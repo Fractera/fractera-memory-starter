@@ -47,6 +47,8 @@ import { createServer } from "node:http"
 import { readFileSync } from "node:fs"
 import { contract, CONTRACT_VERSION, METHODS, SERVICE } from "./contract.mjs"
 import { remember, recall } from "./lib/verbs.mjs"
+import { describeTable, listTables, nameQuality } from "./lib/catalogue.mjs"
+import { isSafeName } from "./lib/naming.mjs"
 
 const PORT = Number(process.env.PORT ?? 3700)
 const HOST = process.env.MEMORY_HOST ?? "127.0.0.1"
@@ -118,6 +120,9 @@ const server = createServer(async (req, res) => {
   if (req.method === "GET" && path === "/v1/health") {
     return send(res, 200, {
       methods: contract().methods.length,
+      // 🔒 МЕРА КАЧЕСТВА ИМЁН ВИДНА В ЖИВОСТИ, А НЕ В ОТДЕЛЬНОМ ОТЧЁТЕ: показатель,
+      // который надо специально искать, не смотрит никто.
+      name_quality: nameQuality(),
       ok: true,
       service: SERVICE,
       startedAt: STARTED_AT,
@@ -127,6 +132,19 @@ const server = createServer(async (req, res) => {
 
   if (req.method === "GET" && path === "/v1/contract") {
     return send(res, 200, { ...contract(), ok: true })
+  }
+
+  // ── КАТАЛОГ: что у памяти есть, в виде имён ────────────────────────────────
+  if (req.method === "GET" && path === "/v1/tables") {
+    return send(res, 200, await listTables())
+  }
+  if (req.method === "GET" && path.startsWith("/v1/tables/")) {
+    const name = decodeURIComponent(path.slice("/v1/tables/".length))
+    // 🔒 ИМЯ ИЗ ПУТИ ПРОВЕРЯЕТСЯ ДО ОБРАЩЕНИЯ К БАЗЕ, А НЕ ПОСЛЕ: оно приходит
+    // снаружи, и это единственная граница между именем и SQL.
+    if (!isSafeName(name)) return send(res, 400, { error: "unsafe-name", ok: false })
+    const d = await describeTable(name)
+    return send(res, d.ok ? 200 : 404, d)
   }
 
   // Методы договора: имя в пути, тело — параметры.
