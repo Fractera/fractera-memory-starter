@@ -45,7 +45,8 @@
 
 import { createServer } from "node:http"
 import { readFileSync } from "node:fs"
-import { contract, CONTRACT_VERSION, SERVICE } from "./contract.mjs"
+import { contract, CONTRACT_VERSION, METHODS, SERVICE } from "./contract.mjs"
+import { remember, recall } from "./lib/verbs.mjs"
 
 const PORT = Number(process.env.PORT ?? 3700)
 const HOST = process.env.MEMORY_HOST ?? "127.0.0.1"
@@ -90,7 +91,24 @@ function allowed(req, path) {
   return req.headers["x-data-secret"] === SECRET
 }
 
-const server = createServer((req, res) => {
+/** Тело запроса. Кривой JSON — законный отказ, а не падение службы. */
+function readBody(req) {
+  return new Promise((resolve) => {
+    let raw = ""
+    req.on("data", (d) => { raw += d; if (raw.length > 1e6) req.destroy() })
+    req.on("end", () => {
+      try { resolve(JSON.parse(raw || "{}")) } catch { resolve(null) }
+    })
+    req.on("error", () => resolve(null))
+  })
+}
+
+// 🔒 ИСПОЛНИТЕЛИ ЗОВУТСЯ ПО ИМЕНИ ИЗ ДОГОВОРА, А НЕ ПО СПИСКУ В МАРШРУТИЗАТОРЕ.
+// Второй список разошёлся бы с договором молча — в проекте это оплачено
+// четырежды за три дня.
+const RUN = { recall, remember }
+
+const server = createServer(async (req, res) => {
   const path = (req.url || "/").split("?")[0].replace(/\/+$/, "") || "/"
 
   if (!allowed(req, path)) {
@@ -111,13 +129,35 @@ const server = createServer((req, res) => {
     return send(res, 200, { ...contract(), ok: true })
   }
 
+  // Методы договора: имя в пути, тело — параметры.
+  if (req.method === "POST" && path.startsWith("/v1/")) {
+    const name = path.slice(4)
+    const declared = METHODS.find((m) => m.name === name)
+    if (declared) {
+      const body = await readBody(req)
+      if (!body) return send(res, 400, { error: "bad-json", ok: false })
+      // 🔒 ОБЯЗАТЕЛЬНОЕ ПРОВЕРЯЕТСЯ ПО ДОГОВОРУ, А НЕ ПО ПАМЯТИ АВТОРА.
+      const missing = declared.params.filter((p) => p.required && !body[p.name]).map((p) => p.name)
+      if (missing.length) {
+        return send(res, 400, { error: "missing-params", missing, ok: false })
+      }
+      try {
+        return send(res, 200, await RUN[name](body))
+      } catch (e) {
+        // 🛑 ОТКАЗ НАЗЫВАЕТСЯ ОТКАЗОМ, А НЕ ПАДАЕТ МОЛЧА: служба обязана
+        // пережить любой вызов и сказать, что случилось.
+        return send(res, 500, { error: "inside-memory", ok: false, why: String(e.message).slice(0, 200) })
+      }
+    }
+  }
+
   // 🔒 ОТКАЗ РАЗЛИЧАЕТ «ТАКОГО НЕТ» И «ЕЩЁ НЕ ПОСТРОЕНО», И РАЗНИЦА ВИДНА ТОМУ,
-  // КТО ОТЛАЖИВАЕТ. Пока методов ноль, любой `/v1/<имя>` — это «не построено»;
+  // КТО ОТЛАЖИВАЕТ. Имя, которого нет в договоре, — это «не построено»;
   // сказать «такого не бывает» значило бы соврать о замысле.
   if (path.startsWith("/v1/")) {
     return send(res, 501, {
       error: "not-built",
-      hint: "договор пуст намеренно: методы наполняются по одному, осознанно",
+      hint: "этого метода в договоре нет: методы наполняются по одному, осознанно",
       ok: false,
       version: CONTRACT_VERSION,
     })
