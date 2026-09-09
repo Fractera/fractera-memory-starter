@@ -46,7 +46,7 @@
 import { createServer } from "node:http"
 import { readFileSync } from "node:fs"
 import { contract, CONTRACT_VERSION, METHODS, SERVICE } from "./contract.mjs"
-import { remember, recall } from "./lib/verbs.mjs"
+import { people, remember, recall } from "./lib/verbs.mjs"
 import { describeTable, listTables, nameQuality } from "./lib/catalogue.mjs"
 import { isSafeName } from "./lib/naming.mjs"
 
@@ -108,7 +108,7 @@ function readBody(req) {
 // 🔒 ИСПОЛНИТЕЛИ ЗОВУТСЯ ПО ИМЕНИ ИЗ ДОГОВОРА, А НЕ ПО СПИСКУ В МАРШРУТИЗАТОРЕ.
 // Второй список разошёлся бы с договором молча — в проекте это оплачено
 // четырежды за три дня.
-const RUN = { recall, remember }
+const RUN = { people, recall, remember }
 
 const server = createServer(async (req, res) => {
   const path = (req.url || "/").split("?")[0].replace(/\/+$/, "") || "/"
