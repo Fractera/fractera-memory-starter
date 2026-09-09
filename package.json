@@ -1,0 +1,17 @@
+{
+  "name": "fractera-memory-starter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Служба памяти Fractera: чёрный ящик со своим договором, своим портом и своей жизнью",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node scripts/check-contract.mjs",
+    "probe": "node scripts/probe/alive.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
