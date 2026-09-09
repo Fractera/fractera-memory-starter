@@ -76,6 +76,17 @@ const after = await call("recall", { who: WHO })
 say((after.data?.known ?? []).length >= 2, "записанное читается", `известно ${(after.data?.known ?? []).length}`)
 say(after.data?.used_model === false, "и это чтение тоже БЕЗ модели", `${after.ms} мс`)
 
+// 🔒 ОТВЕТ НАЗЫВАЕТ ИСТОЧНИК — и это проверяется, а не подразумевается.
+say(
+  (after.data?.known ?? []).every((k) => typeof k.from_table === "string" && k.from_table.length > 0),
+  "каждое значение называет таблицу-источник",
+  (after.data?.known ?? [])[0]?.from_table ?? "НЕ НАЗВАН",
+)
+say(
+  (after.data?.known ?? []).every((k) => "claim" in k),
+  "и род значения едет вместе с ним",
+)
+
 // ── 4. ПРОТИВОРЕЧИЕ: ПОСЛЕДНЕЕ ПОБЕЖДАЕТ, НО ВСЛУХ ───────────────────────────
 const langKind = (after.data?.known ?? []).find((k) => k.what.includes("lang"))?.what
 const second = await call("remember", { text: "нет, всё-таки давай на украинском", who: WHO })
