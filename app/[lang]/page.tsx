@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { Suspense } from "react";
 import { PassportBody } from "./settings/_components/passport-body.client";
 import { memoryUi } from "./settings/_i18n/memory.i18n";
 
@@ -16,6 +17,13 @@ import { memoryUi } from "./settings/_i18n/memory.i18n";
 // 🔒 ЧИТАЕТСЯ С ДИСКА НА КАЖДЫЙ ЗАПРОС: правка файла видна на следующей загрузке,
 // без сборки и без перезапуска.
 //
+// ✗ ЧТЕНИЕ ФАЙЛА ЖИВЁТ ПОД `<Suspense>`, И ЭТО ОПЛАЧЕНО СБОРКОЙ, А НЕ ВЫВЕДЕНО.
+// Первая версия читала документ прямо в теле страницы, и сборка упала:
+// «Route "/[lang]": Uncached data was accessed outside of <Suspense>» — под
+// `cacheComponents` этого требует уже сама раскладка. 🛑 Хуже отказа была его цена:
+// собранного дерева не осталось, и служба ответила `502` до починки. Тот же закон
+// уже записан у соседних страниц этого репозитория — я его знал и не применил.
+//
 // 🛑 ЗДЕСЬ НЕТ НИ КНОПОК, НИ ССЫЛОК НА СЛУЖЕБНОЕ. Вход и аккаунт живут в шапке —
 // тот же довод, что у чата (156-2): вторая пара кнопок спорила бы с шапкой за то,
 // какая из них правда.
@@ -28,11 +36,15 @@ export function generateStaticParams() {
   return LANGS.map((lang) => ({ lang }));
 }
 
-export default async function MemoryHome({
-  params,
-}: {
-  params: Promise<{ lang: string }>;
-}) {
+export default function MemoryHome(props: { params: Promise<{ lang: string }> }) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <MemoryHomeBody {...props} />
+    </Suspense>
+  );
+}
+
+async function MemoryHomeBody({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const ui = memoryUi(lang);
 
