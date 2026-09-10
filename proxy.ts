@@ -29,11 +29,36 @@ import { type NextRequest, NextResponse } from "next/server";
  */
 const SELF_GUARDED = new Set(["/api/fractera/memory-test"]);
 
+/**
+ * 🔒 ЯЗЫКОВОЙ КОРЕНЬ ПУБЛИЧЕН (178-5, слово владельца: «создай главную страницу,
+ * которая будет доступна без авторизации»).
+ *
+ * 🛑 ПРОВЕРКА ТОЧНАЯ, А НЕ ПО ПРЕФИКСУ: `/ru` пропускается, `/ru/settings` — нет.
+ * Префикс открыл бы вместе с главной весь раздел, и замок стал бы украшением.
+ * Тот же приём и та же формулировка стоят у чата — способность перенесена, а не
+ * изобретена.
+ */
+const PUBLIC_LANG_ROOTS = new Set(["/ru", "/en"]);
+
 export async function proxy(request: NextRequest) {
   const { pathname } = new URL(request.url);
 
   if (SELF_GUARDED.has(pathname)) {
     return NextResponse.next();
+  }
+
+  if (PUBLIC_LANG_ROOTS.has(pathname)) {
+    return NextResponse.next();
+  }
+
+  // 🔒 ГОЛЫЙ КОРЕНЬ ПЕРЕАДРЕСУЕТСЯ НА ЯЗЫКОВОЙ, А НЕ ПРОПУСКАЕТСЯ.
+  // ✗ оплачено у чата 2026-09-07: корень открыли, а страницы у него нет — все
+  // живут под `[lang]`. Человек, набрав адрес службы без языка, получал `404`.
+  // 🛑 И ЗДЕСЬ ЭТО ВАЖНЕЕ, ЧЕМ ТАМ: корень памяти занят СТАРОЙ страницей журнала
+  // на голом Node, и она отвечает раньше Next. Переадресация до неё не доходит —
+  // строка стоит на будущее, когда журнал уедет со своего корня целиком.
+  if (pathname === "/") {
+    return NextResponse.redirect(`${new URL(request.url).origin}/${langOf(request)}`);
   }
 
   // 🛑 ПУСТАЯ КОРЗИНА КУК — НЕ ПОВОД НЕ СПРАШИВАТЬ, И ЭТО ПРО РЕЖИМ БЕЗ ДОМЕНА.
@@ -77,6 +102,21 @@ export async function proxy(request: NextRequest) {
   }
 
   return NextResponse.next();
+}
+
+// 🔒 ЯЗЫК ДЛЯ ПЕРЕАДРЕСАЦИИ БЕРЁТСЯ ИЗ САМОГО АДРЕСА, А НЕ ЗАШИТ. Увести
+// русского на английскую главную значит показать чужой язык в первый же момент,
+// когда он ещё не вошёл и объяснить некому.
+// 🛑 СПИСКА ЯЗЫКОВ ЗДЕСЬ НЕТ НАМЕРЕННО: второй список рядом с настоящим
+// разошёлся бы с ним молча. Берём первый сегмент, если он похож на код языка,
+// иначе смотрим заголовок браузера, иначе английский. Приём взят у чата.
+function langOf(request: NextRequest): string {
+  const first = new URL(request.url).pathname.split("/")[1] ?? "";
+  if (/^[a-z]{2}$/.test(first)) {
+    return first;
+  }
+  const accept = request.headers.get("accept-language") ?? "";
+  return accept.toLowerCase().startsWith("ru") ? "ru" : "en";
 }
 
 export const config = {

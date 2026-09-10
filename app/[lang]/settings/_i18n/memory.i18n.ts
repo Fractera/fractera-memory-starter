@@ -65,6 +65,11 @@ export type MemoryUi = {
     shared: string;
     refresh: string;
   };
+  /** Слова публичной главной страницы (178-5). */
+  home: {
+    whatIsBehind: string;
+    whereToEnter: string;
+  };
 };
 
 const EN: MemoryUi = {
@@ -80,6 +85,12 @@ const EN: MemoryUi = {
     refresh: "Refresh",
     shared:
       "The development agent reads this very document — as a file on disk. Clearing erases it for both at once: there is no second source.",
+  },
+  home: {
+    whatIsBehind:
+      "A public page of the service. What is behind it — the memory bench and the journal of its work — opens after signing in with the architect role.",
+    whereToEnter:
+      "The sign-in button is at the top right. After signing in, «Account» with your email and roles appears there, and the sections appear on the left.",
   },
   layer: "Memory service",
   memoryTables: {
@@ -147,6 +158,12 @@ const RU: MemoryUi = {
     refresh: "Обновить",
     shared:
       "Этот же документ читает агент разработки — файлом на диске. Очистка стирает его для обоих сразу: второго источника нет.",
+  },
+  home: {
+    whatIsBehind:
+      "Публичная страница службы. То, что за ней — стенд памяти и журнал её работы, — открывается после входа с ролью архитектора.",
+    whereToEnter:
+      "Кнопка входа — справа вверху. После входа там же появится «Аккаунт» с почтой и ролями, а слева — разделы.",
   },
   layer: "Служба памяти",
   memoryTables: {
