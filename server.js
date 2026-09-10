@@ -47,6 +47,9 @@ import { createServer } from "node:http"
 import { readFileSync } from "node:fs"
 import { contract, CONTRACT_VERSION, METHODS, SERVICE } from "./contract.mjs"
 import { people, remember, recall } from "./lib/verbs.mjs"
+import { forget_journal, journal } from "./lib/journal-verbs.mjs"
+import { deniedPage, journalPage, renderJournal } from "./lib/page.mjs"
+import { isArchitect, whoIsThere } from "./lib/session.mjs"
 import { describeTable, listTables, nameQuality } from "./lib/catalogue.mjs"
 import { isSafeName } from "./lib/naming.mjs"
 
@@ -108,10 +111,69 @@ function readBody(req) {
 // 🔒 ИСПОЛНИТЕЛИ ЗОВУТСЯ ПО ИМЕНИ ИЗ ДОГОВОРА, А НЕ ПО СПИСКУ В МАРШРУТИЗАТОРЕ.
 // Второй список разошёлся бы с договором молча — в проекте это оплачено
 // четырежды за три дня.
-const RUN = { people, recall, remember }
+const RUN = { forget_journal, journal, people, recall, remember }
+
+/** Отдать страницу — не JSON, поэтому мимо `send()`. */
+function sendHtml(res, code, html) {
+  res.writeHead(code, {
+    "Cache-Control": "no-store",
+    "Content-Type": "text/html; charset=utf-8",
+  })
+  res.end(html)
+}
 
 const server = createServer(async (req, res) => {
   const path = (req.url || "/").split("?")[0].replace(/\/+$/, "") || "/"
+
+  // ── СТРАНИЦА ЖУРНАЛА (177-3) ───────────────────────────────────────────────
+  //
+  // 🔒 У НЕЁ СВОЙ ЗАМОК, И ОН ДРУГОЙ ПО ПРИРОДЕ. Методы `/v1/*` закрыты секретом
+  // машины: по ту сторону процесс, у которого кук нет. Здесь по ту сторону
+  // ЧЕЛОВЕК в браузере, и секрета машины у него нет и быть не должно — значит
+  // спрашиваем единственную службу входа, как это делают панель, сайт и чат.
+  // 🛑 ПОЭТОМУ СТРАНИЦА СТОИТ ДО `allowed()`: пропусти мы её через проверку
+  // секрета, человек получал бы `401` на собственном экране.
+  if (path === "/" || path === "/clear") {
+    const session = await whoIsThere(req)
+    if (!isArchitect(session)) {
+      // 🔒 ОТКАЗ ОБЪЯСНЯЕТ СЕБЯ ЧЕЛОВЕКУ, А НЕ ОТДАЁТ ГОЛЫЙ КОД. Пустой `403` на
+      // служебной странице читается как поломка службы — то есть ровно как то,
+      // что человек и пришёл сюда проверять.
+      return sendHtml(
+        res,
+        session ? 403 : 401,
+        deniedPage(session ? "нужна роль архитектора" : "вы не вошли"),
+      )
+    }
+
+    if (req.method === "POST" && path === "/clear") {
+      const done = await forget_journal()
+      const after = await journal()
+      return sendHtml(
+        res,
+        200,
+        journalPage({
+          bytes: after.bytes,
+          cleared: done.cleared ?? 0,
+          entries: after.entries,
+          html: renderJournal(after.text),
+          who: session.email,
+        }),
+      )
+    }
+
+    const got = await journal()
+    return sendHtml(
+      res,
+      200,
+      journalPage({
+        bytes: got.bytes,
+        entries: got.entries,
+        html: renderJournal(got.text),
+        who: session.email,
+      }),
+    )
+  }
 
   if (!allowed(req, path)) {
     return send(res, 401, { error: "no-access", ok: false })
