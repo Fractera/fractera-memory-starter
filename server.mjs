@@ -56,6 +56,9 @@ import { WebSocketServer } from "ws"
 import { claudeAuthState, claudeBin } from "./lib/fractera/claude-cli.mjs"
 import { redeemPtyTicket } from "./lib/fractera/pty-ticket.mjs"
 import { contract, CONTRACT_VERSION, METHODS, SERVICE } from "./contract.mjs"
+// 🔒 СЛОВА ОТКАЗОВ — ИЗ ОДНОГО СЛОВАРЯ НА ВСЮ СЛУЖБУ (181-10): дверь и глаголы
+// говорят человеку одними и теми же фразами, и переводятся они в одном месте.
+import { say } from "./lib/words.mjs"
 import { people, remember, recall } from "./lib/verbs.mjs"
 import { forget_journal, journal } from "./lib/journal-verbs.mjs"
 // 🪦 `lib/page.mjs` БОЛЬШЕ НЕ ИМПОРТИРУЕТСЯ — страница журнала на голом Node
@@ -239,7 +242,14 @@ const server = createServer(async (req, res) => {
   // Восстанавливается из git вместе с `lib/page.mjs`.
 
   if (!allowed(req, path)) {
-    return send(res, 401, { error: "no-access", ok: false })
+    // 🔒 ЯЗЫК ЗДЕСЬ БЕРЁТСЯ ИЗ АДРЕСА, А НЕ ИЗ ТЕЛА: тело мы ещё не читали и,
+    // отказывая непрошеному гостю, читать не станем.
+    const askedLang = new URL(req.url ?? "/", "http://x").searchParams.get("lang") ?? undefined
+    return send(res, 401, {
+      error: "no-access",
+      ok: false,
+      what_happened: say("no-access", askedLang),
+    })
   }
 
   if (req.method === "GET" && path === "/v1/health") {
@@ -267,7 +277,9 @@ const server = createServer(async (req, res) => {
     const name = decodeURIComponent(path.slice("/v1/tables/".length))
     // 🔒 ИМЯ ИЗ ПУТИ ПРОВЕРЯЕТСЯ ДО ОБРАЩЕНИЯ К БАЗЕ, А НЕ ПОСЛЕ: оно приходит
     // снаружи, и это единственная граница между именем и SQL.
-    if (!isSafeName(name)) return send(res, 400, { error: "unsafe-name", ok: false })
+    if (!isSafeName(name)) {
+      return send(res, 400, { error: "unsafe-name", ok: false, what_happened: say("unsafe-name") })
+    }
     const d = await describeTable(name)
     return send(res, d.ok ? 200 : 404, d)
   }
@@ -278,18 +290,30 @@ const server = createServer(async (req, res) => {
     const declared = METHODS.find((m) => m.name === name)
     if (declared) {
       const body = await readBody(req)
-      if (!body) return send(res, 400, { error: "bad-json", ok: false })
+      if (!body) {
+        return send(res, 400, { error: "bad-json", ok: false, what_happened: say("bad-json") })
+      }
       // 🔒 ОБЯЗАТЕЛЬНОЕ ПРОВЕРЯЕТСЯ ПО ДОГОВОРУ, А НЕ ПО ПАМЯТИ АВТОРА.
       const missing = declared.params.filter((p) => p.required && !body[p.name]).map((p) => p.name)
       if (missing.length) {
-        return send(res, 400, { error: "missing-params", missing, ok: false })
+        return send(res, 400, {
+          error: "missing-params",
+          missing,
+          ok: false,
+          what_happened: say("missing-params", body.lang, { names: missing.join(", ") }),
+        })
       }
       try {
         return send(res, 200, await RUN[name](body))
       } catch (e) {
         // 🛑 ОТКАЗ НАЗЫВАЕТСЯ ОТКАЗОМ, А НЕ ПАДАЕТ МОЛЧА: служба обязана
         // пережить любой вызов и сказать, что случилось.
-        return send(res, 500, { error: "inside-memory", ok: false, why: String(e.message).slice(0, 200) })
+        return send(res, 500, {
+          error: "inside-memory",
+          ok: false,
+          what_happened: say("inside-memory", body.lang),
+          why: String(e.message).slice(0, 200),
+        })
       }
     }
   }
@@ -300,8 +324,8 @@ const server = createServer(async (req, res) => {
   if (path.startsWith("/v1/")) {
     return send(res, 501, {
       error: "not-built",
-      hint: "этого метода в договоре нет: методы наполняются по одному, осознанно",
       ok: false,
+      what_happened: say("not-built"),
       version: CONTRACT_VERSION,
     })
   }
