@@ -52,6 +52,7 @@ const SELF_GUARDED = new Set([
   "/api/me",
   "/api/fractera/pty-ticket",
   "/api/fractera/openai-key",
+  "/api/fractera/anthropic-key",
 ]);
 
 /**

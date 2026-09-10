@@ -192,6 +192,10 @@ const EN: MemoryUi = {
       hint: "What the OpenAI key is for — and the key itself, one for the whole server.",
       title: "OpenAI subscription",
     },
+    settings: {
+      hint: "Keys and switches of this service. The Anthropic key here is the same one the chat uses: it lives in the machine secret store.",
+      title: "Settings",
+    },
     "memory-test": {
       hint: "Send a phrase straight to memory and see its answer — no agent in the chain.",
       title: "Memory test",
@@ -312,6 +316,10 @@ const RU: MemoryUi = {
     openai: {
       hint: "Зачем нужен ключ OpenAI — и сам ключ, один на весь сервер.",
       title: "Подписка OpenAI",
+    },
+    settings: {
+      hint: "Ключи и выключатели самой службы. Ключ Anthropic здесь тот же, что у чата: он лежит в складе секретов машины.",
+      title: "Настройки",
     },
     "memory-test": {
       hint: "Отправьте фразу прямо в память и посмотрите её ответ — агента в цепочке нет.",

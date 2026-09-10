@@ -66,9 +66,18 @@ function show(body: unknown): string {
 }
 
 export function MemoryTest({
+  lang,
   onSent,
   words,
 }: {
+  /**
+   * Язык, на котором память скажет слова человеку (181-10).
+   *
+   * 🔒 ЯЗЫК НАЗЫВАЕТ ЗОВУЩИЙ, А НЕ УГАДЫВАЕТ СЛУЖБА: память не знает, кто её
+   * позвал. Здесь это язык страницы — тот же, на котором человек читает всё
+   * остальное вокруг стенда.
+   */
+  lang: string;
   /** Стенд сообщает соседу внизу, что состав таблиц мог измениться (176-3). */
   onSent?: () => void;
   words: Words;
@@ -94,14 +103,18 @@ export function MemoryTest({
     if (mode === "say") {
       if (!text.trim()) return;
       sendMethod = "remember";
-      sendBody = { text: text.trim() };
+      sendBody = { lang, text: text.trim() };
       asked = text.trim();
     } else if (mode === "ask") {
       sendMethod = "recall";
-      sendBody = text.trim() ? { text: text.trim() } : {};
+      sendBody = text.trim() ? { lang, text: text.trim() } : { lang };
       asked = text.trim() || "(без вопроса — всё, что известно)";
     } else {
       try {
+        // 🔒 СЫРОЙ ВЫЗОВ УЕЗЖАЕТ РОВНО ТАКИМ, КАКИМ ЕГО НАБРАЛИ, — язык сюда не
+        // дописывается. Это единственное место стенда, где человек говорит с
+        // договором напрямую; подставив своё, стенд перестал бы показывать то,
+        // что он отправляет.
         sendBody = rawBody.trim() ? JSON.parse(rawBody) : {};
       } catch {
         // 🛑 КРИВОЙ JSON — ОТВЕТ СТЕНДА, А НЕ МОЛЧАНИЕ. Пропущенная отправка без

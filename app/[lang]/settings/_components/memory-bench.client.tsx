@@ -17,9 +17,12 @@ import { MemoryTables, type MemoryTablesHandle } from "./memory-tables.client";
 // впустую — а стенд заведён в том числе затем, чтобы видеть её настоящую цену.
 
 export function MemoryBench({
+  lang,
   tablesWords,
   testWords,
 }: {
+  /** Язык страницы: уезжает в каждый вызов договора (181-10). */
+  lang: string;
   tablesWords: React.ComponentProps<typeof MemoryTables>["words"];
   testWords: React.ComponentProps<typeof MemoryTest>["words"];
 }) {
@@ -27,7 +30,7 @@ export function MemoryBench({
 
   return (
     <div className="space-y-8">
-      <MemoryTest onSent={() => tables.current?.reload()} words={testWords} />
+      <MemoryTest lang={lang} onSent={() => tables.current?.reload()} words={testWords} />
       <MemoryTables ref={tables} words={tablesWords} />
     </div>
   );

@@ -5,6 +5,7 @@ import { WorkspaceShell } from "@/components/workspace/workspace-shell";
 import { MemoryBench } from "./_components/memory-bench.client";
 import { JournalView } from "./_components/journal-view.client";
 import { OpenAiTab } from "./_components/openai-tab";
+import { AnthropicKeySection } from "./_components/anthropic-key";
 import { memoryUi } from "./_i18n/memory.i18n";
 import {
   hrefOfMemorySection,
@@ -128,12 +129,22 @@ async function MemoryPageBody({
                 целиком: тип не сужает рантайм — по проводу уедет всё переданное,
                 даже неотрисованное. Закон оплачен в панели дважды за один шаг. */}
             {active === "memory-test" && (
-              <MemoryBench tablesWords={ui.memoryTables} testWords={ui.memoryTest} />
+              <MemoryBench
+                lang={lang}
+                tablesWords={ui.memoryTables}
+                testWords={ui.memoryTest}
+              />
             )}
 
             {active === "journal" && <JournalView words={ui.journal} />}
 
             {active === "openai" && <OpenAiTab ui={ui} />}
+
+            {/* 🔒 «НАСТРОЙКИ» ПАМЯТИ — ПОКА ОДНА КАРТОЧКА, И ЭТО ЧЕСТНО (181-9).
+                Слово владельца: «в кнопку настройки скопируй то же самое решение
+                которое у нас существует для подключения Anthropic ключа».
+                Карточка, форма и дверь — те же файлы, что у чата, байт в байт. */}
+            {active === "settings" && <AnthropicKeySection />}
           </div>
         </WorkspaceShell>
       </div>
