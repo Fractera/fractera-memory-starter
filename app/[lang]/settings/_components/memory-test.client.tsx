@@ -218,10 +218,24 @@ export function MemoryTest({
       {/* 🔒 ВЫСОТА ОГРАНИЧЕНА У СТЕНДА, А ПРОКРУТКА ЖИВЁТ ВНУТРИ КОЛОНОК.
           Заказ владельца дословно: «максимальной высотой 600 пикселей и
           внутренней прокруткой». Прокрути мы страницу целиком — ввод уезжал бы
-          за край ровно тогда, когда нужен: при чтении длинного ответа. */}
-      <div className="grid gap-3 md:grid-cols-2" style={{ maxHeight: 600 }}>
+          за край ровно тогда, когда нужен: при чтении длинного ответа.
+
+          🛑 БЫЛО `style={{ maxHeight: 600 }}` — И ЭТО НЕ РАБОТАЛО (181-11, находка
+          владельца: «когда ответ в правой карточке достаточно большой она выходит
+          за габариты своего контейнера»). Механизм: у сетки строка высотой `auto`,
+          то есть ПО СОДЕРЖИМОМУ; `max-height` на самой сетке такую строку не
+          сжимает, и колонка вырастает наружу, а внутренняя прокрутка не
+          включается — ей нечего ограничивать.
+          🔒 ЛЕЧЕНИЕ — ОПРЕДЕЛЁННАЯ ВЫСОТА, А НЕ ПРЕДЕЛЬНАЯ: `md:h-[600px]` даёт
+          строке точный размер, колонки растягиваются на неё, и `min-h-0 flex-1
+          overflow-y-auto` внутри каждой начинает прокручивать. На узком экране
+          колонки идут одна под другой, и общая высота там была бы вредна —
+          поэтому предел ставится каждой колонке отдельно, `max-h-[70vh]`.
+          🔒 ОБЕ КОЛОНКИ ЛЕЧАТСЯ ОДИНАКОВО, хотя переполнение заметили в правой:
+          лента отправленного растёт так же, просто медленнее. */}
+      <div className="grid gap-3 md:h-[600px] md:grid-cols-2">
         {/* ЛЕВАЯ КОЛОНКА — ВВОД И ЛЕНТА ОТПРАВЛЕННОГО */}
-        <div className="flex min-h-0 flex-col rounded-md border border-muted-foreground/30">
+        <div className="flex max-h-[70vh] min-h-0 flex-col overflow-hidden rounded-md border border-muted-foreground/30 md:max-h-none">
           <div className="border-b border-muted-foreground/20 px-3 py-2 text-[length:var(--fs-small)] font-medium">
             {words.inputTitle}
           </div>
@@ -310,7 +324,7 @@ export function MemoryTest({
         </div>
 
         {/* ПРАВАЯ КОЛОНКА — ОТВЕТ ПАМЯТИ ДОСЛОВНО */}
-        <div className="flex min-h-0 flex-col rounded-md border border-muted-foreground/30">
+        <div className="flex max-h-[70vh] min-h-0 flex-col overflow-hidden rounded-md border border-muted-foreground/30 md:max-h-none">
           <div className="border-b border-muted-foreground/20 px-3 py-2 text-[length:var(--fs-small)] font-medium">
             {words.answerTitle}
           </div>
