@@ -6,7 +6,13 @@ import { NextResponse } from "next/server"
 // избежать. TypeScript выводит их типы сам — объявлять ничего не нужно.
 import { forget_journal, journal } from "@/lib/journal-verbs.mjs"
 import { people, recall, remember } from "@/lib/verbs.mjs"
-import { isArchitect, whoIsThere } from "@/lib/session-http"
+// 🔒 СЕССИЯ СПРАШИВАЕТСЯ ТЕМ ЖЕ ПОМОЩНИКОМ, ЧТО У ЧАТА, — СКОПИРОВАННЫМ ДОСЛОВНО.
+// 🪦 Здесь стоял `lib/session-http.ts`, написанный мной с нуля, — ровно то
+// «программирование заново», против которого владелец возражал дважды. Два
+// способа узнать человека в одной службе однажды ответили бы по-разному:
+// шапка — «вошёл», дверь — «нет». Удалён тем же коммитом, восстанавливается
+// из git.
+import { fracteraSession } from "@/lib/fractera/session"
 
 // ДВЕРЬ СТЕНДА — ТЕПЕРЬ ВНУТРИ САМОЙ ПАМЯТИ (178-2).
 //
@@ -56,11 +62,11 @@ const RUN: Record<string, (body: never) => Promise<unknown>> = {
 }
 
 export async function POST(request: Request) {
-  const session = await whoIsThere(request)
+  const session = await fracteraSession()
   if (!session) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
-  if (!isArchitect(session)) {
+  if (!session.roles.includes("architect")) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 })
   }
 
