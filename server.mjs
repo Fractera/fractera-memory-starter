@@ -44,8 +44,17 @@
 // («учётные данные кем-то выдаются») тут же стало бы тупиком.
 
 import { createServer } from "node:http"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import next from "next"
+// 🔒 МОСТ ТЕРМИНАЛА (180-1) — СКОПИРОВАН С СЕРВЕРА ЧАТА, А НЕ НАПИСАН ЗАНОВО.
+// Решение владельца 2026-09-10: «точка входа в подписку должна быть не одна…
+// так как у нас уже это сделано в чате, то тебе просто перенести это всё».
+// Вход в подписку Claude у чата идёт через терминал в браузере: `claude auth
+// login` печатает ссылку и ждёт код. Учётка одна на весь сервер (`/root/.claude`),
+// поэтому вход, сделанный отсюда, действует и для чата.
+import { WebSocketServer } from "ws"
+import { claudeAuthState, claudeBin } from "./lib/fractera/claude-cli.mjs"
+import { redeemPtyTicket } from "./lib/fractera/pty-ticket.mjs"
 import { contract, CONTRACT_VERSION, METHODS, SERVICE } from "./contract.mjs"
 import { people, remember, recall } from "./lib/verbs.mjs"
 import { forget_journal, journal } from "./lib/journal-verbs.mjs"
@@ -139,10 +148,81 @@ const RUN = { forget_journal, journal, people, recall, remember }
 //
 // 🛑 ЦЕНА НАЗВАНА ВСЛУХ: ЗАКОН СЛУЖБЫ «НОЛЬ ЗАВИСИМОСТЕЙ» ЭТИМ ОТМЕНЁН. Он был
 // верен, пока у памяти не было лица; надгробие с датой стоит в `LAWS.md`.
-const dev = process.env.NODE_ENV !== "production"
+// ✗ УМОЛЧАНИЕ БЫЛО ОБРАТНЫМ — УРОК ЧАТА (114-6), ПЕРЕНЕСЁННЫЙ ВМЕСТЕ С МОСТОМ.
+// Стояло `NODE_ENV !== "production"`: при НЕЗАДАННОЙ переменной Next поднимался
+// бы в режиме разработки — страницы компилировались по требованию, в браузер
+// ехал клиент горячей перезагрузки, а боевая сборка лежала неиспользованной. У
+// чата это выглядело успехом везде и нашлось только по списку запросов. Здесь
+// pm2 пока запускает память с `NODE_ENV=production`, но умолчание не должно
+// зависеть от того, помнит ли запускающий про переменную.
+const dev = process.env.NODE_ENV === "development"
 const app = next({ dev, hostname: HOST, port: PORT })
 const handle = app.getRequestHandler()
 await app.prepare()
+
+// ── МОСТ ТЕРМИНАЛА: ЧТО ЗАПУСКАЕТСЯ И ГДЕ (180-1, копия с сервера чата) ────────
+
+/** Сколько терминалов держим разом: оболочка — это память и процессы. */
+const MAX_SESSIONS = 4
+
+/** Сколько ждём `init` с билетом, прежде чем закрыть молчащее соединение. */
+const INIT_DEADLINE_MS = 10_000
+
+const CLOSE_POLICY = 1008
+
+// 🔒 СПИСОК РЕЖИМОВ ЗАКРЫТЫЙ, СВОБОДНОЙ КОМАНДЫ ПО ПРОВОДУ НЕТ.
+// 🔒 `claude auth login` — ПОДКОМАНДА, А НЕ `/login` ВНУТРИ ИНТЕРФЕЙСА (измерено
+// у чата, 114-2): набирать команду в интерфейсе значило бы зависеть от раскладки.
+// ✗ `claude auth login` НЕ проверяет, вошли ли уже, — начинает обмен безусловно.
+// Поэтому `claude-check` входит только если надо, а `claude-login` — всегда.
+// 🪦 РЕЖИМ `claude-channel` ЧАТА СЮДА НЕ ПОЕХАЛ: он подключает к живой сессии
+// бота (`screen -r fractera-agent`), а у памяти бота нет. Копия с чужой кнопкой
+// обещала бы то, чего здесь не существует.
+const MODES = {
+  "claude-check": () => null,
+  "claude-login": (bin) => `${bin} auth login\n`,
+  system: () => null,
+}
+
+function shellPath() {
+  if (process.env.PTY_SHELL) {
+    return process.env.PTY_SHELL
+  }
+  const candidates =
+    process.platform === "win32"
+      ? [process.env.ComSpec, "C:\\Windows\\System32\\cmd.exe"]
+      : ["/bin/zsh", "/bin/bash", "/bin/sh"]
+  for (const candidate of candidates) {
+    if (candidate && existsSync(candidate)) {
+      return candidate
+    }
+  }
+  return candidates.at(-1) ?? "/bin/sh"
+}
+
+// 🔒 РАБОЧАЯ ПАПКА ТЕРМИНАЛА — ДЕРЕВО ПАМЯТИ, А НЕ ПАПКА БОТА (решение 180).
+// Закон проекта: рабочая папка есть личность агента. `claude`, набранный здесь
+// руками, должен оказаться агентом памяти, а не агентом Telegram.
+function workspaceDir() {
+  const named = process.env.AGENT_WORKSPACE || "/opt/fractera/memory"
+  return existsSync(named) ? named : process.cwd()
+}
+
+// 🛑 `node-pty` — НАТИВНЫЙ МОДУЛЬ, И ЕГО ОТКАЗ ОБЯЗАН БЫТЬ ГРОМКИМ, А НЕ ТИХИМ.
+// Не собравшись, он не должен уронить память: договор и страницы живут и без
+// терминала. Но молчаливо пропавший терминал читается как «вход в подписку
+// сломан», поэтому причина печатается в лог и в сам терминал.
+let pty = null
+let ptyLoadError = ""
+try {
+  pty = (await import("node-pty")).default
+} catch (err) {
+  ptyLoadError = err instanceof Error ? err.message : String(err)
+  process.stderr.write(
+    `[pty] МОДУЛЬ НЕ ЗАГРУЖЕН: ${ptyLoadError}\n` +
+      "[pty] память поднимется, терминал будет отказывать. Лечение: pnpm rebuild node-pty\n",
+  )
+}
 
 const server = createServer(async (req, res) => {
   const path = (req.url || "/").split("?")[0].replace(/\/+$/, "") || "/"
@@ -235,8 +315,199 @@ const server = createServer(async (req, res) => {
   return handle(req, res)
 })
 
+// ── МОСТ ТЕРМИНАЛА: СОКЕТ `/pty` (180-1, копия с сервера чата) ─────────────────
+//
+// 🔒 СОБЫТИЕ `upgrade` ПРИНАДЛЕЖИТ МОСТУ ЦЕЛИКОМ, И ЭТО ОТБИРАЕТСЯ ЯВНО.
+// ✗ Оплачено у чата днём отладки (157-3): Next вешает СВОЙ обработчик `upgrade`
+// из обработчика ПЕРВОГО HTTP-запроса и затем закрывает сокет, если его
+// маршрутизатор что-то сматчил, — в том числе поднятый мостом. Отказ немой и
+// перемежающийся: первое соединение после перезапуска живёт, все следующие
+// рвутся через 3 мс кодом 1006. Лечение — заставить Next привязаться сейчас и
+// тут же снять его обработчик; всё, кроме `/pty`, ему возвращается ниже.
+app.setupWebSocketHandler?.(server)
+server.removeAllListeners("upgrade")
+
+const wss = new WebSocketServer({ noServer: true })
+let sessions = 0
+
+server.on("upgrade", (req, socket, head) => {
+  let pathname = ""
+  try {
+    ({ pathname } = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`))
+  } catch {
+    socket.destroy()
+    return
+  }
+  if (pathname === "/pty") {
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      wss.emit("connection", ws, req)
+    })
+    return
+  }
+  const upgrade = app.getUpgradeHandler?.()
+  if (upgrade) {
+    upgrade(req, socket, head)
+  } else {
+    socket.destroy()
+  }
+})
+
+wss.on("connection", (ws) => {
+  let proc = null
+  let started = false
+
+  const deadline = setTimeout(() => {
+    if (!started) {
+      ws.close(CLOSE_POLICY, "no-init")
+    }
+  }, INIT_DEADLINE_MS)
+
+  function fail(reason) {
+    clearTimeout(deadline)
+    process.stderr.write(`[pty] отказ: ${reason}\n`)
+    ws.close(CLOSE_POLICY, reason)
+  }
+
+  function start(mode) {
+    if (!pty) {
+      ws.send(`\r\n[терминал недоступен: node-pty не собран — ${ptyLoadError}]\r\n`)
+      fail("pty-unavailable")
+      return
+    }
+    if (sessions >= MAX_SESSIONS) {
+      ws.send(`\r\n[открыто ${sessions} терминалов из ${MAX_SESSIONS} — закройте лишние]\r\n`)
+      fail("too-many-sessions")
+      return
+    }
+    const bin = claudeBin()
+    const shell = shellPath()
+    try {
+      proc = pty.spawn(shell, [], {
+        cols: 500,
+        cwd: workspaceDir(),
+        // 🔒 ОКРУЖЕНИЕ ОБОЛОЧКИ СОБРАНО ЯВНО, А НЕ УНАСЛЕДОВАНО ЦЕЛИКОМ: процесс
+        // памяти держит секрет машины, и оболочке в браузере видеть его незачем.
+        env: {
+          HOME: process.env.HOME,
+          LANG: process.env.LANG || "C.UTF-8",
+          LOGNAME: process.env.LOGNAME,
+          PATH: process.env.PATH || "/usr/local/bin:/usr/bin:/bin",
+          SHELL: shell,
+          TERM: "xterm-256color",
+          USER: process.env.USER,
+        },
+        name: "xterm-256color",
+        rows: 24,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      ws.send(`\r\n[оболочка ${shell} не запустилась: ${message}]\r\n`)
+      fail("spawn-failed")
+      return
+    }
+    sessions += 1
+    started = true
+    clearTimeout(deadline)
+
+    proc.onData((data) => {
+      if (ws.readyState === ws.OPEN) {
+        ws.send(data)
+      }
+    })
+    proc.onExit(() => {
+      if (ws.readyState === ws.OPEN) {
+        ws.close()
+      }
+    })
+
+    let command = MODES[mode](bin)
+    if (mode === "claude-check") {
+      const state = claudeAuthState().loggedIn
+      if (state === true) {
+        ws.send(
+          "\r\nПодписка Claude Code подключена. " +
+            "Кнопка «Вход по подписке Claude Code» — войти заново.\r\n\r\n",
+        )
+      } else if (state === null) {
+        ws.send(
+          "\r\nСостояние подписки узнать не удалось: " +
+            `${bin} не ответил. Нажмите кнопку входа, чтобы войти вручную.\r\n\r\n`,
+        )
+      } else {
+        command = MODES["claude-login"](bin)
+      }
+    }
+    if (command) {
+      setTimeout(() => {
+        try {
+          proc.write(command)
+        } catch {
+          /* оболочка уже закрыта — сказать об этом нечему и незачем */
+        }
+      }, 800)
+    }
+  }
+
+  ws.on("message", (raw) => {
+    let msg = null
+    try {
+      msg = JSON.parse(raw.toString())
+    } catch {
+      return
+    }
+    if (!msg || typeof msg !== "object") {
+      return
+    }
+    if (msg.type === "init") {
+      if (started) {
+        return
+      }
+      // 🔒 БИЛЕТ ОДНОРАЗОВЫЙ И ЖИВЁТ МИНУТУ: его выдала дверь под ролью
+      // `architect`. Замок сокета свой, потому что привратник его не видит.
+      const email = redeemPtyTicket(msg.ticket)
+      if (!email) {
+        fail("bad-ticket")
+        return
+      }
+      const mode = typeof msg.mode === "string" && msg.mode in MODES ? msg.mode : "system"
+      start(mode)
+      return
+    }
+    if (!started || !proc) {
+      return
+    }
+    if (msg.type === "stdin" && typeof msg.data === "string") {
+      proc.write(msg.data)
+      return
+    }
+    if (msg.type === "resize" && msg.cols && msg.rows) {
+      proc.resize(Number(msg.cols), Number(msg.rows))
+    }
+  })
+
+  ws.on("close", () => {
+    clearTimeout(deadline)
+    if (proc) {
+      sessions = Math.max(0, sessions - 1)
+      try {
+        proc.kill()
+      } catch {
+        /* уже мёртв */
+      }
+      proc = null
+    }
+  })
+
+  ws.on("error", (err) => {
+    process.stderr.write(`[pty] ошибка сокета: ${err.message}\n`)
+  })
+})
+
 server.listen(PORT, HOST, () => {
-  console.log(`${SERVICE} ${CONTRACT_VERSION} слушает http://${HOST}:${PORT}`)
+  console.log(
+    `${SERVICE} ${CONTRACT_VERSION} слушает http://${HOST}:${PORT} · терминал ws://${HOST}:${PORT}/pty` +
+      `${pty ? "" : " (НЕДОСТУПЕН: node-pty не собран)"}`,
+  )
   if (!SECRET) {
     // 🛑 ГОВОРИМ ВСЛУХ, А НЕ ПАДАЕМ: без секрета служба жива и отвечает `health`,
     // но всё остальное закрыто. Молчаливый старт без замка опаснее отказа.

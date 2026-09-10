@@ -98,11 +98,19 @@ async function MemoryPageBody({
           // 🔒 МЕНЮ ПОРОЖДАЕТСЯ ИЗ `MEMORY_SECTIONS`, А НЕ ПЕРЕЧИСЛЯЕТСЯ ЗДЕСЬ.
           // Тот массив — единственный источник И меню, И маршрутизации; второй
           // список разошёлся бы с ним молча, как это уже случалось у соседа.
-          menu={MEMORY_SECTIONS.map((id) => ({
-            active: id === active,
-            href: hrefOfMemorySection(lang, id),
-            label: ui.pages[id].title,
-          }))}
+          // 🔒 «ПОДПИСКА» СТОИТ В МЕНЮ, НО РАЗДЕЛОМ НЕ ЯВЛЯЕТСЯ (180-2) — тот же
+          // приём, что «Терминал» у чата. Пункт уводит на отдельную страницу
+          // `/terminal` в соседней вкладке, поэтому его нет в `MEMORY_SECTIONS`:
+          // тот массив — единственный источник разделов, и запись в нём означала
+          // бы раздел, которого нет.
+          menu={[
+            ...MEMORY_SECTIONS.map((id) => ({
+              active: id === active,
+              href: hrefOfMemorySection(lang, id),
+              label: ui.pages[id].title,
+            })),
+            { href: `/${lang}/terminal`, label: ui.terminalLabel, newTab: true },
+          ]}
           menuTitle={ui.menuTitle}
           menuWord={ui.menuWord}
           title={ui.pages[active].title}

@@ -19,6 +19,8 @@ export type MemoryUi = {
   layer: string;
   menuTitle: string;
   menuWord: string;
+  /** Пункт меню, уводящий на страницу входа в подписку Claude (180-2). */
+  terminalLabel: string;
   pages: Record<MemorySection, { title: string; hint: string }>;
   memoryTest: {
     lead: string;
@@ -130,6 +132,7 @@ const EN: MemoryUi = {
   },
   menuTitle: "Memory",
   menuWord: "Menu",
+  terminalLabel: "Claude subscription",
   pages: {
     journal: {
       hint: "What memory did: its own account of its work. The same document is read by the development agent, as a file.",
@@ -202,6 +205,7 @@ const RU: MemoryUi = {
   },
   menuTitle: "Память",
   menuWord: "Меню",
+  terminalLabel: "Подписка Claude",
   pages: {
     journal: {
       hint: "Что память делала: её собственный рассказ о своей работе. Этот же документ читает агент разработки — файлом.",
