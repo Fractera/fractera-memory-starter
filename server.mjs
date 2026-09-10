@@ -49,8 +49,12 @@ import next from "next"
 import { contract, CONTRACT_VERSION, METHODS, SERVICE } from "./contract.mjs"
 import { people, remember, recall } from "./lib/verbs.mjs"
 import { forget_journal, journal } from "./lib/journal-verbs.mjs"
-import { deniedPage, journalPage, renderJournal } from "./lib/page.mjs"
-import { isArchitect, whoIsThere } from "./lib/session.mjs"
+// 🪦 `lib/page.mjs` БОЛЬШЕ НЕ ИМПОРТИРУЕТСЯ — страница журнала на голом Node
+// уехала на защищённый маршрут Next (178-6). Файл оставлен на диске: он ещё
+// пригодится тому, кто захочет служебный экран без фреймворка, и восстановить
+// его импорт дешевле, чем написать заново.
+// 🪦 `lib/session.mjs` — там же и по той же причине: его звала только страница
+// журнала. Проверку сессии для Next делает `lib/session-http.ts`.
 import { describeTable, listTables, nameQuality } from "./lib/catalogue.mjs"
 import { isSafeName } from "./lib/naming.mjs"
 
@@ -123,15 +127,9 @@ function readBody(req) {
 // четырежды за три дня.
 const RUN = { forget_journal, journal, people, recall, remember }
 
-/** Отдать страницу — не JSON, поэтому мимо `send()`. */
-function sendHtml(res, code, html) {
-  res.writeHead(code, {
-    "Cache-Control": "no-store",
-    "Content-Type": "text/html; charset=utf-8",
-  })
-  res.end(html)
-}
-
+// 🪦 `sendHtml()` УДАЛЁН ВМЕСТЕ СО СТРАНИЦЕЙ ЖУРНАЛА (178-6): страницы теперь
+// отдаёт Next, и второй способ печатать HTML здесь стал бы приглашением
+// завести служебный экран мимо общей раскладки.
 // ── NEXT РЯДОМ С ДОГОВОРОМ (178-1) ──────────────────────────────────────────
 //
 // 🔒 ОБРАЗЕЦ ВЗЯТ У СЛУЖБЫ ЧАТА `server.mjs`, А НЕ ПРИДУМАН: там Next поднят тем
@@ -148,56 +146,17 @@ await app.prepare()
 
 const server = createServer(async (req, res) => {
   const path = (req.url || "/").split("?")[0].replace(/\/+$/, "") || "/"
-
-  // ── СТРАНИЦА ЖУРНАЛА (177-3) ───────────────────────────────────────────────
+  // 🪦 ЗДЕСЬ ЖИЛА СТРАНИЦА ЖУРНАЛА НА ГОЛОМ NODE (177-3) — УЕХАЛА 2026-09-10
+  // (178-6) ПО СЛОВУ ВЛАДЕЛЬЦА: «журнал памяти должен был быть перенесён на
+  // защищённый маршрут». Теперь он раздел страницы — `/{язык}/settings?section=journal`,
+  // за тем же замком, что стенд, и в том же языковом потоке.
   //
-  // 🔒 У НЕЁ СВОЙ ЗАМОК, И ОН ДРУГОЙ ПО ПРИРОДЕ. Методы `/v1/*` закрыты секретом
-  // машины: по ту сторону процесс, у которого кук нет. Здесь по ту сторону
-  // ЧЕЛОВЕК в браузере, и секрета машины у него нет и быть не должно — значит
-  // спрашиваем единственную службу входа, как это делают панель, сайт и чат.
-  // 🛑 ПОЭТОМУ СТРАНИЦА СТОИТ ДО `allowed()`: пропусти мы её через проверку
-  // секрета, человек получал бы `401` на собственном экране.
-  if (path === "/" || path === "/clear") {
-    const session = await whoIsThere(req)
-    if (!isArchitect(session)) {
-      // 🔒 ОТКАЗ ОБЪЯСНЯЕТ СЕБЯ ЧЕЛОВЕКУ, А НЕ ОТДАЁТ ГОЛЫЙ КОД. Пустой `403` на
-      // служебной странице читается как поломка службы — то есть ровно как то,
-      // что человек и пришёл сюда проверять.
-      return sendHtml(
-        res,
-        session ? 403 : 401,
-        deniedPage(session ? "нужна роль архитектора" : "вы не вошли"),
-      )
-    }
-
-    if (req.method === "POST" && path === "/clear") {
-      const done = await forget_journal()
-      const after = await journal()
-      return sendHtml(
-        res,
-        200,
-        journalPage({
-          bytes: after.bytes,
-          cleared: done.cleared ?? 0,
-          entries: after.entries,
-          html: renderJournal(after.text),
-          who: session.email,
-        }),
-      )
-    }
-
-    const got = await journal()
-    return sendHtml(
-      res,
-      200,
-      journalPage({
-        bytes: got.bytes,
-        entries: got.entries,
-        html: renderJournal(got.text),
-        who: session.email,
-      }),
-    )
-  }
+  // ✗ ПОЧЕМУ ЭТО БЫЛО ДЕФЕКТОМ, А НЕ ПРОСТО ДУБЛЁМ: корень отвечал РАНЬШЕ Next,
+  // поэтому переадресация на языковую главную до него не доходила — человек,
+  // набрав адрес службы, попадал на служебный экран вместо публичной страницы.
+  // 🔒 И ЗАМОК У НЕГО БЫЛ СВОЙ, ВТОРОЙ: та же роль проверялась дважды разными
+  // путями. Два замка на одну способность расходятся на первой правке.
+  // Восстанавливается из git вместе с `lib/page.mjs`.
 
   if (!allowed(req, path)) {
     return send(res, 401, { error: "no-access", ok: false })
