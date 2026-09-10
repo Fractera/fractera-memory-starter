@@ -4,11 +4,38 @@
   "private": true,
   "description": "Служба памяти Fractera: чёрный ящик со своим договором, своим портом и своей жизнью",
   "type": "module",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node server.mjs",
+    "build": "next build",
+    "dev": "next dev",
     "check": "node scripts/check-contract.mjs",
     "probe": "node scripts/probe/alive.mjs"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cn": "^0.2.6",
+    "lucide-react": "^0.446.0",
+    "next": "16.2.10",
+    "next-themes": "^0.3.0",
+    "radix-ui": "^1.6.1",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.2",
+    "@tailwindcss/typography": "^0.5.20",
+    "@types/node": "^24.13.2",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "postcss": "^8",
+    "tailwindcss": "^4.3.2",
+    "typescript": "^5.6.3"
   },
   "engines": {
     "node": ">=20"

@@ -1,0 +1,277 @@
+#!/usr/bin/env node
+//
+// fractera-memory — СЛУЖБА ПАМЯТИ ПЛАТФОРМЫ (процесс pm2, :3700).
+//
+// ═══ ЗАЧЕМ ОНА СУЩЕСТВУЕТ ОТДЕЛЬНО ═══════════════════════════════════════════
+//
+// 🔒 РЕШЕНИЕ ВЛАДЕЛЬЦА 2026-09-09, ДОСЛОВНО: «Я тебе и в предыдущих сессиях
+// неоднократно говорил, что память должна быть отделена от агента гораздо
+// сильнее. Отделена на физическом уровне… у тебя нету паттерна, что память —
+// это чёрный ящик, который живёт своей жизнью, а не твоей и не жизнью агента.
+// Я тебе сказал: это должно выглядеть, как будто мы обращаемся в облако Google —
+// просто отправляем запрос, получаем результат, а что там происходит, не важно».
+//
+// ✗ ЧЕМ ОПЛАЧЕНО, ИЗМЕРЕНО В ТОТ ЖЕ ДЕНЬ. Прежняя память жила ВНУТРИ приложения
+// бота: 5 997 строк (`lib/memory` 2305 + `lib/facts` 2458 + `lib/registry` 1234),
+// и сервер инструментов агента импортировал её исходники ПО ФАЙЛОВОМУ ПУТИ.
+// Это не вызов службы, а линковка. Через этот шов прошёл дефект, из-за которого
+// `memory_write` был недостижим сутки. И через него же «запиши мой день
+// рождения» стоило **278 секунд**: у памяти не было способа завести новый род
+// значения, и работа вывалилась наружу — а снаружи она выразима только
+// программированием (сборка, `sleep 60`, коммит — при цене операции 1.5 с).
+//
+// 🔒 ПОЧЕМУ СТРОИМ ЗАНОВО, А НЕ ПЕРЕНОСИМ. Я предлагал перенос; владелец
+// отклонил, и его довод сильнее: «наша архитектура создавалась без видимого
+// плана, в большей степени хаотично… если мы просто её перенесём, то получим
+// старый план на новом месте». Дефекты оплачены ПРИНЦИПАМИ, а принципы
+// переезжают пониманием, а не файлами.
+//
+// ═══ ЧЕМ ЭТА СЛУЖБА ОТЛИЧАЕТСЯ ОТ СОСЕДЕЙ ════════════════════════════════════
+//
+// Форма взята у `services/data` (:3300) и `services/geo` (:3400): один файл,
+// свой порт, БЕЗ СБОРКИ. Отличие одно и намеренное — **ноль зависимостей**:
+// сосед `geo` берёт express, здесь хватает `node:http`. Пакет, поставленный
+// ради трёх маршрутов, — это ещё один способ не запуститься на чистой машине.
+// Тот же довод уже записан в `intake-preloader.js` и там оправдался.
+//
+// 🔒 СЛУШАЕМ ТОЛЬКО ПЕТЛЮ — решение владельца 2026-09-09 на прямой вопрос.
+// Как `data` и `geo`: зовут её процессы этого же сервера.
+// 🛑 ПЕТЛЯ НЕ ОСЛАБЛЯЕТ ГРАНИЦУ. Граница здесь — граница ПРОЦЕССА, а не сети:
+// импортировать через неё нельзя в принципе, кто бы куда ни ходил.
+//
+// 🔒 ЗАМОК — ОБЩИЙ СЕКРЕТ МАШИНЫ, А НЕ НОВЫЙ КЛЮЧ. Ключ, заведённый ради одной
+// службы, надо кому-то выдавать, где-то хранить и когда-то менять; третье звено
+// («учётные данные кем-то выдаются») тут же стало бы тупиком.
+
+import { createServer } from "node:http"
+import { readFileSync } from "node:fs"
+import next from "next"
+import { contract, CONTRACT_VERSION, METHODS, SERVICE } from "./contract.mjs"
+import { people, remember, recall } from "./lib/verbs.mjs"
+import { forget_journal, journal } from "./lib/journal-verbs.mjs"
+import { deniedPage, journalPage, renderJournal } from "./lib/page.mjs"
+import { isArchitect, whoIsThere } from "./lib/session.mjs"
+import { describeTable, listTables, nameQuality } from "./lib/catalogue.mjs"
+import { isSafeName } from "./lib/naming.mjs"
+
+const PORT = Number(process.env.PORT ?? 3700)
+const HOST = process.env.MEMORY_HOST ?? "127.0.0.1"
+const MACHINE_ENV = process.env.FRACTERA_MACHINE_ENV ?? "/etc/fractera/secrets.env"
+const STARTED_AT = new Date().toISOString()
+
+/** Значение из файла секретов машины. Нет файла — законное состояние вне сервера. */
+function machineEnv(name) {
+  try {
+    for (const line of readFileSync(MACHINE_ENV, "utf8").split("\n")) {
+      const i = line.indexOf("=")
+      if (i > 0 && line.slice(0, i).trim() === name) {
+        return line.slice(i + 1).trim().replace(/^["']|["']$/g, "")
+      }
+    }
+  } catch {
+    // файла нет — на машине разработчика это нормально
+  }
+  return ""
+}
+
+const SECRET = process.env.DATA_SECRET || machineEnv("DATA_SECRET")
+
+function send(res, status, body) {
+  const text = JSON.stringify(body)
+  res.writeHead(status, {
+    "cache-control": "no-store",
+    "content-length": Buffer.byteLength(text),
+    "content-type": "application/json; charset=utf-8",
+  })
+  res.end(text)
+}
+
+/**
+ * 🔒 `health` ОТКРЫТ, ОСТАЛЬНОЕ ПОД ЗАМКОМ, И ЭТО НЕ НЕДОСМОТР.
+ * Проверку живости зовут установщик и сторож, у которых секрета может не быть;
+ * а сказать «я жива» — не значит выдать хоть что-то о человеке.
+ */
+function allowed(req, path) {
+  if (path === "/v1/health") return true
+  if (!SECRET) return false
+  return req.headers["x-data-secret"] === SECRET
+}
+
+/** Тело запроса. Кривой JSON — законный отказ, а не падение службы. */
+function readBody(req) {
+  return new Promise((resolve) => {
+    let raw = ""
+    req.on("data", (d) => { raw += d; if (raw.length > 1e6) req.destroy() })
+    req.on("end", () => {
+      try { resolve(JSON.parse(raw || "{}")) } catch { resolve(null) }
+    })
+    req.on("error", () => resolve(null))
+  })
+}
+
+// 🔒 ИСПОЛНИТЕЛИ ЗОВУТСЯ ПО ИМЕНИ ИЗ ДОГОВОРА, А НЕ ПО СПИСКУ В МАРШРУТИЗАТОРЕ.
+// Второй список разошёлся бы с договором молча — в проекте это оплачено
+// четырежды за три дня.
+const RUN = { forget_journal, journal, people, recall, remember }
+
+/** Отдать страницу — не JSON, поэтому мимо `send()`. */
+function sendHtml(res, code, html) {
+  res.writeHead(code, {
+    "Cache-Control": "no-store",
+    "Content-Type": "text/html; charset=utf-8",
+  })
+  res.end(html)
+}
+
+// ── NEXT РЯДОМ С ДОГОВОРОМ (178-1) ──────────────────────────────────────────
+//
+// 🔒 ОБРАЗЕЦ ВЗЯТ У СЛУЖБЫ ЧАТА `server.mjs`, А НЕ ПРИДУМАН: там Next поднят тем
+// же способом и живёт рядом со своим обработчиком. Решение владельца 2026-09-10:
+// страница копируется целиком, а не пишется заново, — значит и способ поднять её
+// берётся готовым.
+//
+// 🛑 ЦЕНА НАЗВАНА ВСЛУХ: ЗАКОН СЛУЖБЫ «НОЛЬ ЗАВИСИМОСТЕЙ» ЭТИМ ОТМЕНЁН. Он был
+// верен, пока у памяти не было лица; надгробие с датой стоит в `LAWS.md`.
+const dev = process.env.NODE_ENV !== "production"
+const app = next({ dev, hostname: HOST, port: PORT })
+const handle = app.getRequestHandler()
+await app.prepare()
+
+const server = createServer(async (req, res) => {
+  const path = (req.url || "/").split("?")[0].replace(/\/+$/, "") || "/"
+
+  // ── СТРАНИЦА ЖУРНАЛА (177-3) ───────────────────────────────────────────────
+  //
+  // 🔒 У НЕЁ СВОЙ ЗАМОК, И ОН ДРУГОЙ ПО ПРИРОДЕ. Методы `/v1/*` закрыты секретом
+  // машины: по ту сторону процесс, у которого кук нет. Здесь по ту сторону
+  // ЧЕЛОВЕК в браузере, и секрета машины у него нет и быть не должно — значит
+  // спрашиваем единственную службу входа, как это делают панель, сайт и чат.
+  // 🛑 ПОЭТОМУ СТРАНИЦА СТОИТ ДО `allowed()`: пропусти мы её через проверку
+  // секрета, человек получал бы `401` на собственном экране.
+  if (path === "/" || path === "/clear") {
+    const session = await whoIsThere(req)
+    if (!isArchitect(session)) {
+      // 🔒 ОТКАЗ ОБЪЯСНЯЕТ СЕБЯ ЧЕЛОВЕКУ, А НЕ ОТДАЁТ ГОЛЫЙ КОД. Пустой `403` на
+      // служебной странице читается как поломка службы — то есть ровно как то,
+      // что человек и пришёл сюда проверять.
+      return sendHtml(
+        res,
+        session ? 403 : 401,
+        deniedPage(session ? "нужна роль архитектора" : "вы не вошли"),
+      )
+    }
+
+    if (req.method === "POST" && path === "/clear") {
+      const done = await forget_journal()
+      const after = await journal()
+      return sendHtml(
+        res,
+        200,
+        journalPage({
+          bytes: after.bytes,
+          cleared: done.cleared ?? 0,
+          entries: after.entries,
+          html: renderJournal(after.text),
+          who: session.email,
+        }),
+      )
+    }
+
+    const got = await journal()
+    return sendHtml(
+      res,
+      200,
+      journalPage({
+        bytes: got.bytes,
+        entries: got.entries,
+        html: renderJournal(got.text),
+        who: session.email,
+      }),
+    )
+  }
+
+  if (!allowed(req, path)) {
+    return send(res, 401, { error: "no-access", ok: false })
+  }
+
+  if (req.method === "GET" && path === "/v1/health") {
+    return send(res, 200, {
+      methods: contract().methods.length,
+      // 🔒 МЕРА КАЧЕСТВА ИМЁН ВИДНА В ЖИВОСТИ, А НЕ В ОТДЕЛЬНОМ ОТЧЁТЕ: показатель,
+      // который надо специально искать, не смотрит никто.
+      name_quality: nameQuality(),
+      ok: true,
+      service: SERVICE,
+      startedAt: STARTED_AT,
+      version: CONTRACT_VERSION,
+    })
+  }
+
+  if (req.method === "GET" && path === "/v1/contract") {
+    return send(res, 200, { ...contract(), ok: true })
+  }
+
+  // ── КАТАЛОГ: что у памяти есть, в виде имён ────────────────────────────────
+  if (req.method === "GET" && path === "/v1/tables") {
+    return send(res, 200, await listTables())
+  }
+  if (req.method === "GET" && path.startsWith("/v1/tables/")) {
+    const name = decodeURIComponent(path.slice("/v1/tables/".length))
+    // 🔒 ИМЯ ИЗ ПУТИ ПРОВЕРЯЕТСЯ ДО ОБРАЩЕНИЯ К БАЗЕ, А НЕ ПОСЛЕ: оно приходит
+    // снаружи, и это единственная граница между именем и SQL.
+    if (!isSafeName(name)) return send(res, 400, { error: "unsafe-name", ok: false })
+    const d = await describeTable(name)
+    return send(res, d.ok ? 200 : 404, d)
+  }
+
+  // Методы договора: имя в пути, тело — параметры.
+  if (req.method === "POST" && path.startsWith("/v1/")) {
+    const name = path.slice(4)
+    const declared = METHODS.find((m) => m.name === name)
+    if (declared) {
+      const body = await readBody(req)
+      if (!body) return send(res, 400, { error: "bad-json", ok: false })
+      // 🔒 ОБЯЗАТЕЛЬНОЕ ПРОВЕРЯЕТСЯ ПО ДОГОВОРУ, А НЕ ПО ПАМЯТИ АВТОРА.
+      const missing = declared.params.filter((p) => p.required && !body[p.name]).map((p) => p.name)
+      if (missing.length) {
+        return send(res, 400, { error: "missing-params", missing, ok: false })
+      }
+      try {
+        return send(res, 200, await RUN[name](body))
+      } catch (e) {
+        // 🛑 ОТКАЗ НАЗЫВАЕТСЯ ОТКАЗОМ, А НЕ ПАДАЕТ МОЛЧА: служба обязана
+        // пережить любой вызов и сказать, что случилось.
+        return send(res, 500, { error: "inside-memory", ok: false, why: String(e.message).slice(0, 200) })
+      }
+    }
+  }
+
+  // 🔒 ОТКАЗ РАЗЛИЧАЕТ «ТАКОГО НЕТ» И «ЕЩЁ НЕ ПОСТРОЕНО», И РАЗНИЦА ВИДНА ТОМУ,
+  // КТО ОТЛАЖИВАЕТ. Имя, которого нет в договоре, — это «не построено»;
+  // сказать «такого не бывает» значило бы соврать о замысле.
+  if (path.startsWith("/v1/")) {
+    return send(res, 501, {
+      error: "not-built",
+      hint: "этого метода в договоре нет: методы наполняются по одному, осознанно",
+      ok: false,
+      version: CONTRACT_VERSION,
+    })
+  }
+
+  // 🔒 ВСЁ ОСТАЛЬНОЕ — NEXT, И ПОРЯДОК ЗДЕСЬ ЕДИНСТВЕННО ВЕРНЫЙ (178-1).
+  // Договор `/v1/*` и страница журнала обслуживаются НАШИМ кодом выше и в Next
+  // не попадают вовсе: они старше его и переписывать их незачем.
+  // 🛑 ОТДАВАТЬ NEXT ВСЁ ПОДРЯД НЕЛЬЗЯ — он ответил бы своей страницей `404` на
+  // вызов метода договора, и потребитель получил бы HTML вместо JSON. Ровно так
+  // ломались двери, перехваченные привратником, — три случая за три дня.
+  return handle(req, res)
+})
+
+server.listen(PORT, HOST, () => {
+  console.log(`${SERVICE} ${CONTRACT_VERSION} слушает http://${HOST}:${PORT}`)
+  if (!SECRET) {
+    // 🛑 ГОВОРИМ ВСЛУХ, А НЕ ПАДАЕМ: без секрета служба жива и отвечает `health`,
+    // но всё остальное закрыто. Молчаливый старт без замка опаснее отказа.
+    console.log("ВНИМАНИЕ: секрет машины не найден — открыт только /v1/health")
+  }
+})
