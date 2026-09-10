@@ -23,6 +23,8 @@ export type MemoryUi = {
   menuWord: string;
   /** Пункт меню, уводящий на страницу входа в подписку Claude (180-2). */
   terminalLabel: string;
+  /** Что сказать, когда документа паспорта нет на диске (182-1). */
+  passportMissing: string;
   /** Слова карточки ключа OpenAI — форму задаёт сама карточка (181-1). */
   openai: OpenAiKeyWords;
   /** Объяснение вкладки «Подписка OpenAI» простыми словами (181-1). */
@@ -138,6 +140,8 @@ const EN: MemoryUi = {
   },
   menuTitle: "Memory",
   menuWord: "Menu",
+  passportMissing:
+    "The passport document is not on disk yet: development-docs/PASSPORT.md. It is written first — before any code.",
   terminalLabel: "Claude subscription",
   openai: {
     badFormat: "That does not look like an OpenAI key — they start with sk-",
@@ -199,6 +203,10 @@ const EN: MemoryUi = {
     "memory-test": {
       hint: "Send a phrase straight to memory and see its answer — no agent in the chain.",
       title: "Memory test",
+    },
+    passport: {
+      hint: "What memory is and how it works — written before it is built. Read it, approve it or change it; the code comes after.",
+      title: "Passport",
     },
   },
   subtitle:
@@ -263,6 +271,8 @@ const RU: MemoryUi = {
   },
   menuTitle: "Память",
   menuWord: "Меню",
+  passportMissing:
+    "Документа паспорта пока нет на диске: development-docs/PASSPORT.md. Он пишется первым — раньше кода.",
   terminalLabel: "Подписка Claude",
   openai: {
     badFormat: "Это не похоже на ключ OpenAI — они начинаются с sk-",
@@ -324,6 +334,10 @@ const RU: MemoryUi = {
     "memory-test": {
       hint: "Отправьте фразу прямо в память и посмотрите её ответ — агента в цепочке нет.",
       title: "Тест памяти",
+    },
+    passport: {
+      hint: "Что такое память и как она работает — написанное раньше, чем построено. Читаете, утверждаете или меняете; код идёт после.",
+      title: "Паспорт",
     },
   },
   subtitle:

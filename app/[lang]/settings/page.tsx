@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { Suspense } from "react";
 import { Breadcrumbs } from "@/components/nav/breadcrumbs.server";
 import { Eyebrow, H1, Lead } from "@/components/ui/typography";
@@ -6,12 +8,14 @@ import { MemoryBench } from "./_components/memory-bench.client";
 import { JournalView } from "./_components/journal-view.client";
 import { OpenAiTab } from "./_components/openai-tab";
 import { AnthropicKeySection } from "./_components/anthropic-key";
+import { PassportBody } from "./_components/passport-body.client";
 import { memoryUi } from "./_i18n/memory.i18n";
 import {
   hrefOfMemorySection,
   MEMORY_SECTIONS,
   resolveMemorySection,
 } from "./_lib/memory-sections";
+import { passportOutline } from "./_lib/passport-outline";
 
 // СТРАНИЦА ПАМЯТИ — СКОПИРОВАНА СО СЛУЖБЫ ЧАТА И УРЕЗАНА (178-2).
 //
@@ -75,6 +79,28 @@ async function MemoryPageBody({
   const active = resolveMemorySection(raw);
   const ui = memoryUi(lang);
 
+  // 🔒 ДОКУМЕНТ ЧИТАЕТСЯ С ДИСКА НА КАЖДЫЙ ЗАПРОС, И ЭТО ГЛАВНОЕ ЕГО СВОЙСТВО:
+  // владелец правит `development-docs/PASSPORT.md` — и видит правку на следующей
+  // загрузке, без сборки и без перезапуска. Тот же приём, что у паспорта чата.
+  // 🛑 ЧИТАЕМ ТОЛЬКО КОГДА РАЗДЕЛ ОТКРЫТ: страница со стендом не должна платить
+  // чтением файла, который на ней не показывают.
+  let passport = "";
+  if (active === "passport") {
+    try {
+      passport = await readFile(join(process.cwd(), "development-docs", "PASSPORT.md"), "utf8");
+    } catch {
+      // Файла нет — раздел скажет это словами ниже, а не покажет пустоту.
+      passport = "";
+    }
+  }
+  // 🔒 ЗАГОЛОВКИ ПЕРВОГО УРОВНЯ СТАНОВЯТСЯ ЛИПКИМ МЕНЮ — той же полосой раздела,
+  // что у соседей. Второе меню своей конструкции рядом с ней разошлось бы с ним.
+  const passportTabs = passportOutline(passport).map((i) => ({
+    active: false,
+    href: `#${i.id}`,
+    label: i.title,
+  }));
+
   return (
     <main className="min-h-screen bg-background">
       <div className="px-6 py-[var(--page-py-work)]" data-app-column>
@@ -122,12 +148,22 @@ async function MemoryPageBody({
           })}
           menuTitle={ui.menuTitle}
           menuWord={ui.menuWord}
+          tabs={active === "passport" ? passportTabs : undefined}
           title={ui.pages[active].title}
         >
           <div className="space-y-6">
             {/* 🔒 СЛОВА УЕЗЖАЮТ ОСТРОВКАМ ПЕРЕЧИСЛЕННЫМИ ПОИМЁННО, а не словарём
                 целиком: тип не сужает рантайм — по проводу уедет всё переданное,
                 даже неотрисованное. Закон оплачен в панели дважды за один шаг. */}
+            {active === "passport" &&
+              (passport ? (
+                <PassportBody text={passport} />
+              ) : (
+                <p className="text-[length:var(--fs-small)] text-muted-foreground">
+                  {ui.passportMissing}
+                </p>
+              ))}
+
             {active === "memory-test" && (
               <MemoryBench
                 lang={lang}
