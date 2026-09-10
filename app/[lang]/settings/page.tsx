@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Suspense } from "react";
+import { METHODS } from "@/contract.mjs";
 import { Breadcrumbs } from "@/components/nav/breadcrumbs.server";
 import { Eyebrow, H1, Lead } from "@/components/ui/typography";
 import { WorkspaceShell } from "@/components/workspace/workspace-shell";
@@ -46,6 +47,20 @@ const LANGS = ["en", "ru"] as const;
 
 export function generateStaticParams() {
   return LANGS.map((lang) => ({ lang }));
+}
+
+/**
+ * Что договор принимает у двух глаголов — ПОРОЖДЕНО, А НЕ ПЕРЕЧИСЛЕНО (183-1).
+ *
+ * 🔒 ОТСЮДА МЕТКИ «ДОЕЗЖАЕТ» / «ПОКА НЕ ДОЕЗЖАЕТ» У КАЖДОГО ОРГАНА СТЕНДА.
+ * Рукописный список поддержанного разошёлся бы с `contract.mjs` молча — в этом
+ * проекте такое оплачено пять раз за две недели, и дважды автором закона об
+ * этом. Растёт договор — метки на экране меняются сами, без правки страницы.
+ */
+function supportedParams(): { recall: string[]; remember: string[] } {
+  const of = (name: string) =>
+    (METHODS.find((m) => m.name === name)?.params ?? []).map((p) => p.name);
+  return { recall: of("recall"), remember: of("remember") };
 }
 
 // ✗ СТРАНИЦА ЖИВЁТ ПОД `<Suspense>`, И ЭТО ОПЛАЧЕНО СБОРКОЙ, А НЕ ВЫВЕДЕНО.
@@ -167,6 +182,7 @@ async function MemoryPageBody({
             {active === "memory-test" && (
               <MemoryBench
                 lang={lang}
+                supported={supportedParams()}
                 tablesWords={ui.memoryTables}
                 testWords={ui.memoryTest}
               />
