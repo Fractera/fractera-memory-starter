@@ -4,6 +4,7 @@ import { Eyebrow, H1, Lead } from "@/components/ui/typography";
 import { WorkspaceShell } from "@/components/workspace/workspace-shell";
 import { MemoryBench } from "./_components/memory-bench.client";
 import { JournalView } from "./_components/journal-view.client";
+import { OpenAiTab } from "./_components/openai-tab";
 import { memoryUi } from "./_i18n/memory.i18n";
 import {
   hrefOfMemorySection,
@@ -103,14 +104,21 @@ async function MemoryPageBody({
           // `/terminal` в соседней вкладке, поэтому его нет в `MEMORY_SECTIONS`:
           // тот массив — единственный источник разделов, и запись в нём означала
           // бы раздел, которого нет.
-          menu={[
-            ...MEMORY_SECTIONS.map((id) => ({
+          // 🔒 «ПОДПИСКА CLAUDE» СТОИТ ПРЯМО НАД «ПОДПИСКОЙ OpenAI» (181-1, слово
+          // владельца: «под кнопкой подписка Claude должна быть кнопка подписка
+          // OpenAI»). Claude — отдельная страница входа в соседней вкладке, OpenAI —
+          // раздел этой страницы; поэтому первое вставляется ссылкой перед вторым, а в
+          // `MEMORY_SECTIONS` живёт только второе.
+          menu={MEMORY_SECTIONS.flatMap((id) => {
+            const item = {
               active: id === active,
               href: hrefOfMemorySection(lang, id),
               label: ui.pages[id].title,
-            })),
-            { href: `/${lang}/terminal`, label: ui.terminalLabel, newTab: true },
-          ]}
+            };
+            return id === "openai"
+              ? [{ href: `/${lang}/terminal`, label: ui.terminalLabel, newTab: true }, item]
+              : [item];
+          })}
           menuTitle={ui.menuTitle}
           menuWord={ui.menuWord}
           title={ui.pages[active].title}
@@ -124,6 +132,8 @@ async function MemoryPageBody({
             )}
 
             {active === "journal" && <JournalView words={ui.journal} />}
+
+            {active === "openai" && <OpenAiTab ui={ui} />}
           </div>
         </WorkspaceShell>
       </div>

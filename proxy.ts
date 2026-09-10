@@ -45,10 +45,13 @@ import { type NextRequest, NextResponse } from "next/server";
 // чата оплачен день отладки в шаге 157-3; здесь урок взят заранее.
 // 🪦 ДВЕРЬ `agent-setup` ЧАТА СЮДА НЕ ПОЕХАЛА (180-3): она обслуживала окно
 // настройки агента — токен бота и ключ OpenAI, — которого у памяти нет.
+// 🔒 ДВЕРЬ КЛЮЧА OpenAI (181-1) — ТОГО ЖЕ КЛАССА: проверяет роль сама, и её имя
+// стоит здесь до первой сборки, а не после отладки.
 const SELF_GUARDED = new Set([
   "/api/fractera/memory-test",
   "/api/me",
   "/api/fractera/pty-ticket",
+  "/api/fractera/openai-key",
 ]);
 
 /**

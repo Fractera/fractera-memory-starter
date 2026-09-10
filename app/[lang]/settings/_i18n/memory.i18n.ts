@@ -12,6 +12,8 @@
 // везде в проекте; это служебный экран архитектора, а не витрина.
 
 import type { MemorySection } from "../_lib/memory-sections";
+import type { OpenAiKeyWords } from "../_components/openai-key";
+import type { OpenAiTabWords } from "../_components/openai-tab";
 
 export type MemoryUi = {
   title: string;
@@ -21,6 +23,10 @@ export type MemoryUi = {
   menuWord: string;
   /** Пункт меню, уводящий на страницу входа в подписку Claude (180-2). */
   terminalLabel: string;
+  /** Слова карточки ключа OpenAI — форму задаёт сама карточка (181-1). */
+  openai: OpenAiKeyWords;
+  /** Объяснение вкладки «Подписка OpenAI» простыми словами (181-1). */
+  openaiTab: OpenAiTabWords;
   pages: Record<MemorySection, { title: string; hint: string }>;
   memoryTest: {
     lead: string;
@@ -133,10 +139,58 @@ const EN: MemoryUi = {
   menuTitle: "Memory",
   menuWord: "Menu",
   terminalLabel: "Claude subscription",
+  openai: {
+    badFormat: "That does not look like an OpenAI key — they start with sk-",
+    balanceNote:
+      "The remaining balance cannot be shown: OpenAI returns it only to a browser session of your account or to an admin key with the api.usage.read scope. An ordinary project key never sees it.",
+    check: "Check",
+    checking: "Checking…",
+    consumerApp: "the site project",
+    consumerData: "data layer",
+    consumerGraph: "knowledge graph",
+    consumerMachine: "memory and the bot",
+    exists: "An OpenAI key is set",
+    failed: "Action failed",
+    funded: "The balance is positive",
+    fundsUnknown: "Could not tell whether there is credit — try again later",
+    invalid: "OpenAI did not accept this key",
+    keyLabel: "Key from platform.openai.com",
+    keyPlaceholder: "sk-…",
+    keyReplace: "Paste a new key to replace the saved one",
+    lead:
+      "One key for the whole server: entered here, it reaches every service that needs it. If you have already entered it somewhere else, there is no need to enter it again.",
+    missing: "No OpenAI key yet",
+    noFunds: "The key works, but the account is out of credit",
+    partial: "The key has not reached every service",
+    restartNote:
+      "Most services pick up a new key at once. The site project and the knowledge graph read it when they start, so they get it after their next restart.",
+    save: "Save",
+    saved: "OpenAI key saved",
+    saving: "Saving…",
+    title: "OpenAI key",
+    valid: "The key is valid",
+  },
+  openaiTab: {
+    heading: "Why the project needs an OpenAI key",
+    intro:
+      "Claude does the thinking in this project — on your subscription. The OpenAI key is needed for two helper jobs, and neither gets done without it:",
+    voiceTitle: "Voice becomes text",
+    voice:
+      "When you dictate a message instead of typing it, the recording has to become text. OpenAI does that. Without the key a voice message stays a sound that nobody has read.",
+    vectorsTitle: "Search by meaning",
+    vectors:
+      "To find the right piece in your documents and past conversations, every text is turned into a fingerprint of its meaning — a vector. The agentic RAG and the vector store compare these fingerprints and find what is close in meaning, even when the words differ. OpenAI makes the fingerprints.",
+    without:
+      "Without the key the main things keep working: Claude answers, memory remembers what was said. What you lose is voice-to-text and search by meaning.",
+  },
   pages: {
     journal: {
       hint: "What memory did: its own account of its work. The same document is read by the development agent, as a file.",
       title: "Journal",
+    },
+    openai: {
+      hint: "What the OpenAI key is for — and the key itself, one for the whole server.",
+      title: "OpenAI subscription",
     },
     "memory-test": {
       hint: "Send a phrase straight to memory and see its answer — no agent in the chain.",
@@ -206,10 +260,58 @@ const RU: MemoryUi = {
   menuTitle: "Память",
   menuWord: "Меню",
   terminalLabel: "Подписка Claude",
+  openai: {
+    badFormat: "Это не похоже на ключ OpenAI — они начинаются с sk-",
+    balanceNote:
+      "Остаток показать нельзя: OpenAI отдаёт его только браузерной сессии вашего кабинета или админскому ключу с правом api.usage.read. Обычный проектный ключ его не видит.",
+    check: "Проверить",
+    checking: "Проверяю…",
+    consumerApp: "проект сайта",
+    consumerData: "слой данных",
+    consumerGraph: "граф знаний",
+    consumerMachine: "память и бот",
+    exists: "Ключ OpenAI существует",
+    failed: "Действие не выполнено",
+    funded: "Баланс положительный",
+    fundsUnknown: "Про средства ответить не удалось — попробуйте позже",
+    invalid: "OpenAI этот ключ не принял",
+    keyLabel: "Ключ с platform.openai.com",
+    keyPlaceholder: "sk-…",
+    keyReplace: "Вставьте новый ключ, чтобы заменить сохранённый",
+    lead:
+      "Ключ один на весь сервер: введённый здесь, он доезжает до всех служб, которым нужен. Если вы уже вводили его в другом месте — второй раз вводить не нужно.",
+    missing: "Ключ OpenAI не задан",
+    noFunds: "Ключ рабочий, но на счёте кончились средства",
+    partial: "Ключ доехал не до всех служб",
+    restartNote:
+      "Большинство служб подхватывают новый ключ сразу. Проект сайта и граф знаний читают его при запуске — им он достанется после ближайшего перезапуска.",
+    save: "Сохранить",
+    saved: "Ключ OpenAI сохранён",
+    saving: "Сохраняю…",
+    title: "Ключ OpenAI",
+    valid: "Ключ верный",
+  },
+  openaiTab: {
+    heading: "Зачем проекту ключ OpenAI",
+    intro:
+      "Думает в проекте Claude — по вашей подписке. Ключ OpenAI нужен для двух вспомогательных дел, и без него они не делаются:",
+    voiceTitle: "Голос превращается в текст",
+    voice:
+      "Когда вы не печатаете сообщение, а надиктовываете его, запись нужно превратить в текст. Это делает OpenAI. Без ключа голосовое сообщение так и останется звуком, который никто не прочитал.",
+    vectorsTitle: "Поиск по смыслу",
+    vectors:
+      "Чтобы находить нужное в ваших документах и прошлых разговорах, каждый текст превращается в «отпечаток смысла» — вектор. Агентный RAG и векторная база сравнивают такие отпечатки и находят близкое по смыслу, даже когда слова другие. Отпечатки делает OpenAI.",
+    without:
+      "Без ключа главное продолжает работать: Claude отвечает, память запоминает сказанное. Пропадут расшифровка голоса и поиск по смыслу.",
+  },
   pages: {
     journal: {
       hint: "Что память делала: её собственный рассказ о своей работе. Этот же документ читает агент разработки — файлом.",
       title: "Журнал",
+    },
+    openai: {
+      hint: "Зачем нужен ключ OpenAI — и сам ключ, один на весь сервер.",
+      title: "Подписка OpenAI",
     },
     "memory-test": {
       hint: "Отправьте фразу прямо в память и посмотрите её ответ — агента в цепочке нет.",
