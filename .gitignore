@@ -5,3 +5,4 @@ node_modules/
 logs/*.md
 !logs/README.md
 .next/
+tsconfig.tsbuildinfo
