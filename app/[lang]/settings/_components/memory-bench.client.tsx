@@ -18,11 +18,18 @@ import { MemoryTables, type MemoryTablesHandle } from "./memory-tables.client";
 
 export function MemoryBench({
   lang,
+  supported,
   tablesWords,
   testWords,
 }: {
   /** Язык страницы: уезжает в каждый вызов договора (181-10). */
   lang: string;
+  /**
+   * Что договор принимает у `recall` и `remember` — порождено на сервере из
+   * `contract.mjs` (183-1). Проезжает насквозь: связующий островок ничего об
+   * этом не знает и знать не должен.
+   */
+  supported: React.ComponentProps<typeof MemoryTest>["supported"];
   tablesWords: React.ComponentProps<typeof MemoryTables>["words"];
   testWords: React.ComponentProps<typeof MemoryTest>["words"];
 }) {
@@ -30,7 +37,12 @@ export function MemoryBench({
 
   return (
     <div className="space-y-8">
-      <MemoryTest lang={lang} onSent={() => tables.current?.reload()} words={testWords} />
+      <MemoryTest
+        lang={lang}
+        onSent={() => tables.current?.reload()}
+        supported={supported}
+        words={testWords}
+      />
       <MemoryTables ref={tables} words={tablesWords} />
     </div>
   );

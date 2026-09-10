@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { BenchControls, type BenchControlWords } from "./memory-test-controls.client";
+import { buildCall, EMPTY_PARAMS } from "@/lib/bench-call.mjs";
+import type { BenchMode, BenchParams } from "@/lib/bench-call.mjs";
 
-// СТЕНД ПАМЯТИ — ВЕРХНЯЯ ПОЛОВИНА РАЗДЕЛА (176-2).
+// СТЕНД ПАМЯТИ — ВЕРХНЯЯ ПОЛОВИНА РАЗДЕЛА (176-2, перестроен 183-1).
 //
 // 🔒 ЗАЧЕМ ОН ЕСТЬ: ЧТОБЫ ИЗМЕРЯТЬ ПАМЯТЬ, А НЕ СУММУ «ПАМЯТЬ ПЛЮС АГЕНТ».
 // ✗ оплачено разбором 2026-09-10: на вопрос «что ты знаешь обо мне» от нажатия
@@ -17,6 +20,12 @@ import { Button } from "@/components/ui/button";
 //
 // 🔒 ВРЕМЯ СТОИТ РЯДОМ С ОТВЕТОМ. Разбор фразы идёт 6–10 секунд, потому что
 // думает Opus; без числа это неотличимо от зависшей страницы.
+//
+// 🔒 ЧТО ДОБАВИЛ 183-1 И ПОЧЕМУ ЭТО НЕ УКРАШЕНИЕ: девять органов управления
+// раздела 13 паспорта плюс панель «что уедет». Стенд обязан уметь всё, что
+// умеет зовущая модель, — иначе он проверяет не тот путь. А панель отвечает на
+// вопрос, который до неё был неразрешим: память проигнорировала параметр или
+// стенд его не послал?
 
 type Words = {
   lead: string;
@@ -38,9 +47,11 @@ type Words = {
   failed: string;
   took: string;
   status: string;
+  /** Панель «что уедет»: заголовок и строка о непринятых параметрах (183-1). */
+  whatGoes: string;
+  droppedTitle: string;
+  controls: BenchControlWords;
 };
-
-type Mode = "say" | "ask" | "raw";
 
 type Shot = {
   /** Что ушло — то, что человек набрал, а не то, что мы из этого собрали. */
@@ -68,6 +79,7 @@ function show(body: unknown): string {
 export function MemoryTest({
   lang,
   onSent,
+  supported,
   words,
 }: {
   /**
@@ -80,41 +92,90 @@ export function MemoryTest({
   lang: string;
   /** Стенд сообщает соседу внизу, что состав таблиц мог измениться (176-3). */
   onSent?: () => void;
+  /**
+   * Что договор принимает у каждого глагола — порождено из `contract.mjs`
+   * на сервере (183-1).
+   *
+   * 🔒 ОТСЮДА МЕТКИ У ОРГАНОВ И ОТСЮДА ЖЕ СПИСОК «НЕ ДОЕЗЖАЕТ». Рукописный
+   * список поддержанного разошёлся бы с договором молча.
+   */
+  supported: { recall: readonly string[]; remember: readonly string[] };
   words: Words;
 }) {
-  const [mode, setMode] = useState<Mode>("say");
+  const [mode, setMode] = useState<BenchMode>("say");
   const [text, setText] = useState("");
   const [method, setMethod] = useState("recall");
   const [rawBody, setRawBody] = useState('{\n  "who": "bench-1"\n}');
+  const [params, setParams] = useState<BenchParams>(EMPTY_PARAMS);
+  const [people, setPeople] = useState<string[]>([]);
+  const [peopleLoading, setPeopleLoading] = useState(true);
   const [shots, setShots] = useState<Shot[]>([]);
   const [busy, setBusy] = useState(false);
   const nextId = useRef(1);
 
+  // 🔒 КОГО ПАМЯТЬ ЗНАЕТ — СПРАШИВАЕМ У НЕЁ ЖЕ, А НЕ ДЕРЖИМ СПИСОК НА ЭКРАНЕ.
+  // Метод `people` для того и заведён: наружу уходят ЛЮДИ, а не таблицы.
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      try {
+        const r = await fetch("/api/fractera/memory-test", {
+          body: JSON.stringify({ body: { lang }, method: "people" }),
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        });
+        const data = (await r.json()) as { body?: { people?: Array<{ who?: string } | string> } };
+        const list = (data?.body?.people ?? [])
+          .map((p) => (typeof p === "string" ? p : p?.who))
+          .filter((p): p is string => typeof p === "string" && p.length > 0);
+        if (alive) setPeople(list);
+      } catch {
+        // 🛑 НЕ ОТВЕТИЛА — СПИСОК ОСТАЁТСЯ ПУСТЫМ, А СЛУЖЕБНОЕ ИМЯ СТЕНДА НА
+        // МЕСТЕ. Стенд обязан работать и тогда, когда память молчит: именно в
+        // этом состоянии его чаще всего и открывают.
+      } finally {
+        if (alive) setPeopleLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [lang]);
+
+  const patch = useCallback((p: Partial<BenchParams>) => {
+    setParams((old: BenchParams) => ({ ...old, ...p }));
+  }, []);
+
+  // 🔒 ТО, ЧТО ПОКАЗАНО, И ТО, ЧТО ОТПРАВЛЕНО, — ОДНА И ТА ЖЕ СБОРКА. Второй
+  // путь сборки тела разошёлся бы с первым, и панель начала бы врать первой.
+  const preview = buildCall({
+    lang,
+    mode,
+    params,
+    supported: mode === "say" ? supported.remember : supported.recall,
+    text,
+  });
+
   const send = useCallback(async () => {
     if (busy) return;
 
-    // 🔒 ЧТО ИМЕННО УЕДЕТ — РЕШАЕТСЯ ЗДЕСЬ И ПОКАЗЫВАЕТСЯ ЧЕЛОВЕКУ. Стенд, в
-    // котором не видно отправленного, отвечает на вопрос «что вернулось» и
-    // молчит о том, «на что».
-    let sendMethod = method;
-    let sendBody: unknown = {};
+    let sendMethod = preview.method;
+    let sendBody: unknown = preview.body;
     let asked = "";
 
     if (mode === "say") {
       if (!text.trim()) return;
-      sendMethod = "remember";
-      sendBody = { lang, text: text.trim() };
       asked = text.trim();
     } else if (mode === "ask") {
-      sendMethod = "recall";
-      sendBody = text.trim() ? { lang, text: text.trim() } : { lang };
       asked = text.trim() || "(без вопроса — всё, что известно)";
     } else {
+      sendMethod = method;
       try {
-        // 🔒 СЫРОЙ ВЫЗОВ УЕЗЖАЕТ РОВНО ТАКИМ, КАКИМ ЕГО НАБРАЛИ, — язык сюда не
-        // дописывается. Это единственное место стенда, где человек говорит с
-        // договором напрямую; подставив своё, стенд перестал бы показывать то,
-        // что он отправляет.
+        // 🔒 СЫРОЙ ВЫЗОВ УЕЗЖАЕТ РОВНО ТАКИМ, КАКИМ ЕГО НАБРАЛИ, — ни язык, ни
+        // органы управления сюда не дописываются. Это единственное место стенда,
+        // где человек говорит с договором напрямую; подставив своё, стенд
+        // перестал бы показывать то, что он отправляет.
         sendBody = rawBody.trim() ? JSON.parse(rawBody) : {};
       } catch {
         // 🛑 КРИВОЙ JSON — ОТВЕТ СТЕНДА, А НЕ МОЛЧАНИЕ. Пропущенная отправка без
@@ -174,7 +235,7 @@ export function MemoryTest({
         },
         ...s,
       ]);
-      if (mode !== "ask") onSent?.();
+      if (sendMethod !== "recall") onSent?.();
     } catch (e) {
       setShots((s) => [
         {
@@ -192,9 +253,9 @@ export function MemoryTest({
     } finally {
       setBusy(false);
     }
-  }, [busy, method, mode, onSent, rawBody, text, words.failed]);
+  }, [busy, method, mode, onSent, preview, rawBody, text, words.failed]);
 
-  const modeButton = (id: Mode, label: string) => (
+  const modeButton = (id: BenchMode, label: string) => (
     <button
       className={`rounded-md border px-3 py-1 text-[length:var(--fs-small)] transition-colors ${
         mode === id
@@ -232,7 +293,22 @@ export function MemoryTest({
           колонки идут одна под другой, и общая высота там была бы вредна —
           поэтому предел ставится каждой колонке отдельно, `max-h-[70vh]`.
           🔒 ОБЕ КОЛОНКИ ЛЕЧАТСЯ ОДИНАКОВО, хотя переполнение заметили в правой:
-          лента отправленного растёт так же, просто медленнее. */}
+          лента отправленного растёт так же, просто медленнее.
+          🔒 С 183-1 ВЫСОТА ОТДАНА ТОЛЬКО ДВУМ КОЛОНКАМ, а органы управления и
+          панель «что уедет» стоят НАД ними: втиснутые внутрь, они съели бы то
+          самое место, ради которого предел и ставился. */}
+
+      {mode === "raw" ? null : (
+        <BenchControls
+          onChange={patch}
+          params={params}
+          people={people}
+          peopleLoading={peopleLoading}
+          supported={mode === "say" ? supported.remember : supported.recall}
+          words={words.controls}
+        />
+      )}
+
       <div className="grid gap-3 md:h-[600px] md:grid-cols-2">
         {/* ЛЕВАЯ КОЛОНКА — ВВОД И ЛЕНТА ОТПРАВЛЕННОГО */}
         <div className="flex max-h-[70vh] min-h-0 flex-col overflow-hidden rounded-md border border-muted-foreground/30 md:max-h-none">
@@ -275,6 +351,23 @@ export function MemoryTest({
                 }}
                 value={text}
               />
+            )}
+
+            {/* 🔒 ПАНЕЛЬ «ЧТО УЕДЕТ» — НЕ ОРГАН, А ПРИБОР ЧЕСТНОСТИ (183-1).
+                Без неё «память проигнорировала параметр» неотличимо от «стенд
+                его не послал», и виноватой всегда выглядит память. */}
+            {mode === "raw" ? null : (
+              <div className="space-y-1">
+                <div className="text-[length:var(--fs-small)] font-medium">{words.whatGoes}</div>
+                <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-md bg-muted px-2 py-1 font-mono text-[length:var(--fs-small)]">
+                  {JSON.stringify({ body: preview.body, method: preview.method }, null, 2)}
+                </pre>
+                {preview.dropped.length ? (
+                  <p className="text-[length:var(--fs-small)] text-muted-foreground">
+                    {words.droppedTitle}: {preview.dropped.join(", ")}
+                  </p>
+                ) : null}
+              </div>
             )}
 
             <div className="flex items-center gap-2">

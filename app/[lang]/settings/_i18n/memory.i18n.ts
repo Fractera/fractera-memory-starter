@@ -14,6 +14,7 @@
 import type { MemorySection } from "../_lib/memory-sections";
 import type { OpenAiKeyWords } from "../_components/openai-key";
 import type { OpenAiTabWords } from "../_components/openai-tab";
+import type { BenchControlWords } from "../_components/memory-test-controls.client";
 
 export type MemoryUi = {
   title: string;
@@ -51,6 +52,11 @@ export type MemoryUi = {
     failed: string;
     took: string;
     status: string;
+    /** Панель «что уедет» и строка о непринятых параметрах (183-1). */
+    whatGoes: string;
+    droppedTitle: string;
+    /** Слова девяти органов управления — форму задаёт сам компонент (183-1). */
+    controls: BenchControlWords;
   };
   memoryTables: {
     title: string;
@@ -120,6 +126,72 @@ const EN: MemoryUi = {
     answerTitle: "Memory's answer",
     ask: "Ask",
     askHint: "The phrase goes to recall. Empty field means everything memory knows.",
+    controls: {
+      chain: {
+        hint: "Recursive thinking produces a lot of text. Whether to fill your own context with it is decided by whoever asked — not by memory.",
+        label: "Return the chain of reasoning",
+        off: "No",
+        on: "Yes",
+      },
+      deny: {
+        hint: "Overturn a conclusion memory made. The conclusion is cancelled, the grounds are kept: a refuted guess that is deleted gets reborn by the same search.",
+        label: "This is wrong, because…",
+        placeholder: "why the previous answer is wrong",
+      },
+      depth: {
+        deep: "Deep",
+        deepHint:
+          "Search by meaning in the vector store is added. Slower and more expensive — turn it on when the standard depth found nothing.",
+        extreme: "Extreme",
+        extremeHint:
+          "Memory goes into recursive research, up to ten minutes. It spends the same subscription quota the bot lives on. Only when deep did not answer either.",
+        label: "Search depth",
+        standard: "Standard",
+        standardHint:
+          "Memory goes on its own: the database first, then the model, then the knowledge graph. Seconds. Enough almost always.",
+      },
+      history: {
+        hint: "A calling model may pass memory the previous conversation. A bench that cannot do the same tests the wrong path.",
+        label: "Conversation history",
+        placeholder: "what was said before this question",
+      },
+      legend: "the mark says whether the parameter reaches the contract today",
+      needTable: {
+        hint: "An input parameter: the caller may state that the answer has to become a table. Whether it does is still memory's decision.",
+        label: "A table is required",
+      },
+      prior: {
+        hint: "What has already been found before this question — the caller may send it along with the question.",
+        label: "Results of previous searches",
+        placeholder: "what was already found",
+      },
+      scope: {
+        date: "Date",
+        hint: "Date and place are the scope of a fact. An empty scope means «I do not know where and when», not «everywhere and always».",
+        label: "Calendar and geotag",
+        place: "Place",
+        placePlaceholder: "city or place",
+      },
+      supported: "reaches memory",
+      title: "Controls",
+      unsupported: "does not reach yet",
+      upload: {
+        hint: "Memory only understands text today. The buttons stand here because the kinds of data are declared — and they are switched off because the ability is not built.",
+        html: "HTML",
+        image: "Image",
+        label: "Send data that is not text",
+        pdf: "PDF",
+        sound: "Sound",
+        video: "Video",
+      },
+      who: {
+        bench: "bench-1 — the bench's own name",
+        hint: "Memory answers about a particular person. The list is what memory itself knows — the bench does not invent people.",
+        label: "On whose behalf",
+        loading: "asking memory who it knows…",
+      },
+    },
+    droppedTitle: "Set here, but this method does not accept it yet",
     failed: "The bench could not reach the door",
     inputTitle: "What we send",
     lead: "Phrases go straight to the memory service — this page runs on the service itself, so there is nothing in between at all.",
@@ -137,6 +209,7 @@ const EN: MemoryUi = {
     status: "status",
     took: "took",
     volatile: "The list lives in this browser tab and disappears on reload.",
+    whatGoes: "What goes to memory",
   },
   menuTitle: "Memory",
   menuWord: "Menu",
@@ -252,6 +325,72 @@ const RU: MemoryUi = {
     answerTitle: "Ответ памяти",
     ask: "Спросить",
     askHint: "Фраза уходит в recall. Пустое поле — всё, что памяти известно.",
+    controls: {
+      chain: {
+        hint: "Рекурсивное размышление порождает много текста. Переполнять свой контекст или нет решает тот, кто спросил, — а не память за него.",
+        label: "Возвращать цепочку размышлений",
+        off: "Нет",
+        on: "Да",
+      },
+      deny: {
+        hint: "Опровергнуть прежний вывод памяти. Отменяется вывод, а не факт: основание остаётся — стёртая догадка рождается заново тем же поиском.",
+        label: "Это неверно, потому что…",
+        placeholder: "чем прежний ответ неверен",
+      },
+      depth: {
+        deep: "Глубокий",
+        deepHint:
+          "Добавляется поиск по смыслу в векторной базе. Дольше и дороже — включайте, когда стандарт ничего не нашёл.",
+        extreme: "Экстремальный",
+        extremeHint:
+          "Память уходит в рекурсивное исследование, до десяти минут. Тратит ту же квоту подписки, которой живёт бот. Только когда и глубокий не дал ответа.",
+        label: "Глубина поиска",
+        standard: "Стандарт",
+        standardHint:
+          "Память идёт сама: сначала база, потом модель, потом граф знаний. Секунды. Хватает почти всегда.",
+      },
+      history: {
+        hint: "Зовущая модель по своему усмотрению передаёт памяти предыдущий разговор. Стенд, который так не умеет, проверяет не тот путь.",
+        label: "История разговора",
+        placeholder: "что говорили до этого вопроса",
+      },
+      legend: "метка говорит, доезжает ли параметр до договора сегодня",
+      needTable: {
+        hint: "Входной параметр: зовущий вправе сказать, что ответ должен стать таблицей. Заводить ли её — по-прежнему решение памяти.",
+        label: "Требуется создать таблицу",
+      },
+      prior: {
+        hint: "Что уже нашли до этого вопроса — зовущий вправе прислать это вместе с вопросом.",
+        label: "Результаты предыдущих поисков",
+        placeholder: "что уже было найдено",
+      },
+      scope: {
+        date: "Дата",
+        hint: "Дата и место — это охват факта. Пустой охват значит «не знаю где и когда», а не «везде и всегда».",
+        label: "Календарь и геометка",
+        place: "Место",
+        placePlaceholder: "город или место",
+      },
+      supported: "доезжает",
+      title: "Органы управления",
+      unsupported: "пока не доезжает",
+      upload: {
+        hint: "Память сегодня понимает только текст. Кнопки стоят здесь потому, что роды данных объявлены, — и выключены потому, что способности нет.",
+        html: "HTML",
+        image: "Изображение",
+        label: "Отправить не текст",
+        pdf: "PDF",
+        sound: "Звук",
+        video: "Видео",
+      },
+      who: {
+        bench: "bench-1 — служебное имя стенда",
+        hint: "Память отвечает про конкретного человека. Список — тот, что память знает сама; людей стенд не выдумывает.",
+        label: "От чьего имени",
+        loading: "спрашиваем память, кого она знает…",
+      },
+    },
+    droppedTitle: "Выставлено здесь, но этот метод пока такого не принимает",
     failed: "Стенд не достучался до двери",
     inputTitle: "Что отправляем",
     lead: "Фразы уходят прямо в службу памяти — эта страница работает на самой службе, значит между вами и памятью нет вообще ничего.",
@@ -268,6 +407,7 @@ const RU: MemoryUi = {
     status: "код",
     took: "заняло",
     volatile: "Список живёт в этой вкладке браузера и исчезает при перезагрузке.",
+    whatGoes: "Что уедет в память",
   },
   menuTitle: "Память",
   menuWord: "Меню",
