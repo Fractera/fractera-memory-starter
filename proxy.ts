@@ -30,6 +30,45 @@ import { type NextRequest, NextResponse } from "next/server";
 const SELF_GUARDED = new Set(["/api/fractera/memory-test"]);
 
 /**
+ * 🔒 ПУБЛИЧНОЕ ИМЯ СЛУЖБЫ БЕРЁТСЯ ИЗ ЗАГОЛОВКОВ, А НЕ ИЗ АДРЕСА ЗАПРОСА.
+ * За nginx `request.url` всегда указывает на петлю — `localhost:3700`; наружу
+ * человек ходит по имени, и оно приходит только в `x-forwarded-*`.
+ * ✗ Оплачено живым замером в тот же час: без этого переадресация вела человека
+ * на адрес, которого в его браузере не существует.
+ */
+function publicOrigin(request: NextRequest): string {
+  const host =
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "";
+  const proto = request.headers.get("x-forwarded-proto") ?? "https";
+  return host ? `${proto}://${host}` : new URL(request.url).origin;
+}
+
+/**
+ * 🔒 АДРЕС СЛУЖБЫ ВХОДА ВЫВОДИТСЯ ИЗ ХОСТА, А НЕ ХРАНИТСЯ КОНСТАНТОЙ. На домене
+ * это `auth.<апекс>`, на голом IP — соседний порт. Скопировано у чата дословно
+ * вместе с его оплаченным уроком: там в образце `(\d+)` однажды потеряли
+ * обратный слэш, и три дня клиент на голом IP уходил на несуществующий адрес,
+ * а на домене это молчало целиком.
+ */
+function publicAuthOrigin(request: NextRequest): string {
+  const host =
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "";
+  const proto = request.headers.get("x-forwarded-proto") ?? "https";
+  if (!host) {
+    return process.env.NEXT_PUBLIC_AUTH_URL ?? "http://127.0.0.1:3001";
+  }
+  // Голый IP с портом: служба входа живёт соседним портом на той же машине.
+  const m = host.match(/^([^:]+):(\d+)$/);
+  if (m) {
+    return `${proto}://${m[1]}:3001`;
+  }
+  // Домен: `memory.aifa.dev` → `auth.aifa.dev`. Первый ярлык заменяется, апекс цел.
+  const parts = host.split(".");
+  const apex = parts.length > 2 ? parts.slice(1).join(".") : host;
+  return `${proto}://auth.${apex}`;
+}
+
+/**
  * 🔒 ЯЗЫКОВОЙ КОРЕНЬ ПУБЛИЧЕН (178-5, слово владельца: «создай главную страницу,
  * которая будет доступна без авторизации»).
  *
@@ -58,7 +97,7 @@ export async function proxy(request: NextRequest) {
   // на голом Node, и она отвечает раньше Next. Переадресация до неё не доходит —
   // строка стоит на будущее, когда журнал уедет со своего корня целиком.
   if (pathname === "/") {
-    return NextResponse.redirect(`${new URL(request.url).origin}/${langOf(request)}`);
+    return NextResponse.redirect(`${publicOrigin(request)}/${langOf(request)}`);
   }
 
   // 🛑 ПУСТАЯ КОРЗИНА КУК — НЕ ПОВОД НЕ СПРАШИВАТЬ, И ЭТО ПРО РЕЖИМ БЕЗ ДОМЕНА.
@@ -91,13 +130,15 @@ export async function proxy(request: NextRequest) {
     // заглушка `/welcome` есть и объясняет, где человек оказался; у памяти её
     // нет, и заводить её ради одного случая значило бы завести вторую страницу
     // о входе — при том что вход в проекте один.
-    const auth =
-      process.env.NEXT_PUBLIC_AUTH_URL ||
-      process.env.AUTH_SERVICE_URL ||
-      "http://127.0.0.1:3001";
-    const back = `${new URL(request.url).origin}${pathname}`;
+    //
+    // ✗ ПЕРВАЯ РЕДАКЦИЯ БРАЛА ВНУТРЕННИЙ АДРЕС, И ЭТО ИЗМЕРЕНО ЖИВЬЁМ 2026-09-10:
+    // человек получал `307` на `http://127.0.0.1:3001/login?callbackUrl=
+    // https://localhost:3700/...` — то есть его отправляли на адрес, которого в
+    // его браузере не существует. За nginx `request.url` всегда петля; публичное
+    // имя приходит ТОЛЬКО заголовками `x-forwarded-*`.
+    const back = `${publicOrigin(request)}${pathname}`;
     return NextResponse.redirect(
-      `${auth}/login?callbackUrl=${encodeURIComponent(back)}&requireRole=architect`,
+      `${publicAuthOrigin(request)}/login?callbackUrl=${encodeURIComponent(back)}&requireRole=architect`,
     );
   }
 
