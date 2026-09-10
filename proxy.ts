@@ -121,7 +121,11 @@ export async function proxy(request: NextRequest) {
       // английскую главную.
       const asked = search.get("lang") ?? "";
       const back = SUPPORTED.includes(asked) ? asked : langOf(request);
-      search.set("redirectUrl", `${publicOrigin(request)}/${back}`);
+      // 🔒 ПОСЛЕ ВЫХОДА — СТРАНИЦА ПРИВЕТСТВИЯ, А НЕ ГЛАВНАЯ (179-1, слово
+      // владельца 2026-09-10: «after success logout to do welcome page»). Там две
+      // дороги — войти снова или вернуться на главную; главная сама по себе не
+      // говорит человеку, что он только что вышел.
+      search.set("redirectUrl", `${publicOrigin(request)}/${back}/welcome`);
     }
     const qs = search.toString();
     const away = NextResponse.redirect(
@@ -166,6 +170,15 @@ export async function proxy(request: NextRequest) {
   }
 
   if (PUBLIC_LANG_ROOTS.has(pathname)) {
+    return NextResponse.next();
+  }
+
+  // 🔒 СТРАНИЦА ПРИВЕТСТВИЯ ОТКРЫТА БЕЗ ВХОДА (179-1): на неё приходят сразу
+  // после выхода, то есть ровно тогда, когда сессии уже нет. Закрой её замком —
+  // и человек, только что вышедший, был бы тут же отправлен на форму входа.
+  // 🛑 ТОЧНЫМ СПИСКОМ, КАК ГЛАВНАЯ, А НЕ `endsWith("/welcome")`, как у чата:
+  // окончание пропустило бы и `/ru/settings/welcome`, заведи его кто-нибудь.
+  if (pathname === "/ru/welcome" || pathname === "/en/welcome") {
     return NextResponse.next();
   }
 
