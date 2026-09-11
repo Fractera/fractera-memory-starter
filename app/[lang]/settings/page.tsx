@@ -1,7 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Suspense } from "react";
+import { headers } from "next/headers";
 import { METHODS } from "@/contract.mjs";
+import { publicMemoryUrl, publicSiteUrl } from "@/lib/fractera/auth-url";
 import { Breadcrumbs } from "@/components/nav/breadcrumbs.server";
 import { Eyebrow, H1, Lead } from "@/components/ui/typography";
 import { WorkspaceShell } from "@/components/workspace/workspace-shell";
@@ -58,19 +60,12 @@ export function generateStaticParams() {
  * проекте такое оплачено пять раз за две недели, и дважды автором закона об
  * этом. Растёт договор — метки на экране меняются сами, без правки страницы.
  */
-/**
- * Внешний адрес службы для примеров вкладки API (185).
- *
- * 🔒 БЕРЁТСЯ ИЗ ОКРУЖЕНИЯ МАШИНЫ, А НЕ ПИШЕТСЯ КОНСТАНТОЙ. Домен у каждого
- * сервера свой; зашитый адрес отправил бы чужого человека на нашу машину —
- * и он бы не понял, почему ключ не подходит.
- * 🛑 УМОЛЧАНИЕ — ПЕТЛЯ, И ЭТО ЧЕСТНО: пока домен не назван, снаружи службы
- * и правда нет. Обещать адрес, которого нет, хуже, чем показать локальный.
- */
-function memoryBase(): string {
-  const named = process.env.MEMORY_PUBLIC_URL ?? process.env.NEXT_PUBLIC_MEMORY_URL ?? "";
-  return named.replace(/\/+$/, "") || "http://127.0.0.1:3700";
-}
+// 🪦 ЗДЕСЬ СТОЯЛ ВЫВОД АДРЕСА ИЗ ПЕРЕМЕННОЙ `MEMORY_PUBLIC_URL` — СНЯТО 185-2
+// ТРЕБОВАНИЕМ ВЛАДЕЛЬЦА: «хочу быть уверен в том, что домен здесь не является
+// хардкор, а подставляется строго в соответствии с реальным доменом».
+// Переменная и была скрытым хардкодом: значение писал человек, и на другом
+// сервере оно осталось бы нашим. Адрес теперь берётся из ЗАПРОСА —
+// `publicMemoryUrl(host, proto)`, тем же приёмом, что и ссылка входа.
 
 function supportedParams(): { recall: string[]; remember: string[] } {
   const of = (name: string) =>
@@ -109,6 +104,13 @@ async function MemoryPageBody({
   const active = resolveMemorySection(raw);
   const ui = memoryUi(lang);
 
+  // 🔒 АДРЕС СЛУЖБЫ ДЛЯ ПРИМЕРОВ ВКЛАДКИ API БЕРЁТСЯ ИЗ ЗАПРОСА (185-2): хост
+  // знает правду всегда, а переменная, записанная при рождении сервера,
+  // застывает и ломается молча — это уже оплачено ссылкой входа у соседа.
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
+  const proto = h.get("x-forwarded-proto") ?? "https";
+
   // 🔒 ДОКУМЕНТ ЧИТАЕТСЯ С ДИСКА НА КАЖДЫЙ ЗАПРОС, И ЭТО ГЛАВНОЕ ЕГО СВОЙСТВО:
   // владелец правит `development-docs/PASSPORT.md` — и видит правку на следующей
   // загрузке, без сборки и без перезапуска. Тот же приём, что у паспорта чата.
@@ -135,9 +137,16 @@ async function MemoryPageBody({
     <main className="min-h-screen bg-background">
       <div className="px-6 py-[var(--page-py-work)]" data-app-column>
         <div className="flex flex-col gap-4">
+          {/* 🔒 ТРИ КРОШКИ, И У КАЖДОЙ СВОЙ АДРЕС (2026-09-11, слово владельца).
+              «Fractera» — корень БЕЗ субдомена, выведенный из хоста запроса;
+              «Служба памяти» — корень ЭТОГО субдомена на языке страницы;
+              последняя — где мы сейчас, и она не ссылка по устройству крошек.
+              🪦 Прежде первая вела на корень своей же службы, а вторая не была
+              ссылкой вовсе — владелец нашёл это живьём. */}
           <Breadcrumbs
+            rootHref={publicSiteUrl(host, proto)}
             trail={[
-              { label: ui.layer },
+              { href: `/${lang}`, label: ui.layer },
               { href: hrefOfMemorySection(lang, "memory-test"), label: ui.title },
               { label: ui.pages[active].title },
             ]}
@@ -207,7 +216,7 @@ async function MemoryPageBody({
                 Адрес службы считается ОДИН раз здесь и уезжает пропсом: в
                 примерах и в инструкции Postman должен стоять тот адрес, по
                 которому человек реально придёт, а не выдуманный образец. */}
-            {active === "api" && <ApiDoc base={memoryBase()} keyWords={ui.apiKey} lang={lang} />}
+            {active === "api" && <ApiDoc base={publicMemoryUrl(host, proto)} keyWords={ui.apiKey} lang={lang} />}
 
             {active === "journal" && <JournalView words={ui.journal} />}
 

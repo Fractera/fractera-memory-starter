@@ -1,7 +1,9 @@
+import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { Suspense } from "react"
 import { Breadcrumbs } from "@/components/nav/breadcrumbs.server"
 import { Eyebrow, H1, Lead } from "@/components/ui/typography"
+import { publicSiteUrl } from "@/lib/fractera/auth-url"
 import { fracteraSession } from "@/lib/fractera/session"
 import { TerminalPanel } from "./_components/terminal-panel.client"
 import { terminalUi } from "./_i18n/terminal.i18n"
@@ -56,11 +58,21 @@ export default async function TerminalPage({
 }) {
   const { lang } = await params
   const ui = terminalUi(lang)
+  // Корень без субдомена выводится из хоста запроса — см. крошки ниже.
+  const h = await headers()
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? ""
+  const proto = h.get("x-forwarded-proto") ?? "https"
 
   return (
     <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-8 px-6 py-10 md:px-8">
       <div className="flex flex-col gap-4">
-        <Breadcrumbs trail={[{ label: ui.layer }, { label: ui.title }]} />
+        {/* 🔒 «Fractera» ведёт в корень БЕЗ субдомена, «служба» — в корень
+            своего субдомена (2026-09-11, слово владельца). Адрес выводится из
+            хоста запроса: на другом сервере он другой, и править нечего. */}
+        <Breadcrumbs
+          rootHref={publicSiteUrl(host, proto)}
+          trail={[{ href: `/${lang}`, label: ui.layer }, { label: ui.title }]}
+        />
 
         <header className="flex flex-col gap-4 border-border border-b pb-8">
           <Eyebrow>{ui.layer}</Eyebrow>
