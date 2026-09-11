@@ -70,6 +70,19 @@ export type LandingWords = {
    */
   install: { title: string; lead: string; body: string };
   principles: { title: string; items: Array<{ title: string; body: string }> };
+  /**
+   * Вопросы и ответы — блок стартера, перенесённый сюда целиком по замыслу.
+   *
+   * 🔒 ОДИН ИСТОЧНИК НА ГЛАЗА И НА РАЗМЕТКУ: `FAQPage` строится из этих же
+   * строк. Вторая копия «для поисковика» разошлась бы с видимой на первой
+   * правке, а расхождение разметки с текстом страницы — это ровно то, за что
+   * поисковик наказывает.
+   */
+  faq: { title: string; lead: string; items: Array<{ q: string; a: string }> };
+  /** Слова для мета-тегов: то, что человек увидит в выдаче. */
+  seo: { title: string; description: string };
+  /** Единственная внешняя ссылка страницы — на проект Fractera. */
+  project: { label: string; body: string };
   cta: { title: string; body: string; primary: string; secondary: string };
 };
 
@@ -160,7 +173,7 @@ const EN: LandingWords = {
     body:
       "Read the full design in the passport — the document written before the code and kept in step with it ever since.",
     primary: "Open the passport",
-    secondary: "Source on GitHub",
+    secondary: "Open the bench",
     title: "See how it is built",
   },
   comparison: {
@@ -260,6 +273,54 @@ const EN: LandingWords = {
     lead:
       "When the engine detects repeated misses or a sub-optimal path, it writes a candidate skill and runs it as a challenger in the shadow — on real production traffic, while people keep being answered by the verified champion.",
     title: "A self-evolving skill core with shadow A/B testing",
+  },
+  faq: {
+    items: [
+      {
+        a: "No. The engine answers levels 1 to 3 without a model at all: a direct lookup, a graph traversal, a conclusion already folded back into the stores. A model turn is spent only when the cheap deterministic paths return nothing, and the answer reports depth_used so you can see what you paid for.",
+        q: "Does every request cost tokens?",
+      },
+      {
+        a: "Yes. A scope entry carries lat, lon and an optional radius_m, and the coordinates are spatially indexed. You can ask what you know within 500 metres of a point, and knowledge recorded in Madrid never merges with knowledge recorded in London.",
+        q: "Can it answer questions about a place by coordinates, not by a word?",
+      },
+      {
+        a: "Voice notes, images, video, PDF and HTML. The pipeline lives inside the engine: audio is transcribed, images are captioned and read by OCR, video has its track transcribed and its key frames captioned, PDFs are parsed with an OCR fallback. The original binary stays in the built-in object store and is referenced from answers by id.",
+        q: "What can I send besides text?",
+      },
+      {
+        a: "None. You send a sentence. The engine adds columns as new kinds of fact appear and generates typed relational tables when a kind grows into an entity. There are no migrations to write.",
+        q: "What schema do I have to design first?",
+      },
+      {
+        a: "It folds the result back. The artifact goes to the object store, its summary into text, into the vector store and into the knowledge graph, and the relation tables are updated. The same question is then answered from the cheap levels, in fractions of a second.",
+        q: "What happens after an expensive research run?",
+      },
+      {
+        a: "It writes a second version of the skill and runs it as a challenger in the shadow, on real traffic, while people keep being answered by the champion. Promotion needs an external verdict and no regression in cost: the engine is never allowed to grade its own work.",
+        q: "How does it improve itself without breaking what works?",
+      },
+      {
+        a: "Any HTTP client: a Telegram bot, a web chat, a mobile app, a scheduled job. The engine also ships with its own console, already connected, and that console is optional: nothing in the API path depends on it.",
+        q: "What can I connect to it?",
+      },
+      {
+        a: "On your server, in your database, in your object store, behind a key you can revoke in one click. There is no metered API in the middle and no telemetry leaving the machine.",
+        q: "Where does my data live?",
+      },
+    ],
+    lead: "Short answers to what people ask before they integrate.",
+    title: "Questions and answers",
+  },
+  project: {
+    body:
+      "Fractera Memory is one microservice of the Fractera platform, the engineering infrastructure for autonomous agents. The whole project, this engine included, is open source.",
+    label: "The Fractera project on GitHub",
+  },
+  seo: {
+    description:
+      "Self-hosted memory engine for AI agents: knowledge graph, vector and relational stores, built-in object storage, geospatial lat/lon radius recall, native voice, image, video and PDF input, zero-token deterministic reads and champion/challenger skill evolution. One REST API, open source.",
+    title: "Fractera Memory — self-hosted memory engine for AI agents",
   },
   hero: {
     badges: ["Zero per-request fees", "Zero vendor lock-in", "Full privacy on your server"],
@@ -446,7 +507,7 @@ const RU: LandingWords = {
     body:
       "Полный замысел — в паспорте: документе, написанном раньше кода и с тех пор идущем с ним в ногу.",
     primary: "Открыть паспорт",
-    secondary: "Исходники на GitHub",
+    secondary: "Открыть стенд",
     title: "Посмотреть, как это устроено",
   },
   comparison: {
@@ -546,6 +607,54 @@ const RU: LandingWords = {
     lead:
       "Если память фиксирует повторяющиеся промахи, она создаёт альтернативную версию навыка и запускает её претендентом в тени — на реальном трафике, пока человек получает ответы от проверенного чемпиона.",
     title: "Эволюция навыков с A/B сплит-тестированием",
+  },
+  faq: {
+    items: [
+      {
+        a: "Нет. Уровни с первого по третий память отвечает вообще без модели: прямой поиск по базе, обход графа, готовый вывод, уже сложенный обратно в хранилища. Ход модели тратится, только когда дешёвые детерминированные пути ничего не вернули, и ответ называет depth_used, чтобы было видно, за что вы заплатили.",
+        q: "Каждый запрос стоит токенов?",
+      },
+      {
+        a: "Да. В записи охвата есть lat, lon и необязательный radius_m, а координаты идут в пространственный индекс. Можно спросить, что известно в радиусе 500 метров от точки, и мадридское знание никогда не смешается с лондонским.",
+        q: "Умеет ли она отвечать про место по координатам, а не по слову?",
+      },
+      {
+        a: "Голосовые заметки, изображения, видео, PDF и HTML. Конвейер живёт внутри памяти: звук расшифровывается, изображение описывается зрением и читается OCR, у видео расшифровывается дорожка и разбираются ключевые кадры, PDF разбирается с запасным OCR. Оригинал остаётся во встроенном объектном хранилище и адресуется из ответа по id.",
+        q: "Что можно присылать, кроме текста?",
+      },
+      {
+        a: "Никакую. Вы присылаете фразу. Память добавляет колонки, когда появляются новые роды фактов, и порождает типизированные таблицы, когда род вырастает в сущность. Миграции писать не нужно.",
+        q: "Какую схему нужно спроектировать заранее?",
+      },
+      {
+        a: "Он замыкается обратно. Артефакт уходит в объектное хранилище, его саммари — в текст, в векторную базу и в граф знаний, а таблицы связей обновляются. Тот же вопрос потом отвечается на дешёвых уровнях, за доли секунды.",
+        q: "Что происходит после дорогого исследования?",
+      },
+      {
+        a: "Она пишет вторую версию навыка и запускает её претендентом в тени, на реальном трафике, пока человеку отвечает чемпион. Для продвижения нужен внешний вердикт и отсутствие проседания по цене: оценивать свою работу самой памяти запрещено.",
+        q: "Как она улучшает себя, не ломая работающее?",
+      },
+      {
+        a: "Любой HTTP-клиент: Telegram-бот, веб-чат, мобильное приложение, фоновая задача. Вместе с памятью идёт и её собственная консоль, уже подключённая, и она при этом опциональна: путь API от неё не зависит.",
+        q: "Что к ней можно подключить?",
+      },
+      {
+        a: "На вашем сервере, в вашей базе, в вашем объектном хранилище, за ключом, который отзывается одним нажатием. Ни платного посредника, ни телеметрии наружу.",
+        q: "Где живут мои данные?",
+      },
+    ],
+    lead: "Короткие ответы на то, о чём спрашивают до интеграции.",
+    title: "Вопросы и ответы",
+  },
+  project: {
+    body:
+      "Fractera Memory — один из микросервисов платформы Fractera, инженерной инфраструктуры для автономных агентов. Весь проект, включая эту память, с открытым исходным кодом.",
+    label: "Проект Fractera на GitHub",
+  },
+  seo: {
+    description:
+      "Автономная память для ИИ-агентов на вашем сервере: граф знаний, векторное и реляционное хранилища, встроенное объектное хранилище, поиск по координатам и радиусу, приём голоса, изображений, видео и PDF, детерминированное чтение за ноль токенов и эволюция навыков через A/B. Один REST API, открытый код.",
+    title: "Fractera Memory — автономная память для ИИ-агентов на вашем сервере",
   },
   hero: {
     badges: ["Ноль комиссий за запрос", "Ноль зависимости от поставщика", "Полная приватность на вашем сервере"],

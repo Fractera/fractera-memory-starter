@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Eyebrow, H1, Lead } from "@/components/ui/typography";
 import { landingWords } from "../_i18n/landing.i18n";
+import { breadcrumbSchema, faqSchema, FRACTERA_PROJECT_URL, softwareSchema, urlFor, webSiteSchema } from "@/lib/seo";
 
 // ПУБЛИЧНЫЙ ЛЕНДИНГ ПАМЯТИ (186).
 //
@@ -64,11 +65,33 @@ function Code({ children }: { children: string }) {
   );
 }
 
-export function Landing({ lang }: { lang: string }) {
+export function Landing({ base, lang }: { base: string; lang: string }) {
   const w = landingWords(lang);
+
+  // 🔒 РАЗМЕТКА СТРОИТСЯ ИЗ ТЕХ ЖЕ СТРОК, ЧТО ВИДИТ ЧЕЛОВЕК (186-2). Вторая
+  // копия вопросов «для поисковика» разошлась бы с видимой на первой правке, а
+  // разметка, не совпадающая с текстом страницы, — это ровно то, за что
+  // поисковик наказывает.
+  const schemas = [
+    softwareSchema({ base, description: w.seo.description, lang, name: "Fractera Memory" }),
+    webSiteSchema({ base, description: w.seo.description, lang, name: "Fractera Memory" }),
+    faqSchema(w.faq.items),
+    breadcrumbSchema([
+      { name: "Fractera Memory", url: urlFor(base, lang) },
+      { name: w.cta.primary, url: urlFor(base, lang, "/passport") },
+    ]),
+  ];
 
   return (
     <main className="min-h-screen bg-background">
+      {/* 🔒 РАЗМЕТКА ОДНИМ БЛОКОМ, ПЕРВЫМ В ДЕРЕВЕ: машина читает её до текста,
+          и её отсутствие в первом килобайте — частая причина, по которой богатый
+          сниппет не собирается вовсе. */}
+      <script
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemas) }}
+        type="application/ld+json"
+      />
       {/* ── ПЕРВЫЙ ЭКРАН ─────────────────────────────────────────────────────
           🔒 Анатомия `heroSplit`: надзаголовок → H1 → лид → тело → метки →
           действия. H1 на странице ровно один, и он здесь. */}
@@ -305,6 +328,48 @@ export function Landing({ lang }: { lang: string }) {
         </div>
       </Section>
 
+      {/* ── ВОПРОСЫ И ОТВЕТЫ: тот самый блок стартера (186-2) ───────────────
+          🔒 Раскрывающиеся элементы — `<details>`, а не своя реализация на
+          состоянии: содержимое ответа лежит в разметке ВСЕГДА и читается
+          машиной даже закрытым. Аккордеон на JavaScript прячет текст и от
+          поисковика тоже. */}
+      <Section id="faq" lead={w.faq.lead} title={w.faq.title}>
+        <div className="divide-y divide-muted-foreground/15 border-y border-muted-foreground/15">
+          {w.faq.items.map((i) => (
+            <details className="group py-3" key={i.q}>
+              <summary className="cursor-pointer list-none text-[length:var(--fs-body)] font-medium marker:content-none">
+                <span className="mr-2 inline-block text-muted-foreground transition-transform group-open:rotate-90">
+                  ›
+                </span>
+                {i.q}
+              </summary>
+              <p className="mt-2 max-w-3xl pl-5 text-[length:var(--fs-small)] leading-relaxed text-muted-foreground">
+                {i.a}
+              </p>
+            </details>
+          ))}
+        </div>
+      </Section>
+
+      {/* ── ПРОЕКТ: ЕДИНСТВЕННАЯ ВНЕШНЯЯ ССЫЛКА СТРАНИЦЫ ───────────────────
+          🎯 Слово владельца: «эти страницы будут попадать каждому пользователю,
+          нужно поставить одну внешнюю ссылку на проект Fractera».
+          🔒 ОДНА, И ЭТО ЧИСЛО. Повторённая в каждом разделе, она читается
+          машиной как навязчивая перелинковка, а человеком — как реклама. Её же
+          машинное упоминание живёт в схеме полем `isPartOf`, и это не вторая
+          ссылка, а тот же факт для другого читателя. */}
+      <Section id="project" title={w.project.label}>
+        <p className="max-w-3xl text-[length:var(--fs-small)] leading-relaxed">{w.project.body}</p>
+        <a
+          className="mt-4 inline-block rounded-md border border-muted-foreground/30 px-4 py-2 text-[length:var(--fs-small)] font-medium hover:bg-muted"
+          href={FRACTERA_PROJECT_URL}
+          rel="noopener"
+          target="_blank"
+        >
+          {w.project.label}
+        </a>
+      </Section>
+
       {/* ── ЗАВЕРШАЮЩИЙ ПРИЗЫВ: вид `cta` каталога ────────────────────────── */}
       <Section id="cta" title={w.cta.title}>
         <p className="max-w-3xl text-[length:var(--fs-small)] leading-relaxed">{w.cta.body}</p>
@@ -315,14 +380,15 @@ export function Landing({ lang }: { lang: string }) {
           >
             {w.cta.primary}
           </Link>
-          <a
+          {/* 🛑 ВТОРОЙ ВНЕШНЕЙ ССЫЛКИ ЗДЕСЬ НЕТ НАМЕРЕННО: владелец просил ОДНУ
+              на страницу, и она стоит разделом выше. Кнопка ведёт к паспорту —
+              внутрь службы. */}
+          <Link
             className="rounded-md border border-muted-foreground/30 px-4 py-2 text-[length:var(--fs-small)] font-medium hover:bg-muted"
-            href="https://github.com/Fractera/fractera-memory-starter"
-            rel="noreferrer"
-            target="_blank"
+            href={`/${lang}/settings?section=api`}
           >
             {w.cta.secondary}
-          </a>
+          </Link>
         </div>
       </Section>
     </main>

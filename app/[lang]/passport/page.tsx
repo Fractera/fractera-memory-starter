@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Suspense } from "react";
 import { PassportBody } from "../settings/_components/passport-body.client";
 import { memoryUi } from "../settings/_i18n/memory.i18n";
+import { landingWords } from "../_i18n/landing.i18n";
+import { languageAlternates, origin, urlFor } from "@/lib/seo";
 
 // ПУБЛИЧНЫЙ ПАСПОРТ — СВОЙ АДРЕС `/{язык}/passport` (186).
 //
@@ -39,6 +42,41 @@ const LANGS = ["ru", "en"] as const;
 
 export function generateStaticParams() {
   return LANGS.map((lang) => ({ lang }));
+}
+
+/**
+ * Мета-теги паспорта (186-2).
+ *
+ * 🔒 У ПАСПОРТА СВОЙ ЗАГОЛОВОК И СВОЁ ОПИСАНИЕ, А НЕ ЗАИМСТВОВАННЫЕ У ЛЕНДИНГА.
+ * Две страницы с одинаковым `title` поисковик считает дублем и оставляет в
+ * выдаче одну — обычно не ту, что нужна.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  const w = landingWords(lang);
+  const base = await origin();
+  const url = urlFor(base, lang, "/passport");
+  const title = `${w.cta.primary} — Fractera Memory`;
+
+  return {
+    alternates: { canonical: url, languages: languageAlternates(base, "/passport") },
+    description: w.cta.body,
+    metadataBase: new URL(base),
+    openGraph: {
+      description: w.cta.body,
+      locale: lang,
+      siteName: "Fractera Memory",
+      title,
+      type: "article",
+      url,
+    },
+    robots: { follow: true, index: true },
+    title,
+  };
 }
 
 export default function MemoryPassport(props: { params: Promise<{ lang: string }> }) {
