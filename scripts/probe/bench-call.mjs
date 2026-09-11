@@ -27,13 +27,13 @@ const paramsOf = (name) => (METHODS.find((m) => m.name === name)?.params ?? []).
 // Все органы выставлены разом: так стенд выглядит в худшем случае.
 const FULL = {
   ...EMPTY_PARAMS,
-  at: "2026-09-11",
+  scope: [{ at: "2026-09-11", place: "Мадрид" }, { at: "", place: "Лондон" }, { at: "", place: "" }],
   deny: "это неверно, потому что я говорил другое",
   depth: "extreme",
   history: "до этого мы говорили о Денисе",
   historyOn: true,
   needTable: true,
-  place: "Мадрид",
+
   prior: "нашли только имя",
   priorOn: true,
   wantChain: true,
@@ -59,7 +59,7 @@ say(ask.body.lang === "ru", "язык называет зовущий, а не �
 
 // ── 2. ГЛАВНОЕ: ЛИБО В ТЕЛЕ, ЛИБО В «НЕ ДОЕЗЖАЕТ» ────────────────────────────
 const declaredRecall = paramsOf("recall")
-const wantedByAsk = ["depth", "history", "prior", "want_chain", "at", "place"]
+const wantedByAsk = ["depth", "history", "prior", "want_chain", "scope"]
 for (const name of wantedByAsk) {
   const inBody = name in ask.body
   const inDropped = ask.dropped.includes(name)
@@ -104,7 +104,31 @@ say(
   `${none.dropped.length} из ${wantedByAsk.length}`,
 )
 
-// ── 5. НЕГАТИВНЫЙ КОНТРОЛЬ: НИЧЕГО НЕ ВЫСТАВЛЕНО ─────────────────────────────
+// ── 5. ОХВАТ ЕДЕТ СПИСКОМ, А ПУСТЫЕ КАРТОЧКИ ОТСЕИВАЮТСЯ (183-7) ─────────────
+// 🔒 ЭТО И ЕСТЬ ГЛАВНОЕ УТВЕРЖДЕНИЕ ПОДШАГА: записей бывает много, и заготовка,
+// которую человек не заполнил, охватом не является. Уедь она — служба ответила
+// бы отказом по форме за то, чего человек не выставлял.
+const scopeAsk = buildCall({
+  lang: "ru",
+  mode: "ask",
+  params: FULL,
+  supported: paramsOf("recall"),
+  text: "вопрос",
+})
+const sentScope = scopeAsk.body.scope
+say(Array.isArray(sentScope), "охват уехал списком", JSON.stringify(sentScope))
+say(
+  Array.isArray(sentScope) && sentScope.length === 2,
+  "из трёх карточек уехали две заполненные",
+  `${Array.isArray(sentScope) ? sentScope.length : "—"} из 3`,
+)
+say(
+  Array.isArray(sentScope) && !("at" in (sentScope[1] ?? {})),
+  "у карточки без даты поля даты нет вовсе, а не пустая строка",
+  JSON.stringify(sentScope?.[1]),
+)
+
+// ── 6. НЕГАТИВНЫЙ КОНТРОЛЬ: НИЧЕГО НЕ ВЫСТАВЛЕНО ─────────────────────────────
 const empty = buildCall({
   lang: "ru",
   mode: "ask",

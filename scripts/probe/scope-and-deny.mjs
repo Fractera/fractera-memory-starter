@@ -16,18 +16,21 @@ const s = scoreboard("ПРИБОР 183-6 — охват, отрицание, т�
 
 // ── ОХВАТ: ПРИНЯТ, И ПРЕДЕЛ НАЗВАН ───────────────────────────────────────────
 const scoped = await call("remember", {
-  at: "2026-09-11",
   lang: "ru",
-  place: "Мадрид",
+  scope: [
+    { at: "2026-09-11", place: "Мадрид" },
+    { place: "Лондон" },
+    { at: "2026-09-10" },
+  ],
   text: "я говорю с вами по-русски",
   who: WHO,
 })
-for (const name of ["at", "place"]) {
-  const f = fate(scoped.data, name)
-  s.say(f?.state === "accepted", `«${name}» принят`, f?.state ?? "строки нет")
+{
+  const f = fate(scoped.data, "scope")
+  s.say(f?.state === "accepted", "список охватов из трёх записей принят", f?.state ?? "строки нет")
   s.say(
     Boolean(f?.note) && f.note.includes("охват"),
-    `«${name}»: предел назван словами, а не умолчанием`,
+    "предел назван словами, а не умолчанием",
     f?.note ?? "—",
   )
 }
@@ -56,29 +59,66 @@ const table = await call("remember", {
 })
 const t = fate(table.data, "need_table")
 s.say(t?.state === "accepted", "«need_table» принят", t?.state ?? "строки нет")
+// 🔒 ПРОВЕРЯЕТСЯ СОСТОЯНИЕ, А НЕ ДЕЙСТВИЕ: «поднял сейчас» и «уже таблица» —
+// оба исхода означают, что требование исполнено. Прибор, требующий именно
+// подъёма, зелен только на чистой машине и краснеет у того, у кого система уже
+// поработала.
+const promo = table.data?.promoted ?? []
 s.say(
-  Array.isArray(table.data?.promoted) && table.data.promoted.length > 0,
-  "требование исполнено: род поднят в свою таблицу",
-  JSON.stringify(table.data?.promoted ?? []),
+  Array.isArray(promo) && promo.length > 0,
+  "требование исполнено: род живёт своей таблицей",
+  JSON.stringify(promo),
+)
+s.say(
+  promo.every((x) => typeof x.table === "string" && x.table.length > 0),
+  "названа сама таблица, а не только факт исполнения",
+  promo.map((x) => `${x.table}${x.already ? " (уже была)" : " (поднята сейчас)"}`).join(", "),
 )
 
 // ── НЕГАТИВНЫЙ КОНТРОЛЬ: ДАТА НЕ ТОЙ ФОРМЫ ──────────────────────────────────
 // 🔒 БЕЗ НЕГО ОХВАТ ЗАПОЛНЯЕТСЯ МУСОРОМ, КОТОРЫЙ ПОТОМ НЕОТЛИЧИМ ОТ ЗНАНИЯ.
 // «Позавчера вечером» — не дата, и уехать в охват молча она не имеет права.
 const bad = await call("remember", {
-  at: "позавчера вечером",
+  scope: [{ at: "2026-09-11" }, { at: "позавчера вечером" }],
   lang: "ru",
   text: "я живу в Мадриде",
   who: WHO,
 })
-const b = fate(bad.data, "at")
+const b = fate(bad.data, "scope")
 s.say(b?.state === "bad_form", "НЕГАТИВНЫЙ: свободная фраза охватом не становится", b?.state ?? "строки нет")
+s.say(
+  Boolean(b?.note) && b.note.includes("запись 2"),
+  "НЕГАТИВНЫЙ: названа НОМЕРОМ та запись, которая подвела",
+  b?.note ?? "—",
+)
 s.say(
   Boolean(b?.note) && b.note.includes("гггг-мм-дд"),
   "НЕГАТИВНЫЙ: сказано, какая форма нужна",
   b?.note ?? "—",
 )
 s.say(bad.data?.ok === true, "НЕГАТИВНЫЙ: кривой параметр не уронил весь вызов", `ok=${bad.data?.ok}`)
+
+// ── НЕГАТИВНЫЙ КОНТРОЛЬ: ПУСТЫЕ ФОРМЫ ОХВАТА ────────────────────────────────
+// 🔒 ПУСТОЙ ОХВАТ ВЫРАЖАЕТСЯ ОТСУТСТВИЕМ ПОЛЯ, А НЕ ПУСТЫМ СПИСКОМ И НЕ
+// ЗАПИСЬЮ-ПУСТЫШКОЙ. Пропусти мы их — охват заполнялся бы ничем, и «здесь
+// что-то есть» стало бы неотличимо от знания.
+const emptyList = await call("remember", { lang: "ru", scope: [], text: "я живу в Мадриде", who: WHO })
+s.say(
+  fate(emptyList.data, "scope")?.state === "bad_form",
+  "НЕГАТИВНЫЙ: пустой список охватом не становится",
+  fate(emptyList.data, "scope")?.note ?? "строки нет",
+)
+const emptyEntry = await call("remember", {
+  lang: "ru",
+  scope: [{ at: "", place: "" }],
+  text: "я живу в Мадриде",
+  who: WHO,
+})
+s.say(
+  fate(emptyEntry.data, "scope")?.state === "bad_form",
+  "НЕГАТИВНЫЙ: запись без даты и места отвергнута",
+  fate(emptyEntry.data, "scope")?.note ?? "строки нет",
+)
 
 // ── НЕГАТИВНЫЙ КОНТРОЛЬ: НИЧЕГО НЕ ПРИСЛАЛИ — СТРОК СУДЬБЫ НЕТ ──────────────
 const plain = await call("recall", { lang: "ru", who: WHO })

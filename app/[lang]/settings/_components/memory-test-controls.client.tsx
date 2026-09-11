@@ -16,10 +16,15 @@
 // поддержанного разошёлся бы с договором молча — в этом проекте такое
 // оплачено пять раз за две недели.
 
+import { useState } from "react";
 import type { BenchParams } from "@/lib/bench-call.mjs";
 
 export type BenchControlWords = {
   title: string;
+  /** Заголовок свёрнутой карточки и её счётчик выставленного (183-7). */
+  advanced: string;
+  setNow: string;
+  nothingSet: string;
   /** Что метки значат — одной строкой над органами. */
   legend: string;
   supported: string;
@@ -37,7 +42,17 @@ export type BenchControlWords = {
   history: { label: string; hint: string; placeholder: string };
   prior: { label: string; hint: string; placeholder: string };
   chain: { label: string; hint: string; on: string; off: string };
-  scope: { label: string; hint: string; date: string; place: string; placePlaceholder: string };
+  scope: {
+    label: string;
+    hint: string;
+    date: string;
+    place: string;
+    placePlaceholder: string;
+    /** Слова списка записей охвата (183-7). */
+    entry: string;
+    add: string;
+    remove: string;
+  };
   deny: { label: string; hint: string; placeholder: string };
   needTable: { label: string; hint: string };
   upload: { label: string; hint: string; image: string; video: string; sound: string; html: string; pdf: string };
@@ -103,7 +118,32 @@ export function BenchControls({
   supported: readonly string[];
   words: BenchControlWords;
 }) {
+  const [open, setOpen] = useState(false);
+
   const has = (name: string) => supported.includes(name);
+
+  /** Правка одной карточки охвата: соседние не трогаем. */
+  const patchScope = (i: number, patch: { at?: string; place?: string }) => {
+    onChange({
+      scope: params.scope.map((e, k) => (k === i ? { ...e, ...patch } : e)),
+    });
+  };
+
+  /**
+   * Убрать карточку охвата.
+   *
+   * 🔒 ПОСЛЕДНЯЯ НЕ УДАЛЯЕТСЯ, А ОЧИЩАЕТСЯ. Список, из которого исчезла
+   * последняя карточка, оставляет человека перед пустым местом без единой
+   * подсказки, что здесь вообще можно что-то завести.
+   */
+  const dropScope = (i: number) => {
+    onChange({
+      scope:
+        params.scope.length > 1
+          ? params.scope.filter((_, k) => k !== i)
+          : [{ at: "", place: "" }],
+    });
+  };
 
   const depthHint =
     params.depth === "standard"
@@ -126,8 +166,43 @@ export function BenchControls({
     </button>
   );
 
+  // 🔒 СВЁРНУТО ПО УМОЛЧАНИЮ — ЭТО ПРО ЧАСТОТУ, А НЕ ПРО ВАЖНОСТЬ (183-7,
+  // решение владельца: «всю новую большую таблицу по умолчанию скрывать в
+  // карточке аккордеон как расширенные параметры»). Обычный прогон стенда — это
+  // фраза и кнопка; девять органов перед глазами каждый раз делают редкое таким
+  // же заметным, как частое.
+  // 🛑 НО СВЁРНУТОЕ ОБЯЗАНО СКАЗАТЬ, ЧТО ВНУТРИ ЧТО-ТО ВЫСТАВЛЕНО. Свёрнутый
+  // блок с молча действующими параметрами — ловушка: человек отправляет фразу и
+  // не знает, что к ней уехала вчерашняя геометка. Поэтому на закрытой карточке
+  // стоит счётчик, и считает он ровно то, что уедет.
+  const set = [
+    params.depth !== "standard" && words.depth.label,
+    params.who !== "bench-1" && words.who.label,
+    params.historyOn && params.history.trim() && words.history.label,
+    params.priorOn && params.prior.trim() && words.prior.label,
+    params.wantChain && words.chain.label,
+    params.scope.some((e) => e.at || e.place) && words.scope.label,
+    params.deny.trim() && words.deny.label,
+    params.needTable && words.needTable.label,
+  ].filter(Boolean) as string[];
+
   return (
-    <div className="space-y-3 rounded-md border border-muted-foreground/30 p-3">
+    <div className="rounded-md border border-muted-foreground/30">
+      <button
+        aria-expanded={open}
+        className="flex w-full flex-wrap items-center justify-between gap-2 px-3 py-2 text-left hover:bg-muted"
+        onClick={() => setOpen((v) => !v)}
+        type="button"
+      >
+        <span className="text-[length:var(--fs-small)] font-medium">
+          {open ? "▾" : "▸"} {words.advanced}
+        </span>
+        <span className="text-[length:var(--fs-small)] text-muted-foreground">
+          {set.length ? `${words.setNow}: ${set.join(", ")}` : words.nothingSet}
+        </span>
+      </button>
+
+      <div className="space-y-3 border-t border-muted-foreground/20 p-3" hidden={!open}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <span className="text-[length:var(--fs-small)] font-medium">{words.title}</span>
         <span className="text-[length:var(--fs-small)] text-muted-foreground">{words.legend}</span>
@@ -240,23 +315,55 @@ export function BenchControls({
       </Row>
 
       {/* ⑥ КАЛЕНДАРЬ И ГЕОМЕТКА — ЭТО ОХВАТ, А НЕ УКРАШЕНИЕ.
-          🔒 Пустой охват значит «не знаю где и когда», а не «везде и всегда». */}
-      <Row hint={words.scope.hint} label={words.scope.label} ok={has("at")} words={words}>
-        <div className="flex flex-wrap gap-2">
-          <input
-            aria-label={words.scope.date}
-            className={`${boxClass} max-w-[12rem]`}
-            onChange={(e) => onChange({ at: e.target.value })}
-            type="date"
-            value={params.at}
-          />
-          <input
-            aria-label={words.scope.place}
-            className={`${boxClass} max-w-[16rem]`}
-            onChange={(e) => onChange({ place: e.target.value })}
-            placeholder={words.scope.placePlaceholder}
-            value={params.place}
-          />
+          🔒 Пустой охват значит «не знаю где и когда», а не «везде и всегда».
+          🔒 ЗАПИСЕЙ БЫВАЕТ МНОГО, И КАЖДАЯ — СВОЯ КАРТОЧКА (183-7, решение
+          владельца 2026-09-11: «событий календаря и геометок может быть
+          множество… кнопка плюс добавить еще запись»). Одна пара полей молча
+          утверждала бы, что у фразы один охват, — а «вчера в Мадриде, сегодня в
+          Лондоне» в неё не помещается вовсе. */}
+      <Row hint={words.scope.hint} label={words.scope.label} ok={has("scope")} words={words}>
+        <div className="space-y-2">
+          {params.scope.map((entry, i) => (
+            <div
+              className="flex flex-wrap items-center gap-2 rounded-md border border-muted-foreground/20 p-2"
+              key={i}
+            >
+              <span className="text-[length:var(--fs-small)] text-muted-foreground">
+                {words.scope.entry} {i + 1}
+              </span>
+              <input
+                aria-label={`${words.scope.date} ${i + 1}`}
+                className={`${boxClass} max-w-[12rem]`}
+                onChange={(e) => patchScope(i, { at: e.target.value })}
+                type="date"
+                value={entry.at}
+              />
+              <input
+                aria-label={`${words.scope.place} ${i + 1}`}
+                className={`${boxClass} max-w-[16rem]`}
+                onChange={(e) => patchScope(i, { place: e.target.value })}
+                placeholder={words.scope.placePlaceholder}
+                value={entry.place}
+              />
+              {/* 🔒 ПОСЛЕДНЮЮ КАРТОЧКУ УДАЛИТЬ НЕЛЬЗЯ — ОНА ОЧИЩАЕТСЯ. Пустой
+                  список на экране есть место, где не видно, что делать. */}
+              <button
+                className="rounded-md border border-muted-foreground/30 px-2 py-1 text-[length:var(--fs-small)] hover:bg-muted"
+                onClick={() => dropScope(i)}
+                title={words.scope.remove}
+                type="button"
+              >
+                {words.scope.remove}
+              </button>
+            </div>
+          ))}
+          <button
+            className="rounded-md border border-muted-foreground/30 px-3 py-1 text-[length:var(--fs-small)] hover:bg-muted"
+            onClick={() => onChange({ scope: [...params.scope, { at: "", place: "" }] })}
+            type="button"
+          >
+            {words.scope.add}
+          </button>
         </div>
       </Row>
 
@@ -306,6 +413,7 @@ export function BenchControls({
           ))}
         </div>
       </Row>
+      </div>
     </div>
   );
 }
