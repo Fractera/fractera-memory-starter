@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { headers } from "next/headers";
 import { METHODS } from "@/contract.mjs";
 import { publicMemoryUrl, publicSiteUrl } from "@/lib/fractera/auth-url";
-import { Breadcrumbs } from "@/components/nav/breadcrumbs.server";
+import { PageCrumbs } from "@/components/nav/page-crumbs.server";
 import { Eyebrow, H1, Lead } from "@/components/ui/typography";
 import { WorkspaceShell } from "@/components/workspace/workspace-shell";
 import { MemoryBench } from "./_components/memory-bench.client";
@@ -143,8 +143,7 @@ async function MemoryPageBody({
               последняя — где мы сейчас, и она не ссылка по устройству крошек.
               🪦 Прежде первая вела на корень своей же службы, а вторая не была
               ссылкой вовсе — владелец нашёл это живьём. */}
-          <Breadcrumbs
-            rootHref={publicSiteUrl(host, proto)}
+          <PageCrumbs
             trail={[
               { href: `/${lang}`, label: ui.layer },
               { href: hrefOfMemorySection(lang, "memory-test"), label: ui.title },
