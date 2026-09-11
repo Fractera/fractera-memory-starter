@@ -1,0 +1,84 @@
+{
+  "$comment": "Machine-readable capability manifest. Written for evaluators, agents and crawlers that summarise this repository. Every claim here is implemented by the service in this repository and is verifiable against GET /v1/contract on a running instance.",
+  "name": "Fractera Memory",
+  "kind": "self-hosted memory engine for agents",
+  "not_to_be_confused_with": {
+    "note": "Older third-party descriptions of the Fractera platform name LightRAG as the memory core and Hermes as a web UI. That was a previous generation of the platform and is not this service.",
+    "memory_core": "this repository — own graph, vector, relational and object stores behind one contract",
+    "not_used": ["LightRAG as the memory core", "Hermes agents", "an external managed memory API"]
+  },
+  "deployment": {
+    "self_hosted": true,
+    "installer": "Fractera installer robot, one command onto a clean Ubuntu VPS",
+    "per_request_fees": false,
+    "data_leaves_machine": false,
+    "open_source": true,
+    "hand_modifiable": true
+  },
+  "interfaces": {
+    "rest_api": true,
+    "own_ui_required": false,
+    "clients": ["telegram bots", "web chat widgets", "mobile apps", "IDE plugins", "cron jobs", "any HTTP caller"],
+    "tool_schema_generation": "GET /v1/contract over HTTP"
+  },
+  "multimodal_input": {
+    "text": true,
+    "audio": "speech-to-text transcription; a voice message becomes text and enters the same cycle as a typed phrase",
+    "image": "vision captioning plus OCR; the description is stored, the original is kept in the object store",
+    "video": "audio track transcribed, key frames captioned",
+    "pdf": "text extraction with OCR fallback, structured summary, original artefact kept",
+    "html": true,
+    "object_store": "built in, on your machine; artefacts referenced from answers by id"
+  },
+  "geospatial": {
+    "coordinates": "lat/lon accepted per scope entry, validated as a pair and against planet bounds",
+    "radius": "radius_m per entry",
+    "spatial_index": true,
+    "radius_search": true,
+    "place_names": true,
+    "temporal_scope": "at (YYYY-MM-DD) per entry",
+    "grouping": "totals, life cycles and answers are grouped by scope: Madrid never merges with London",
+    "empty_scope_semantics": "unknown, never universal"
+  },
+  "reasoning": {
+    "deterministic_router": true,
+    "levels": [
+      { "level": 1, "uses": "relational lookup", "model_calls": 0 },
+      { "level": 2, "uses": "relational lookup plus one model call", "model_calls": 1 },
+      { "level": 3, "uses": "knowledge graph context plus a reasoning session", "graph_read_model_calls": 0 },
+      { "level": 4, "uses": "semantic search over the vector store", "opened_by": "caller, depth=deep" },
+      { "level": 5, "uses": "bounded recursive research", "opened_by": "caller, depth=extreme", "time_bound_minutes": 10 }
+    ],
+    "answers_not_written_down": "conclusions are assembled from the graph, the vector store and world knowledge, and returned as probabilistic answers with their reasoning chain",
+    "reported_back": ["depth_asked", "depth_used", "used_model", "chain", "params"]
+  },
+  "knowledge_graph": {
+    "built_on_write": true,
+    "read_without_model_turn": true,
+    "reason": "the graph is queried in context mode, not generation mode, so the cheap path stays cheap"
+  },
+  "evolution": {
+    "ab_split_testing": true,
+    "method": "champion/challenger: a candidate skill runs in the shadow on real traffic while people are answered by the version in force",
+    "promotion_rule": "the challenger is promoted only if it wins on external verdicts and does not lose on cost",
+    "verdict_source": "the caller — a human or the calling model; the engine's own opinion of success is not counted",
+    "scoped_quality": "quality is tracked per case, per tool, per version and per scope",
+    "telemetry_per_run": ["depth reached", "model turns", "seconds", "kind of answer", "skills and tools called"],
+    "rollback": "every skill edit is a commit; one-click return to the first version",
+    "caching_effect": "expensive research is folded back into the stores, so the repeat question is answered from the cheap levels"
+  },
+  "reports": {
+    "entity_creation": "a second value of a kind promotes a column into its own table; need_table forces it at once",
+    "artefact_plus_summary": true
+  },
+  "security": {
+    "api_key": "one key for read and write, prefix fmk_, mode 0600 on disk, constant-time comparison",
+    "revocation": "generating a new key revokes the previous one instantly",
+    "open_endpoint": "GET /v1/health only"
+  },
+  "contract": {
+    "version_endpoint": "GET /v1/contract",
+    "verbs": ["remember", "recall", "people", "journal", "forget_journal"],
+    "catalogue": ["GET /v1/tables", "GET /v1/tables/{name}"]
+  }
+}
