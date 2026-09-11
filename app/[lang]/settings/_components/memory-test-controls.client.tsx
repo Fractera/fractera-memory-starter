@@ -41,6 +41,8 @@ export type BenchControlWords = {
   who: { label: string; hint: string; bench: string; loading: string };
   history: { label: string; hint: string; placeholder: string };
   prior: { label: string; hint: string; placeholder: string };
+  /** Нить разбора: идентификатор прежнего размышления (184-4). */
+  thread: { label: string; hint: string; placeholder: string; take: string };
   chain: { label: string; hint: string; on: string; off: string };
   scope: {
     label: string;
@@ -102,6 +104,7 @@ const boxClass =
   "w-full rounded-md border border-muted-foreground/30 bg-transparent px-2 py-1 text-[length:var(--fs-small)]";
 
 export function BenchControls({
+  lastThread,
   onChange,
   params,
   people,
@@ -109,6 +112,8 @@ export function BenchControls({
   supported,
   words,
 }: {
+  /** Нить из последнего ответа памяти — чтобы её не набирали руками (184-4). */
+  lastThread: string | null;
   onChange: (patch: Partial<BenchParams>) => void;
   params: BenchParams;
   /** Кого память знает — спрошено у неё же методом `people`. */
@@ -181,6 +186,7 @@ export function BenchControls({
     params.historyOn && params.history.trim() && words.history.label,
     params.priorOn && params.prior.trim() && words.prior.label,
     params.wantChain && words.chain.label,
+    params.thread.trim() && words.thread.label,
     params.scope.some((e) => e.at || e.place) && words.scope.label,
     params.deny.trim() && words.deny.label,
     params.needTable && words.needTable.label,
@@ -264,7 +270,41 @@ export function BenchControls({
         ) : null}
       </Row>
 
-      {/* ④ РЕЗУЛЬТАТЫ ПРЕДЫДУЩИХ ПОИСКОВ */}
+      {/* ④ ПРЕЖНИЙ ПОИСК — ДВЕ РАЗНЫЕ ВЕЩИ В ОДНОМ ОРГАНЕ, И РАЗНИЦА НАЗВАНА.
+          🔒 НИТЬ — НАША СОБСТВЕННАЯ ЦЕПОЧКА РАЗМЫШЛЕНИЯ (184-4). У `claude -p`
+          есть свой разговор со своим именем: память возвращает его в ответе,
+          и присланный обратно он продолжает ту же цепочку — с её кэшем и с её
+          прежним выводом. Измерено: продолжение ДЕШЕВЛЕ нового вызова
+          (0.0289 → 0.0065 → 0.0036), паспорт §18.
+          🔒 СВОБОДНЫЙ ТЕКСТ НАХОДОК ОСТАЁТСЯ РЯДОМ И НЕ ЗАМЕНЯЕТСЯ НИТЬЮ: он для
+          зовущего, у которого нашей нити нет вовсе — чужой модели или службы.
+          Слить их в одно поле значило бы потребовать идентификатор там, где его
+          неоткуда взять. */}
+      <Row hint={words.thread.hint} label={words.thread.label} ok={has("thread")} words={words}>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            aria-label={words.thread.label}
+            className={`${boxClass} max-w-[26rem] font-mono`}
+            onChange={(e) => onChange({ thread: e.target.value })}
+            placeholder={words.thread.placeholder}
+            value={params.thread}
+          />
+          {/* 🔒 КНОПКА СУЩЕСТВУЕТ ПОТОМУ, ЧТО ИДЕНТИФИКАТОР НИКТО НЕ НАБИРАЕТ
+              РУКАМИ: это 36 знаков из ответа службы. Нечего взять — кнопки нет,
+              и это честнее, чем кнопка, которая ничего не делает. */}
+          {lastThread ? (
+            <button
+              className="rounded-md border border-muted-foreground/30 px-2 py-1 text-[length:var(--fs-small)] hover:bg-muted"
+              onClick={() => onChange({ thread: lastThread })}
+              type="button"
+            >
+              {words.thread.take}
+            </button>
+          ) : null}
+        </div>
+      </Row>
+
+      {/* ⑤ РЕЗУЛЬТАТЫ ПРЕДЫДУЩИХ ПОИСКОВ — СВОБОДНЫМ ТЕКСТОМ */}
       <Row hint={words.prior.hint} label={words.prior.label} ok={has("prior")} words={words}>
         <label className="flex items-center gap-2 text-[length:var(--fs-small)]">
           <input

@@ -111,6 +111,11 @@ export function MemoryTest({
   const [peopleLoading, setPeopleLoading] = useState(true);
   const [shots, setShots] = useState<Shot[]>([]);
   const [busy, setBusy] = useState(false);
+  // 🔒 НИТЬ ИЗ ПОСЛЕДНЕГО ОТВЕТА ПАМЯТИ ЖИВЁТ ЗДЕСЬ (184-4). Человек не набирает
+  // руками 36 знаков идентификатора — он берёт их кнопкой. Стенд только помнит
+  // последнюю: выбор нити из истории — это уже реестр нитей, а его никто не
+  // заказывал.
+  const [lastThread, setLastThread] = useState<string | null>(null);
   const nextId = useRef(1);
 
   // 🔒 КОГО ПАМЯТЬ ЗНАЕТ — СПРАШИВАЕМ У НЕЁ ЖЕ, А НЕ ДЕРЖИМ СПИСОК НА ЭКРАНЕ.
@@ -222,6 +227,10 @@ export function MemoryTest({
         status?: number;
         trouble?: string | null;
       };
+      // 🔒 ИМЯ НИТИ ВЫНИМАЕТСЯ ИЗ ОТВЕТА СРАЗУ: оно приходит только там, и
+      // упустив его, продолжить цепочку уже нечем.
+      const gotThread = (answer?.body as { thread?: unknown } | undefined)?.thread;
+      if (typeof gotThread === "string" && gotThread) setLastThread(gotThread);
       setShots((s) => [
         {
           asked,
@@ -300,6 +309,7 @@ export function MemoryTest({
 
       {mode === "raw" ? null : (
         <BenchControls
+          lastThread={lastThread}
           onChange={patch}
           params={params}
           people={people}

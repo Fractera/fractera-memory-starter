@@ -179,6 +179,12 @@ const EN: MemoryUi = {
       },
       setNow: "set",
       supported: "reaches memory",
+      thread: {
+        hint: "Claude keeps its own thread of reasoning, with its own name and its own cache. Memory returns that name in every answer where it thought; send it back and the same thread continues — the model sees its own earlier conclusion, and it costs LESS than a fresh call. Denying a conclusion only makes sense with a thread.",
+        label: "Thread of the earlier reasoning",
+        placeholder: "identifier from a previous answer",
+        take: "take from the last answer",
+      },
       title: "Controls",
       unsupported: "does not reach yet",
       upload: {
@@ -384,6 +390,12 @@ const RU: MemoryUi = {
       },
       setNow: "выставлено",
       supported: "доезжает",
+      thread: {
+        hint: "У Claude есть собственная нить размышления — со своим именем и своим кэшем. Память возвращает это имя в каждом ответе, где думала; пришлите его обратно — и продолжится та же цепочка: модель увидит свой прежний вывод, а стоит это ДЕШЕВЛЕ нового вызова. Опровергать вывод имеет смысл только с нитью.",
+        label: "Нить прежнего разбора",
+        placeholder: "идентификатор из прошлого ответа",
+        take: "взять из последнего ответа",
+      },
       title: "Органы управления",
       unsupported: "пока не доезжает",
       upload: {
