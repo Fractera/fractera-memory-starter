@@ -59,10 +59,20 @@ const table = await call("remember", {
 })
 const t = fate(table.data, "need_table")
 s.say(t?.state === "accepted", "«need_table» принят", t?.state ?? "строки нет")
+// 🔒 ПРОВЕРЯЕТСЯ СОСТОЯНИЕ, А НЕ ДЕЙСТВИЕ: «поднял сейчас» и «уже таблица» —
+// оба исхода означают, что требование исполнено. Прибор, требующий именно
+// подъёма, зелен только на чистой машине и краснеет у того, у кого система уже
+// поработала.
+const promo = table.data?.promoted ?? []
 s.say(
-  Array.isArray(table.data?.promoted) && table.data.promoted.length > 0,
-  "требование исполнено: род поднят в свою таблицу",
-  JSON.stringify(table.data?.promoted ?? []),
+  Array.isArray(promo) && promo.length > 0,
+  "требование исполнено: род живёт своей таблицей",
+  JSON.stringify(promo),
+)
+s.say(
+  promo.every((x) => typeof x.table === "string" && x.table.length > 0),
+  "названа сама таблица, а не только факт исполнения",
+  promo.map((x) => `${x.table}${x.already ? " (уже была)" : " (поднята сейчас)"}`).join(", "),
 )
 
 // ── НЕГАТИВНЫЙ КОНТРОЛЬ: ДАТА НЕ ТОЙ ФОРМЫ ──────────────────────────────────
