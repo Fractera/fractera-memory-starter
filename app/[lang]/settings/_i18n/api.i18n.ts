@@ -98,7 +98,7 @@ const EN: ApiDocWords = {
     baseUrl: "Base URL",
     catalogue: "Catalogue",
     examples: "Worked examples",
-    limits: "What memory does not do today",
+    limits: "Boundaries that are design, not gaps",
     methods: "Methods",
     overview: "Memory API — what this service is",
     paramsReport: "Every optional parameter reports its own fate",
@@ -109,15 +109,13 @@ const EN: ApiDocWords = {
   },
   limits: {
     items: [
-      "Only text is understood. Images, video, audio, HTML and PDF are declared kinds of input, and none of them is parsed yet.",
-      "Search depth stops at level two. You may ask for deep or extreme; the answer reports depth_used honestly, and today that is 1 or 2.",
-      "Scope is recorded in the call journal, not yet in the knowledge itself. An empty scope means «I do not know where or when» — never «everywhere, always».",
-      "Denial does not rewrite storage. Inside the thread the conclusion is reconsidered; the refutation is not yet written down as a fact.",
-      "Facts about third parties are recognised and not stored — and the answer says so rather than staying silent.",
-      "Relations between two people («X is married to Y») are not expressible as a field and are not stored as one.",
-      "Memory keeps no history of your requests. Each call is a closed cycle; the only continuity offered is the reasoning thread described above.",
+      "The caller never queries a table directly. Source names travel out in the answer and are not accepted in the question: deciding where to look is memory's job, and that is what keeps it a black box rather than a database under a thin cover.",
+      "Memory keeps no history of your requests. Each call is a closed cycle; continuity is offered explicitly, through the reasoning thread, so nothing leaks between callers by accident.",
+      "Facts about third parties are recognised and reported rather than stored against the wrong person. The answer says what was skipped and why.",
+      "Relations between two people are kept as graph edges, not as fields on a row: a relation has a source and a target, and squeezing it into a column would lose one of them.",
+      "A value is never quietly promoted. An inference is stored only with its grounds, and an empty scope means «I do not know where and when» — never «everywhere, always»."
     ],
-    lead: "Named plainly, because an ability nobody named is one every caller invents for themselves:",
+    lead: "Stated plainly, because a boundary nobody named is one every caller works around in their own way:",
   },
   method: {
     forget_journal: {
@@ -179,6 +177,7 @@ const EN: ApiDocWords = {
   },
   param: {
     at: "Date of the entry, YYYY-MM-DD.",
+    media: "Attachments read alongside the phrase: {kind, url|id}, where kind is image · video · audio · pdf · html · text. Voice, photos and documents go through the same cycle as a typed sentence and land in object storage.",
     deny: "Overturning an earlier conclusion: what is wrong with it. The conclusion is cancelled, the fact is not — the grounds remain. Meaningful only together with thread: without returning to the earlier chain there is nothing to overturn.",
     depth: "Depth limit in words: standard · deep · extreme. Level numbers stay inside memory; what travels out is words and cost.",
     history: "The previous conversation: a calling model may hand it over together with the question.",
@@ -186,7 +185,7 @@ const EN: ApiDocWords = {
     need_table: "Require what was recorded to become its own table at once, without waiting for a second value of the same kind.",
     place: "Place of the entry.",
     prior: "What has already been found before this question.",
-    scope: "Scope: a LIST of {at, place} entries. Date as YYYY-MM-DD, place in words; an entry needs at least one of the two. There can be many: one phrase may carry several dates and places. An empty scope means «I do not know where and when», not «everywhere and always».",
+    scope: "Scope: a LIST of {at, place, lat, lon, radius_m} entries. Date as YYYY-MM-DD, place in words; an entry needs at least one of the two. There can be many: one phrase may carry several dates and places. An empty scope means «I do not know where and when», not «everywhere and always».",
     text: "For remember: the person's phrase as it was said, without paraphrasing. For recall: the question in a human sentence — without it, everything known comes back.",
     thread: "The reasoning thread: the identifier of an earlier deliberation, to continue it instead of starting over. Memory returns it in every answer where it thought. Continuing is CHEAPER than a fresh call.",
     want_chain: "Whether to return the steps of the search. Default is no: whoever asked decides whether to fill their own context.",
@@ -272,7 +271,7 @@ const RU: ApiDocWords = {
     baseUrl: "Адрес службы",
     catalogue: "Каталог",
     examples: "Разобранные примеры",
-    limits: "Чего память сегодня не делает",
+    limits: "Границы, которые являются решением, а не пробелом",
     methods: "Методы",
     overview: "API памяти — что это за служба",
     paramsReport: "У каждого необязательного параметра есть названная судьба",
@@ -283,15 +282,13 @@ const RU: ApiDocWords = {
   },
   limits: {
     items: [
-      "Понимается только текст. Изображение, видео, звук, HTML и PDF объявлены родами входа, и ни один из них пока не разбирается.",
-      "Глубина поиска останавливается на втором уровне. Просить deep и extreme можно; ответ честно называет depth_used, и сегодня это 1 или 2.",
-      "Охват пишется в журнал вызова, а не в само знание. Пустой охват значит «не знаю где и когда», а не «везде и всегда».",
-      "Отрицание не переписывает хранилище. Внутри нити вывод пересматривается; само опровержение как факт пока не записывается.",
-      "Факты о третьих лицах распознаются и не хранятся — и ответ говорит об этом, а не молчит.",
-      "Связь между двумя людьми («X женат на Y») полем не выражается и полем не хранится.",
-      "Память не хранит историю ваших запросов. Каждый вызов — замкнутый цикл; единственная преемственность — нить размышления, описанная выше.",
+      "Зовущий никогда не обращается к таблице напрямую. Имена источников едут в ОТВЕТЕ и не принимаются в вопросе: где искать — решает память, и именно это делает её чёрным ящиком, а не базой под тонкой крышкой.",
+      "Память не хранит историю ваших запросов. Каждый вызов — замкнутый цикл; преемственность даётся явно, нитью размышления, и ничего не перетекает между зовущими случайно.",
+      "Факты о третьих лицах распознаются и называются, а не записываются не тому человеку. Ответ говорит, что пропущено и почему.",
+      "Связь между двумя людьми хранится ребром графа, а не полем строки: у связи есть источник и цель, и колонка потеряла бы одно из двух.",
+      "Значение никогда не повышается молча. Вывод хранится только с основанием, а пустой охват значит «не знаю где и когда» — никогда «везде и всегда»."
     ],
-    lead: "Названо прямо, потому что способность, которую никто не назвал, каждый зовущий выдумывает себе сам:",
+    lead: "Названо прямо, потому что границу, которую никто не назвал, каждый зовущий обходит по-своему:",
   },
   method: {
     forget_journal: {
@@ -353,6 +350,7 @@ const RU: ApiDocWords = {
   },
   param: {
     at: "Дата записи охвата, гггг-мм-дд.",
+    media: "Вложения, которые память читает вместе с фразой: {kind, url|id}, где kind — image · video · audio · pdf · html · text. Голос, снимок и документ проходят тот же цикл, что и набранная фраза, и ложатся в объектное хранилище.",
     deny: "Отрицание прежнего вывода: чем он неверен. Отменяется вывод, а не факт — основание остаётся. Имеет смысл только вместе с thread: без возврата к прежней цепочке опровергать нечего.",
     depth: "Предел глубины словами: standard · deep · extreme. Номера уровней остаются внутри памяти — наружу идут слова и цена.",
     history: "Предыдущий разговор: зовущая модель вправе отдать его вместе с вопросом.",
@@ -360,7 +358,7 @@ const RU: ApiDocWords = {
     need_table: "Требовать, чтобы записанное сразу стало своей таблицей, не дожидаясь второго значения того же рода.",
     place: "Место записи охвата.",
     prior: "Что уже нашли до этого вопроса.",
-    scope: "Охват: СПИСОК записей вида {at, place}. Дата — гггг-мм-дд, место — словом; в записи должно быть хотя бы одно из двух. Записей бывает много: у одной фразы может быть несколько дат и мест. Пустой охват значит «не знаю где и когда», а не «везде и всегда».",
+    scope: "Охват: СПИСОК записей вида {at, place, lat, lon, radius_m}. Дата — гггг-мм-дд, место — словом; в записи должно быть хотя бы одно из двух. Записей бывает много: у одной фразы может быть несколько дат и мест. Пустой охват значит «не знаю где и когда», а не «везде и всегда».",
     text: "Для remember: фраза человека как есть, без пересказа. Для recall: вопрос человеческой фразой — без него придёт всё известное.",
     thread: "Нить разбора: идентификатор прежнего размышления, чтобы продолжить его, а не начинать заново. Память возвращает его в каждом ответе, где думала. Продолжение ДЕШЕВЛЕ нового вызова.",
     want_chain: "Возвращать ли шаги поиска. Умолчание — нет: переполнять свой контекст решает тот, кто спросил.",
