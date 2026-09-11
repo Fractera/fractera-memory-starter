@@ -34,6 +34,8 @@ ${w.hero.lead}
 - [${w.hero.title}](${page}): the landing page of this instance
 - [Passport](${urlFor(base, lang, "/passport")}): the full design document, public
 - [API reference](${urlFor(base, lang, "/settings?section=api")}): generated from the live contract
+- [This page in Markdown](${urlFor(base, lang, "/index.md")}): the whole landing as plain text, no markup
+- [Passport in Markdown](${urlFor(base, lang, "/passport/index.md")}): the design document as it is written
 - [Machine contract](${base}/v1/contract): the authoritative machine-readable interface
 - [Health](${base}/v1/health): liveness, contract version, name-quality figure
 - [Capability manifest](https://github.com/Fractera/fractera-memory-starter/blob/main/capabilities.json)

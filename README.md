@@ -7,6 +7,11 @@ that answers without any LLM when no LLM is needed · bounded deep reasoning tha
 nobody wrote down · and a self-evolving skill core that **A/B split-tests its own candidates** before
 promoting them.
 
+Built to act as the architect's personal command centre — through a Telegram bot, a web chat or
+anything else that speaks HTTP — it closes the gap between a volatile context window and real
+cognitive continuity. A factual lookup comes back in **under 10 ms for zero tokens**; a question that
+once took a minute of deep research is answered **in about 0.2 s** the second time it is asked.
+
 It ships **with its own web console** — passport, API reference with key generation, a live
 playground, the work journal and settings — wired up and working from the first minute. The console
 is a microservice of its own: use it, or ignore it and drive the engine head-first through the REST
@@ -114,8 +119,9 @@ and its place behind nginx, wires it into the machine's secret store, issues cer
 under the process manager. Minutes after you order a server you have a running memory engine with its
 own pages, its own contract and its own key.
 
-Prefer to do it yourself? It is an ordinary Node service in this repository — clone it, give it a
-database, run it. Nothing here phones home.
+That is the whole of it: one run of the robot brings up every microservice of the platform, memory
+included. There is nothing to assemble by hand and no command on this page to copy — a command
+printed in a readme lives its own life and goes stale silently.
 
 ## Quick start
 
@@ -275,6 +281,16 @@ Every value carries its kind: `said` — the person stated it; `guess` — the e
 inference is stored **only with its basis**, because a guess without its grounds becomes
 indistinguishable from testimony within a week.
 
+## Knowledge becomes an object, not a paragraph
+
+Asked to summarise complex data — last month's spending, a project's state — the engine does not hand
+back a wall of text. It builds the thing you asked for:
+
+1. **Instantiates a structured entity**: a typed table with the columns the answer needs.
+2. **Compiles, sorts and formats a clean Markdown artifact**, assigned its own **Object ID**.
+3. **Returns a short executive summary next to the artifact**, so the answer reads well and the
+   detail stays referenceable.
+
 ## Threads of reasoning — and why continuing one is cheaper
 
 Every answer in which the engine thought carries `thread`; send it back and the same chain continues,
@@ -291,6 +307,34 @@ Continuing a thread is **eight times cheaper** than restating context in a fresh
 This is what makes `deny` meaningful: overturning a conclusion only matters if you can return to the
 reasoning that produced it. The conclusion is withdrawn, the grounds are kept, and the refuted
 hypothesis stays on record so the same search does not reproduce it tomorrow.
+
+## The memoization loop: the slow answer becomes the fast one
+
+Nothing expensive is paid for twice:
+
+1. An expensive computation or research loop runs at level 4 or 5.
+2. An artifact is created with its ID, alongside a concise conclusion.
+3. The conclusion is indexed into the vector store, the knowledge graph and the tables.
+4. Repeat questions are answered **in about 0.2 s at levels 1–3, for zero tokens**.
+
+A computed table and the output of deep research are the same case, not two.
+
+## The evolution core: skills that improve themselves under A/B testing
+
+After every cycle the engine records the facts of the run: how deep it went, how many model turns,
+how many seconds, what kind of answer came out, which skills and tools were called. These are data,
+not impressions.
+
+When it detects a repeated miss, it writes a **second version of the skill next to the working one**
+and runs it as a **challenger in the shadow** — on real traffic, while people keep being answered by
+the **champion**. Three rules hold it together:
+
+- **No self-evaluation.** The verdict comes from whoever asked — a human or the calling model. A
+  model retelling its own work errs in its own favour, and the design refuses to rely on that.
+- **Deterministic promotion.** A challenger becomes champion only when it wins on external quality
+  and regresses on neither speed nor cost — measured per case, per tool, per version and per scope.
+- **Versioning and safe rollback.** Every modification is a commit, and one click returns the
+  instructions to the baseline version without touching the accumulated data.
 
 ## Everything it did is written down
 
@@ -312,6 +356,10 @@ It is not a demo page: it is how you operate the memory day to day.
 | **Settings · Subscription** | keys and switches of the service itself |
 | **Terminal** | a live shell into the service for the people who own the machine |
 
+**What the playground is for**, in three lines: execute direct API requests against the memory core
+with no front-end abstraction in the way; inspect raw JSON payloads, execution timings and exact
+model token usage; verify the request body before committing a line of client code.
+
 **The playground deserves its own paragraph.** Its controls mirror the API one to one — depth in
 plain words, conversation history, previous findings, the reasoning thread with a button that lifts
 the identifier from the last answer, the denial field, scope as cards with *«add an entry»*, the
@@ -322,6 +370,31 @@ eventually asks — did the service ignore my parameter, or did my client never 
 **And all of it is optional.** The console is a microservice beside the engine, not a layer in front
 of it: nothing in the API path depends on it, and an installation that never opens a browser behaves
 identically.
+
+## How it compares
+
+Two comparisons: one against the categories of memory tooling, one against a ready-made assistant
+built on a different philosophy.
+
+| Capability | **Fractera Memory** | Standard RAG frameworks | MemGPT / Letta | Mem0 / Zep |
+|---|---|---|---|---|
+| Storage architecture | Hybrid: graph + vector + relational + object store | Vector DB only | Relational / text files | Vector plus a basic graph |
+| Zero-token reads | Yes — deterministic paths at levels 1–3 | No | No | Partial |
+| Native multimodality | Built in: audio, video, PDF, images | Requires external parsers | Requires external parsers | Text focused |
+| Spatial proximity indexing | Native lat/lon radius search | Text matching only | Function calling only | Basic metadata |
+| Skill evolution | Champion / challenger A/B testing | None | Manual prompt edits | None |
+| Self-hosted / open source | 100% on-premise, single node | Varies | Yes | Freemium / cloud |
+
+| Feature | **Fractera Memory** | IVA Agent (`smixs/iva-agent`) |
+|---|---|---|
+| System classification | An autonomous memory engine behind an API, for any front-end | An end-to-end Telegram assistant tied to an Obsidian vault |
+| Architecture | A decoupled microservice; the Telegram bot is an optional client | A monolith: Telegram, userbot and vault manager in one codebase |
+| Cost optimisation | A five-tier deterministic router; instant zero-token reads | Every operation leans on model passes, BM25 and vector lookups |
+| Multimodality | Built-in object storage, transcription, OCR, PDF and video pipelines | Audio transcription and plain text handling |
+| Geolocation | Native lat/lon plus radius_m proximity search | None; dates and places are unstructured text |
+| Data processing | Dynamic SQL tables, structured artifacts with IDs, knowledge graph | Markdown cards written to a folder for Obsidian to sync |
+| System evolution | Shadow A/B testing with external verdicts | None; execution logic is fixed in prompt files |
+| Integrations | Many front-ends at once over one REST API | Bound to one Telegram account and an Obsidian setup |
 
 ## Boundaries that are design, not gaps
 
@@ -337,6 +410,46 @@ identically.
 
 ---
 
+## Questions and answers
+
+**Does every request cost tokens?**
+No. Levels 1 to 3 are answered without a model at all: a direct lookup, a graph traversal, a
+conclusion already folded back into the stores. A model turn is spent only when the cheap
+deterministic paths return nothing, and the answer reports `depth_used` so you can see what you paid
+for.
+
+**Can it answer questions about a place by coordinates, not by a word?**
+Yes. A scope entry carries `lat`, `lon` and an optional `radius_m`, and the coordinates are spatially
+indexed. You can ask what you know within 500 metres of a point, and knowledge recorded in Madrid
+never merges with knowledge recorded in London.
+
+**What can I send besides text?**
+Voice notes, images, video, PDF and HTML. The pipeline lives inside the engine: audio is transcribed,
+images are captioned and read by OCR, video has its track transcribed and its key frames captioned,
+PDFs are parsed with an OCR fallback. The original binary stays in the built-in object store and is
+referenced from answers by id.
+
+**What schema do I have to design first?**
+None. You send a sentence. The engine adds columns as new kinds of fact appear and generates typed
+relational tables when a kind grows into an entity. There are no migrations to write.
+
+**What happens after an expensive research run?**
+It folds the result back — artifact, summary, vector store, knowledge graph, relation tables — and
+the same question is then answered from the cheap levels in fractions of a second.
+
+**How does it improve itself without breaking what works?**
+It writes a second version of the skill and runs it as a challenger in the shadow, on real traffic,
+while people keep being answered by the champion. Promotion needs an external verdict and no
+regression in cost: the engine is never allowed to grade its own work.
+
+**What can I connect to it?**
+Any HTTP client: a Telegram bot, a web chat, a mobile app, a scheduled job. The bundled console is
+optional — nothing in the API path depends on it.
+
+**Where does my data live?**
+On your server, in your database, in your object store, behind a key you can revoke in one click.
+There is no metered API in the middle and no telemetry leaving the machine.
+
 ## Privacy and ownership
 
 The engine runs on **your** server, stores its data in **your** database, keeps artefacts in **your**
@@ -346,5 +459,8 @@ single click.
 
 ## Licence and contact
 
-Open source, part of the Fractera platform. Fork it, read it, change it. Commercial enquiries:
-`admin@fractera.ai`.
+Fractera Memory is one microservice of the **Fractera platform** — the engineering infrastructure
+for autonomous agents:
+[github.com/Fractera/Agentic-Engineering-Infrastructure](https://github.com/Fractera/Agentic-Engineering-Infrastructure).
+
+Open source. Fork it, read it, change it. Commercial enquiries: `admin@fractera.ai`.

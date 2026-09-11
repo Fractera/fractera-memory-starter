@@ -48,7 +48,14 @@ export async function generateMetadata({
   const url = urlFor(base, lang);
 
   return {
-    alternates: { canonical: url, languages: languageAlternates(base) },
+    // 🔒 ЗЕРКАЛО ОБЪЯВЛЕНО В МЕТЕ, А НЕ ТОЛЬКО В КАРТЕ (186-3): агент, пришедший
+    // на страницу напрямую, находит markdown-версию прямо в её заголовке и не
+    // платит ходами за разбор разметки.
+    alternates: {
+      canonical: url,
+      languages: languageAlternates(base),
+      types: { "text/markdown": `${url}/index.md` },
+    },
     description: w.seo.description,
     metadataBase: new URL(base),
     openGraph: {
