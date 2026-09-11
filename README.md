@@ -7,7 +7,10 @@ that answers without any LLM when no LLM is needed · bounded deep reasoning tha
 nobody wrote down · and a self-evolving skill core that **A/B split-tests its own candidates** before
 promoting them.
 
-One REST API. Your server. Your data. No per-request fees to anyone.
+It ships **with its own web console** — passport, API reference with key generation, a live
+playground, the work journal and settings — wired up and working from the first minute. The console
+is a microservice of its own: use it, or ignore it and drive the engine head-first through the REST
+API. Your server. Your data. No per-request fees to anyone.
 
 ---
 
@@ -82,7 +85,7 @@ instance.
 
 | What you need | How this engine does it |
 |---|---|
-| **Any front-end — Telegram today, a web chat or mobile app tomorrow** | One REST API and no interface of its own. Every client is just a caller with a key; an agent's tool schema is generated from `GET /v1/contract` over HTTP, so a new front-end is wired in minutes. |
+| **Any front-end — Telegram today, a web chat or mobile app tomorrow** | A working web console comes in the box and is already connected; every other client — a Telegram bot, a web widget, a mobile app, a cron job — attaches to the same REST API as a caller with a key. An agent's tool schema is generated from `GET /v1/contract` over HTTP, so a new front-end is wired in minutes. |
 | **Decisions and actions, not hints** | Answers carry the conclusion, its source table, the kind of claim (said or inferred), the grounds, and the reasoning chain. Conclusions that imply a next step become scheduled follow-ups. |
 | **Video, images, PDF, audio** | Native, with the pipeline and the object store inside — see §1 above. |
 | **Geolocation, and dates when they matter** | Spatial-temporal scope with `lat`/`lon`, `radius_m` and `at`, spatially indexed — see §2 above. |
@@ -96,8 +99,11 @@ instance.
 | **A knowledge graph updated on write, nearly free on read** | Exactly the design: entities and links are built as facts arrive, and on read the graph is queried in context mode — **no model turn** — so the cheap path stays cheap. |
 | **Open source, modifiable by hand** | This repository is the whole service: contract, verbs, stores, pages. Every design decision is written down next to the code that implements it. |
 
-**What you still build yourself: the front-end you want, and nothing else.** This engine does not ship
-a Telegram bot, because it is not an interface — it is the memory an interface talks to.
+**What comes with it, and what stays yours.** The console ships connected: you sign in and you are
+already talking to memory, generating keys, reading the journal, watching what each call cost. What
+stays yours is the **product** front-end — the Telegram bot, the web chat, the mobile app your users
+actually touch. The engine does not impose one, and it does not need one: the console is a separate
+microservice, and the engine runs perfectly well with it switched off.
 
 ---
 
@@ -292,13 +298,30 @@ The journal records every call — what came in, what the model returned, what w
 dropped and why**, what went out, how long it took. A human reads it on the Journal page; an agent
 reads the same document as a file.
 
-## The bench
+## The console that comes with it
 
-The service ships with a playground at `/{lang}/settings?section=memory-test`, where a human talks to
-memory directly — no agent in the chain — and sees the raw answer with the time it took. Its controls
-mirror the API one to one, and above the send button it shows **the exact request body about to
-leave**: the single panel that answers the question every integration eventually asks — did the
-service ignore my parameter, or did my client never send it?
+The engine ships with its own web interface, already wired up and protected by role-based sign-in.
+It is not a demo page: it is how you operate the memory day to day.
+
+| Screen | What it is for |
+|---|---|
+| **Passport** | the full design of the engine, read from disk on every request — edit the document, reload, see it |
+| **API** | this reference, generated from the live contract, with the **Generate access key** button |
+| **Playground** | talk to memory with nothing in between and see the raw answer with its timing |
+| **Journal** | what memory did: what arrived, what was decided, what was dropped and why |
+| **Settings · Subscription** | keys and switches of the service itself |
+| **Terminal** | a live shell into the service for the people who own the machine |
+
+**The playground deserves its own paragraph.** Its controls mirror the API one to one — depth in
+plain words, conversation history, previous findings, the reasoning thread with a button that lifts
+the identifier from the last answer, the denial field, scope as cards with *«add an entry»*, the
+demand for a table, uploads for everything that is not text. Above the send button it shows **the
+exact request body about to leave**: the single panel that answers the question every integration
+eventually asks — did the service ignore my parameter, or did my client never send it?
+
+**And all of it is optional.** The console is a microservice beside the engine, not a layer in front
+of it: nothing in the API path depends on it, and an installation that never opens a browser behaves
+identically.
 
 ## Boundaries that are design, not gaps
 
