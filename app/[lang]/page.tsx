@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Landing } from "./_components/landing";
 import { landingWords } from "./_i18n/landing.i18n";
 import { languageAlternates, origin, urlFor } from "@/lib/seo";
@@ -64,7 +65,23 @@ export async function generateMetadata({
   };
 }
 
-export default async function MemoryHome({ params }: { params: Promise<{ lang: string }> }) {
+// ✗ ГРАНИЦА ОЖИДАНИЯ ЗДЕСЬ ОПЛАЧЕНА СБОРКОЙ, И ЭТО ТРЕТИЙ РАЗ ЗА ДЕНЬ.
+// Страница читает заголовки запроса — адрес экземпляра нужен и разметке, и
+// каноническому адресу, — а под `cacheComponents` обращение к запросу живёт
+// только под `<Suspense>`. Первая версия читала их в теле: «Error occurred
+// prerendering page /ru», и сборка не дала дерева вовсе.
+// 🔒 ПРАВИЛО ШИРЕ СЛУЧАЯ: приём, скопированный с соседней страницы, приносит с
+// собой и условие, при котором сосед его применяет. У настроек тело уже под
+// Suspense, поэтому там это незаметно.
+export default function MemoryHome(props: { params: Promise<{ lang: string }> }) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <MemoryHomeBody {...props} />
+    </Suspense>
+  );
+}
+
+async function MemoryHomeBody({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
   const base = await origin();
   return <Landing base={base} lang={lang} />;
