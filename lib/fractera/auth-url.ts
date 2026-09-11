@@ -105,3 +105,14 @@ export function publicMemoryUrl(host: string, proto: string): string {
   if (!host) return "http://127.0.0.1:3700";
   return `${proto}://${host}`;
 }
+
+/**
+ * Публичный адрес соседней службы — служба чата (186-4).
+ *
+ * 🔒 ТОТ ЖЕ ВЫВОД, ЧТО У ВХОДА И У САЙТА, И ЖИВЁТ ОН ЗДЕСЬ ЖЕ: два места,
+ * считающие один адрес, расходятся так, что одна половина продолжает работать.
+ * 🛑 Пустая строка — законный ответ: подвал тогда не рисует ссылку вовсе.
+ */
+export function publicChatUrl(host: string, proto: string): string {
+  return siblingByHost(host, proto, "chat.", "3600");
+}

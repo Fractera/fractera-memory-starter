@@ -9,6 +9,8 @@
 // смешивать две правки в одной.
 
 export type ShellUi = {
+  /** Имя соседней службы в верхнем блоке подвала (186-4). */
+  chatService: string;
   rights: string
   /** Подпись кнопки навигации в шапке — ведёт в настройки проекта. */
   settings: string;
@@ -21,6 +23,7 @@ const UI: Record<string, ShellUi> = {
   en: {
     dark: "Theme: dark",
     light: "Theme: light",
+    chatService: "Chat service",
     rights: "All rights reserved.",
     settings: "Settings",
     system: "Theme: system",
@@ -28,6 +31,7 @@ const UI: Record<string, ShellUi> = {
   es: {
     dark: "Tema: oscuro",
     light: "Tema: claro",
+    chatService: "Servicio de chat",
     rights: "Todos los derechos reservados.",
     settings: "Ajustes",
     system: "Tema: sistema",
@@ -35,6 +39,7 @@ const UI: Record<string, ShellUi> = {
   ru: {
     dark: "Тема: тёмная",
     light: "Тема: светлая",
+    chatService: "Служба чата",
     rights: "Все права защищены.",
     settings: "Настройки",
     system: "Тема: системная",
