@@ -51,7 +51,11 @@ const byBearer = await knock({ authorization: `Bearer ${first}` })
 s.say(byBearer.status === 200, "тот же ключ открывает как Bearer", String(byBearer.status))
 
 // ── ④ НЕГАТИВНЫЙ КОНТРОЛЬ: ЧУЖОЙ КЛЮЧ ────────────────────────────────────────
-const wrong = await knock({ "x-memory-key": "fmk_этого-ключа-не-существует" })
+// 🛑 ЗНАЧЕНИЕ ЗАГОЛОВКА — ТОЛЬКО ASCII, И ЭТО НЕ ПРИДИРКА СТИЛЯ. ✗ оплачено
+// первым прогоном: кириллический «ключ» уронил сам прибор изнутри fetch
+// («Cannot convert argument to a ByteString»), то есть замер не состоялся вовсе,
+// а выглядело это как отказ способности.
+const wrong = await knock({ "x-memory-key": "fmk_this-key-does-not-exist" })
 s.say(wrong.status === 401, "НЕГАТИВНЫЙ: чужой ключ не открывает", String(wrong.status))
 
 // ── ⑤ НЕГАТИВНЫЙ КОНТРОЛЬ: НОВЫЙ КЛЮЧ ОТМЕНЯЕТ ПРЕЖНИЙ ───────────────────────
