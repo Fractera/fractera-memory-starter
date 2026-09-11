@@ -15,6 +15,7 @@ import type { MemorySection } from "../_lib/memory-sections";
 import type { OpenAiKeyWords } from "../_components/openai-key";
 import type { OpenAiTabWords } from "../_components/openai-tab";
 import type { BenchControlWords } from "../_components/memory-test-controls.client";
+import type { ApiKeyWords } from "../_components/api-key.client";
 
 export type MemoryUi = {
   title: string;
@@ -31,6 +32,8 @@ export type MemoryUi = {
   /** Объяснение вкладки «Подписка OpenAI» простыми словами (181-1). */
   openaiTab: OpenAiTabWords;
   pages: Record<MemorySection, { title: string; hint: string }>;
+  /** Слова карточки ключа доступа — форму задаёт сама карточка (185). */
+  apiKey: ApiKeyWords;
   memoryTest: {
     lead: string;
     say: string;
@@ -89,6 +92,25 @@ export type MemoryUi = {
 };
 
 const EN: MemoryUi = {
+  // 🔒 СЛОВА КАРТОЧКИ КЛЮЧА — ЕДИНСТВЕННОЕ РУССКОЕ МЕСТО ВКЛАДКИ API, И ТОЛЬКО
+  // ПОТОМУ, ЧТО ЭТО ОРГАН УПРАВЛЕНИЯ, А НЕ ДОКУМЕНТАЦИЯ: на кнопку нажимает
+  // человек, документацию читает машина.
+  apiKey: {
+    copied: "Copied",
+    copy: "Copy",
+    exists: "current key",
+    failed: "The key was not created",
+    generate: "Generate access key",
+    lead:
+      "One key for reading and writing. It is stored on this machine only, checked on every call, and never leaves the server except here, once, at the moment you create it.",
+    missing: "no key yet",
+    regenerate: "Generate a new key",
+    shownOnce: "Copy it now — this is the only time the full key is shown.",
+    title: "Access key",
+    warning:
+      "Generating a new key revokes the current one immediately. Anything already using it stops working at that moment — there is no separate revoke button, because this is the same action.",
+    working: "Working…",
+  },
   journal: {
     bytes: "bytes",
     clear: "Clear history — erases for good",
@@ -285,6 +307,10 @@ const EN: MemoryUi = {
       hint: "Keys and switches of this service. The Anthropic key here is the same one the chat uses: it lives in the machine secret store.",
       title: "Settings",
     },
+    api: {
+      hint: "How external tools talk to this memory: the key, the methods, the limits — and how to test it in Postman.",
+      title: "API",
+    },
     "memory-test": {
       hint: "Send a phrase straight to memory and see its answer — no agent in the chain.",
       title: "Memory test",
@@ -300,6 +326,22 @@ const EN: MemoryUi = {
 };
 
 const RU: MemoryUi = {
+  apiKey: {
+    copied: "Скопировано",
+    copy: "Копировать",
+    exists: "текущий ключ",
+    failed: "Ключ не создан",
+    generate: "Сгенерировать ключ доступа",
+    lead:
+      "Один ключ на чтение и запись. Он хранится только на этой машине, проверяется при каждом вызове и покидает сервер ровно один раз — здесь, в момент создания.",
+    missing: "ключа ещё нет",
+    regenerate: "Сгенерировать новый ключ",
+    shownOnce: "Скопируйте сейчас — полностью ключ показывается только этот раз.",
+    title: "Ключ доступа",
+    warning:
+      "Новый ключ отменяет прежний немедленно. Всё, что уже им пользуется, перестанет работать в тот же миг — отдельной кнопки «отозвать» нет, потому что это одно и то же действие.",
+    working: "Создаю…",
+  },
   journal: {
     bytes: "байт",
     clear: "Очистить историю — стирает насовсем",
@@ -494,6 +536,10 @@ const RU: MemoryUi = {
     settings: {
       hint: "Ключи и выключатели самой службы. Ключ Anthropic здесь тот же, что у чата: он лежит в складе секретов машины.",
       title: "Настройки",
+    },
+    api: {
+      hint: "Как внешние инструменты работают с этой памятью: ключ, методы, пределы — и как проверить это в Postman.",
+      title: "API",
     },
     "memory-test": {
       hint: "Отправьте фразу прямо в память и посмотрите её ответ — агента в цепочке нет.",

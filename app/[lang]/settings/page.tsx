@@ -10,6 +10,7 @@ import { JournalView } from "./_components/journal-view.client";
 import { OpenAiTab } from "./_components/openai-tab";
 import { AnthropicKeySection } from "./_components/anthropic-key";
 import { PassportBody } from "./_components/passport-body.client";
+import { ApiDoc } from "./_components/api-doc";
 import { memoryUi } from "./_i18n/memory.i18n";
 import {
   hrefOfMemorySection,
@@ -57,6 +58,20 @@ export function generateStaticParams() {
  * проекте такое оплачено пять раз за две недели, и дважды автором закона об
  * этом. Растёт договор — метки на экране меняются сами, без правки страницы.
  */
+/**
+ * Внешний адрес службы для примеров вкладки API (185).
+ *
+ * 🔒 БЕРЁТСЯ ИЗ ОКРУЖЕНИЯ МАШИНЫ, А НЕ ПИШЕТСЯ КОНСТАНТОЙ. Домен у каждого
+ * сервера свой; зашитый адрес отправил бы чужого человека на нашу машину —
+ * и он бы не понял, почему ключ не подходит.
+ * 🛑 УМОЛЧАНИЕ — ПЕТЛЯ, И ЭТО ЧЕСТНО: пока домен не назван, снаружи службы
+ * и правда нет. Обещать адрес, которого нет, хуже, чем показать локальный.
+ */
+function memoryBase(): string {
+  const named = process.env.MEMORY_PUBLIC_URL ?? process.env.NEXT_PUBLIC_MEMORY_URL ?? "";
+  return named.replace(/\/+$/, "") || "http://127.0.0.1:3700";
+}
+
 function supportedParams(): { recall: string[]; remember: string[] } {
   const of = (name: string) =>
     (METHODS.find((m) => m.name === name)?.params ?? []).map((p) => p.name);
@@ -187,6 +202,12 @@ async function MemoryPageBody({
                 testWords={ui.memoryTest}
               />
             )}
+
+            {/* 🔒 ВКЛАДКА API — ДОКУМЕНТАЦИЯ ДЛЯ ВНЕШНИХ ИНСТРУМЕНТОВ (185).
+                Адрес службы считается ОДИН раз здесь и уезжает пропсом: в
+                примерах и в инструкции Postman должен стоять тот адрес, по
+                которому человек реально придёт, а не выдуманный образец. */}
+            {active === "api" && <ApiDoc base={memoryBase()} keyWords={ui.apiKey} lang={lang} />}
 
             {active === "journal" && <JournalView words={ui.journal} />}
 

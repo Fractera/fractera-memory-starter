@@ -69,6 +69,10 @@ import { forget_journal, journal } from "./lib/journal-verbs.mjs"
 // журнала. Проверку сессии для Next делает `lib/session-http.ts`.
 import { describeTable, listTables, nameQuality } from "./lib/catalogue.mjs"
 import { isSafeName } from "./lib/naming.mjs"
+// 🔒 КЛЮЧ ВНЕШНИХ ИНСТРУМЕНТОВ ЧИТАЕТСЯ С ДИСКА НА КАЖДОМ ЗАПРОСЕ (185): новый
+// ключ начинает работать сразу, без перезапуска службы. Иначе кнопка «отозвать»
+// не отзывала бы ничего до ближайшего `pm2 reload`.
+import { keyMatches } from "./lib/api-key.mjs"
 
 const PORT = Number(process.env.PORT ?? 3700)
 const HOST = process.env.MEMORY_HOST ?? "127.0.0.1"
@@ -118,6 +122,16 @@ function allowed(req, path) {
   // есть секрет машины и нет кук. Страницы открывает ЧЕЛОВЕК — у него есть куки
   // и нет секрета. Один замок на обоих закрывает дверь тому, для кого её строили.
   if (!path.startsWith("/v1/")) return true
+  // 🔒 ДВА КЛЮЧА, ДВА РАЗНЫХ ПРЕДЪЯВИТЕЛЯ (185). Секрет машины `DATA_SECRET` —
+  // для СВОИХ процессов на этом сервере; ключ памяти `x-memory-key` — для
+  // ЧУЖИХ инструментов снаружи. Разница не в силе, а в отзыве: чужой ключ
+  // отзывается одной кнопкой и касается только памяти, а секрет машины отозвать
+  // нельзя, не сломав половину сервера.
+  // 🔒 `Authorization: Bearer <ключ>` принимается наравне: так его шлёт всё, что
+  // умеет HTTP, и требовать своё имя заголовка значило бы усложнять жизнь
+  // каждому клиенту ради нашего вкуса.
+  const bearer = String(req.headers.authorization ?? "").replace(/^Bearer\s+/i, "")
+  if (keyMatches(req.headers["x-memory-key"]) || keyMatches(bearer)) return true
   if (!SECRET) return false
   return req.headers["x-data-secret"] === SECRET
 }
