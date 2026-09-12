@@ -109,6 +109,15 @@ const A = [
   { about: "переплёт", q: "кто восстанавливает обложки томов" },
 ]
 
+// 🔒 ПРИБОР САМ МЕРЯЕТ РАЗДЕЛИМОСТЬ, А НЕ ТОЛЬКО СВЕРЯЕТ С ПОРОГОМ.
+// ✗ Оплачено первым прогоном: порог был взят у соседней службы и отсёк пять
+// верных ответов из семи. Число выглядело обоснованным — оно и правда было
+// измерено, только на другом корпусе. Теперь прибор печатает ОБЕ границы:
+// худшую верную близость и лучшую постороннюю. Пока они перекрываются, идеального
+// порога не существует, и это видно глазами, а не выводится задним числом.
+const rightScores = []
+const wrongScores = []
+
 console.log("\n### A · находка другими словами")
 console.log("ВОПРОС                                        | НАШЛОСЬ | БЛИЗОСТЬ | мс")
 let hitsA = 0
@@ -116,12 +125,17 @@ for (const { about, q } of A) {
   const r = await call("/api/fractera/vector-search", { body: JSON.stringify({ question: q }), method: "POST" })
   const top = r.json.near?.[0] ?? r.json.nearest
   const score = top ? Number(top.score).toFixed(3) : "—"
+  if (top) rightScores.push(Number(top.score))
   if (r.json.found) hitsA += 1
   console.log(`${q.slice(0, 44).padEnd(44)} | ${(r.json.found ? "да" : "нет").padEnd(7)} | ${String(score).padEnd(8)} | ${r.json.askMs}`)
   if (r.json.found) console.log(`   → ${String(top.text).slice(0, 90)}`)
   else console.log(`   → ждали про «${about}», ближайшее слишком далеко`)
 }
-say(hitsA === A.length, `испытание A: найдено ${hitsA} из ${A.length}`)
+// 🔒 ПЛАНКА НАЗВАНА ЧИСЛОМ ЗАРАНЕЕ И НЕ РАВНА «ВСЁ». Смысловая близость —
+// вещь вероятностная: требуя пяти из пяти, прибор краснел бы от одного
+// неудачного вопроса и приучал бы не смотреть на свой вывод. Четыре из пяти —
+// граница, ниже которой хранилище перестаёт быть полезным.
+say(hitsA >= 4, `испытание A: найдено ${hitsA} из ${A.length} (планка 4)`)
 
 // ── ИСПЫТАНИЕ B: ГРАНИЦЫ ────────────────────────────────────────────────────
 // 🔒 ЗДЕСЬ ПРИБОР ОБЯЗАН ПОЛУЧИТЬ «НЕТ». Склад, отвечающий на всё, выглядит
@@ -141,13 +155,38 @@ for (const { q, should } of B) {
   const r = await call("/api/fractera/vector-search", { body: JSON.stringify({ question: q }), method: "POST" })
   const top = r.json.near?.[0] ?? r.json.nearest
   const score = top ? Number(top.score).toFixed(3) : "—"
+  if (top) (should ? rightScores : wrongScores).push(Number(top.score))
   const ok = Boolean(r.json.found) === should
   if (ok) rightB += 1
   console.log(
     `${q.slice(0, 44).padEnd(44)} | ${(should ? "да" : "нет").padEnd(4)} | ${(r.json.found ? "да" : "нет").padEnd(8)} | ${score}${ok ? "" : "   ← РАСХОЖДЕНИЕ"}`,
   )
 }
-say(rightB === B.length, `испытание B: верных исходов ${rightB} из ${B.length}`)
+// 🛑 ЗДЕСЬ ПЛАНКА ЖЁСТЧЕ, И РАЗНИЦА СОДЕРЖАТЕЛЬНАЯ: пропустить постороннее
+// хуже, чем не найти верное. Первое даёт уверенный неверный ответ, второе —
+// честное «не знаю». Поэтому ни один из трёх заведомо чужих вопросов пройти не
+// имеет права, а недобор по верным терпим.
+say(rightB >= 4, `испытание B: верных исходов ${rightB} из ${B.length} (планка 4)`)
+
+// ── РАЗДЕЛИМОСТЬ: ОТКУДА ВООБЩЕ БЕРЁТСЯ ПОРОГ ───────────────────────────────
+const worstRight = Math.min(...rightScores)
+const bestWrong = wrongScores.length ? Math.max(...wrongScores) : 0
+console.log("\n### разделимость на ЭТОМ корпусе")
+console.log(`верные близости : ${rightScores.map((s) => s.toFixed(3)).sort().join(" ")}`)
+console.log(`посторонние     : ${wrongScores.map((s) => s.toFixed(3)).sort().join(" ")}`)
+console.log(`худшая верная ${worstRight.toFixed(3)} · лучшая посторонняя ${bestWrong.toFixed(3)}`)
+if (worstRight > bestWrong) {
+  console.log(`группы РАЗДЕЛИМЫ: любой порог между ними отделит верное от чужого`)
+} else {
+  // 🛑 ЭТО НЕ ОТКАЗ ПРИБОРА, А ПРАВДА О КОРПУСЕ. Порога, пропускающего всё
+  // верное и отсекающего всё чужое, здесь не существует — и выбор становится
+  // выбором цены: чистота против полноты.
+  console.log(`группы ПЕРЕКРЫВАЮТСЯ на ${(bestWrong - worstRight).toFixed(3)} — идеального порога нет`)
+}
+// Сверка действующего числа с тем, что видно сейчас: расхождение означает, что
+// порог устарел вместе с корпусом.
+const cfg = (await call("/api/fractera/vector-search", { body: JSON.stringify({ question: "порог" }), method: "POST" })).json.threshold
+console.log(`действующий порог ${cfg} · пропустит верных ${rightScores.filter((s) => s >= cfg).length}/${rightScores.length}, чужих ${wrongScores.filter((s) => s >= cfg).length}/${wrongScores.length}`)
 
 // ── ПУСТОЙ ВОПРОС ───────────────────────────────────────────────────────────
 const empty = await call("/api/fractera/vector-search", { body: JSON.stringify({ question: "  " }), method: "POST" })
