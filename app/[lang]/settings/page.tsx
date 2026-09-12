@@ -19,6 +19,7 @@ import {
   MEMORY_SECTIONS,
   resolveMemorySection,
 } from "./_lib/memory-sections";
+import { hrefOfTestTab, isTestSection, resolveTestTab, TEST_TABS } from "./_lib/test-tabs";
 import { passportOutline } from "./_lib/passport-outline";
 
 // СТРАНИЦА ПАМЯТИ — СКОПИРОВАНА СО СЛУЖБЫ ЧАТА И УРЕЗАНА (178-2).
@@ -133,6 +134,20 @@ async function MemoryPageBody({
     label: i.title,
   }));
 
+  // 🔒 ТРИ СТРАНИЦЫ СТЕНДА — ТА ЖЕ ПОЛОСА ВКЛАДОК, ЧТО У ПАСПОРТА (189-1).
+  // Второе меню своей конструкции рядом с ней разошлось бы с ним на первой
+  // правке; здесь различается только то, откуда берутся пункты.
+  // 🔒 ОТКРЫТАЯ СТРАНИЦА ЖИВЁТ В АДРЕСЕ (`?tab=`), А НЕ В СОСТОЯНИИ ОСТРОВКА:
+  // владелец обязан уметь прислать ссылку на то, что он видит.
+  const openTab = resolveTestTab(typeof sp.tab === "string" ? sp.tab : undefined);
+  const testTabs = isTestSection(active)
+    ? TEST_TABS.map((t) => ({
+        active: t === openTab,
+        href: hrefOfTestTab(lang, active, t),
+        label: ui.testBench.tabs[t],
+      }))
+    : undefined;
+
   return (
     <main className="min-h-screen bg-background">
       <div className="px-6 py-[var(--page-py-work)]" data-app-column>
@@ -186,7 +201,7 @@ async function MemoryPageBody({
           })}
           menuTitle={ui.menuTitle}
           menuWord={ui.menuWord}
-          tabs={active === "passport" ? passportTabs : undefined}
+          tabs={active === "passport" ? passportTabs : testTabs}
           title={ui.pages[active].title}
         >
           <div className="space-y-6">
@@ -216,6 +231,27 @@ async function MemoryPageBody({
                 примерах и в инструкции Postman должен стоять тот адрес, по
                 которому человек реально придёт, а не выдуманный образец. */}
             {active === "api" && <ApiDoc base={publicMemoryUrl(host, proto)} keyWords={ui.apiKey} lang={lang} />}
+
+            {/* 🔒 ДВА СТЕНДА ХРАНИЛИЩ — ПОКА ТОЛЬКО ВИД (189-1). Владелец смотрит
+                раскладку до того, как под ней появится логика: «вы смотрите вид и
+                говорите так или не так, до логики».
+                🛑 ПУСТАЯ СТРАНИЦА ГОВОРИТ, ПОЧЕМУ ОНА ПУСТА. Молчащий экран
+                читается как поломка — в этом проекте оплачено не раз. */}
+            {isTestSection(active) && (
+              <section className="space-y-4">
+                <h2 className="font-medium text-[length:var(--fs-h3)]">
+                  {ui.testBench.tabs[openTab]}
+                </h2>
+                <p className="max-w-3xl text-[length:var(--fs-body)] text-muted-foreground">
+                  {active === "graph-test"
+                    ? ui.testBench.graph[openTab]
+                    : ui.testBench.vector[openTab]}
+                </p>
+                <p className="rounded-md border border-border border-dashed p-4 text-[length:var(--fs-small)] text-muted-foreground">
+                  {ui.testBench.soon}
+                </p>
+              </section>
+            )}
 
             {active === "journal" && <JournalView words={ui.journal} />}
 

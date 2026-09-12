@@ -12,6 +12,7 @@
 // везде в проекте; это служебный экран архитектора, а не витрина.
 
 import type { MemorySection } from "../_lib/memory-sections";
+import type { TestTab } from "../_lib/test-tabs";
 import type { OpenAiKeyWords } from "../_components/openai-key";
 import type { OpenAiTabWords } from "../_components/openai-tab";
 import type { BenchControlWords } from "../_components/memory-test-controls.client";
@@ -32,6 +33,22 @@ export type MemoryUi = {
   /** Объяснение вкладки «Подписка OpenAI» простыми словами (181-1). */
   openaiTab: OpenAiTabWords;
   pages: Record<MemorySection, { title: string; hint: string }>;
+  /**
+   * Слова двух стендов хранилищ — графа знаний и вектора (189-1).
+   *
+   * 🔒 ОДИН НАБОР НА ОБА, А НЕ ДВА ПОХОЖИХ: имена вкладок и порядок работы у них
+   * общие, различается только то, о каком хранилище идёт речь. Две копии слов
+   * разошлись бы на первой правке — в этом проекте оплачено.
+   */
+  testBench: {
+    /** Названия трёх страниц: загрузка · поиск · оценка. */
+    tabs: Record<TestTab, string>;
+    /** Лид каждой страницы у графа и у вектора — что человек здесь делает. */
+    graph: Record<TestTab, string>;
+    vector: Record<TestTab, string>;
+    /** Честная строка о том, что органа ещё нет: молчащий экран читается как поломка. */
+    soon: string;
+  };
   /** Слова карточки ключа доступа — форму задаёт сама карточка (185). */
   apiKey: ApiKeyWords;
   memoryTest: {
@@ -315,9 +332,41 @@ const EN: MemoryUi = {
       hint: "Send a phrase straight to memory and see its answer — no agent in the chain.",
       title: "Memory test",
     },
+    "graph-test": {
+      hint: "Load your own text, watch the graph being built from it, then ask in other words and see how fast the answer comes back.",
+      title: "Knowledge graph test",
+    },
+    "vector-test": {
+      hint: "The same three steps against the vector store: load, search by meaning, judge what came back.",
+      title: "Vector store test",
+    },
     passport: {
       hint: "What memory is and how it works — written before it is built. Read it, approve it or change it; the code comes after.",
       title: "Passport",
+    },
+  },
+  testBench: {
+    graph: {
+      search:
+        "Ask in words that are not in the text. The graph answers from entities and relations it extracted at load time — this is where the answer must be instant.",
+      upload:
+        "Paste your text and press the button. A model reads it once and pulls out entities and relations: the cost sits here, at load time, on purpose.",
+      verdict:
+        "Only you can say whether the right thing was found. The numbers next to your verdict — seconds and model turns — are measured, not guessed.",
+    },
+    soon: "This control is built in the next sub-step. Nothing is hidden here: today the page only shows what it will hold.",
+    tabs: {
+      search: "Search",
+      upload: "Load",
+      verdict: "Verdict",
+    },
+    vector: {
+      search:
+        "Ask by meaning, not by matching words. The store returns the closest passages with their distance — and an unrelated question must return nothing.",
+      upload:
+        "The same text becomes a fingerprint of its meaning. No model reads it; only the embeddings are computed, and that is much cheaper.",
+      verdict:
+        "The same verdict, the same case book. Two stores judged by one form, so their numbers can be compared at all.",
     },
   },
   subtitle:
@@ -545,6 +594,14 @@ const RU: MemoryUi = {
       hint: "Отправьте фразу прямо в память и посмотрите её ответ — агента в цепочке нет.",
       title: "Тест памяти",
     },
+    "graph-test": {
+      hint: "Загрузите свой текст, посмотрите, как из него строится граф, а потом спросите другими словами — и увидьте, за сколько приходит ответ.",
+      title: "Тест графа знаний",
+    },
+    "vector-test": {
+      hint: "Те же три шага для векторного хранилища: загрузить, найти по смыслу, оценить найденное.",
+      title: "Тест векторного хранилища",
+    },
     passport: {
       hint: "Что такое память и как она работает — написанное раньше, чем построено. Читаете, утверждаете или меняете; код идёт после.",
       title: "Паспорт",
@@ -552,6 +609,30 @@ const RU: MemoryUi = {
   },
   subtitle:
     "Служба памяти говорит сама за себя: отправьте ей фразу, посмотрите ответ и то, что она из него построила.",
+  testBench: {
+    graph: {
+      search:
+        "Спросите словами, которых в тексте нет. Граф отвечает из сущностей и связей, добытых при загрузке, — здесь ответ обязан приходить мгновенно.",
+      upload:
+        "Вставьте свой текст и нажмите кнопку. Модель прочитает его один раз и вытащит сущности и связи: цена стоит здесь, на загрузке, и это сделано намеренно.",
+      verdict:
+        "Нашлось нужное или нет — можете сказать только вы. Числа рядом с вашим вердиктом — секунды и ходы модели — измерены, а не прикинуты.",
+    },
+    soon: "Этот орган строится следующим подшагом. Здесь ничего не спрятано: сегодня страница показывает только то, что будет на ней стоять.",
+    tabs: {
+      search: "Поиск",
+      upload: "Загрузка",
+      verdict: "Оценка",
+    },
+    vector: {
+      search:
+        "Спрашивайте по смыслу, а не по совпадению слов. Хранилище вернёт ближайшие куски и их близость — а посторонний вопрос обязан не найти ничего.",
+      upload:
+        "Тот же текст превращается в отпечаток смысла. Модель его не читает — считаются только встраивания, и это заметно дешевле.",
+      verdict:
+        "Тот же вердикт и тот же корпус случаев. Два хранилища судятся одной формой — иначе их числа не с чем сравнивать.",
+    },
+  },
   title: "Память",
 };
 
