@@ -10,6 +10,7 @@ import { WorkspaceShell } from "@/components/workspace/workspace-shell";
 import { MemoryBench } from "./_components/memory-bench.client";
 import { JournalView } from "./_components/journal-view.client";
 import { GraphUpload } from "./_components/graph-upload.client";
+import { GraphSearch } from "./_components/graph-search.client";
 import { OpenAiTab } from "./_components/openai-tab";
 import { AnthropicKeySection } from "./_components/anthropic-key";
 import { PassportBody } from "./_components/passport-body.client";
@@ -255,6 +256,8 @@ async function MemoryPageBody({
                     а обещанная и пустая — как ложь. */}
                 {active === "graph-test" && openTab === "upload" ? (
                   <GraphUpload words={ui.graphUpload} />
+                ) : active === "graph-test" && openTab === "search" ? (
+                  <GraphSearch words={ui.graphSearch} />
                 ) : (
                   <p className="rounded-md border border-border border-dashed p-4 text-[length:var(--fs-small)] text-muted-foreground">
                     {ui.testBench.soon}

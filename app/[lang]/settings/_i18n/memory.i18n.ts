@@ -86,6 +86,31 @@ export type MemoryUi = {
     workNote: string;
     workNone: string;
   };
+  /**
+   * Слова поиска по графу (189-4).
+   *
+   * 🔒 ДВА ПУТИ НАЗВАНЫ СЛОВАМИ ЧЕЛОВЕКА, А НЕ КОДОМ: «со словами от памяти» и
+   * «по-старому, без слов». Кнопка `legacy` существует ради доказательства, и
+   * человек обязан понимать, что именно он сравнивает.
+   */
+  graphSearch: {
+    ask: string;
+    askLegacy: string;
+    busy: string;
+    empty: string;
+    errors: { "empty-question": string; "graph-unreachable": string; refused: string };
+    forget: string;
+    forgetDone: string;
+    found: string;
+    keywordsLine: string;
+    label: string;
+    legacyNote: string;
+    matchedLine: string;
+    modelNone: string;
+    modelUnknown: string;
+    placeholder: string;
+    timing: string;
+  };
   /** Слова карточки ключа доступа — форму задаёт сама карточка (185). */
   apiKey: ApiKeyWords;
   memoryTest: {
@@ -413,6 +438,30 @@ const EN: MemoryUi = {
       "Chunks read is the lower bound on model turns: the engine exposes no call counter, and an invented number would be a lie about the cost. This is where the expensive half of the work happens — reading afterwards is nearly free.",
     workTitle: "What the load cost",
   },
+  graphSearch: {
+    ask: "Ask — memory supplies the keywords",
+    askLegacy: "Ask the old way, without keywords",
+    busy: "Asking…",
+    empty: "Nothing was found for this question.",
+    errors: {
+      "empty-question": "There is no question to ask.",
+      "graph-unreachable": "The graph engine is not answering.",
+      refused: "The graph refused the question.",
+    },
+    forget: "Forget everything the bench loaded",
+    forgetDone: "Forgotten: {n}. Deletion runs in the background — the list empties within seconds.",
+    found: "Found: {n} entity blocks.",
+    keywordsLine: "Keywords we sent — topics: {high} · things: {low}.",
+    label: "Your question",
+    legacyNote:
+      "Asked the old way: we sent no keywords, so the engine extracted them itself — with a model call. Whether it actually called one or answered from its cache we do not know, and we do not claim to.",
+    matchedLine: "Recognised as entities the graph already knows: {names}.",
+    modelNone:
+      "No model turn: we named the keywords ourselves, so the engine had nothing left to extract.",
+    modelUnknown: "Model turn: unknown — see the note below.",
+    placeholder: "Ask in words that are not in the text…",
+    timing: "Keywords prepared in {words} ms · the graph answered in {ask} ms.",
+  },
   testBench: {
     graph: {
       search:
@@ -707,6 +756,30 @@ const RU: MemoryUi = {
     workNote:
       "Кусков прочитано — это нижняя граница числа ходов модели: счётчика вызовов служба наружу не отдаёт, а придуманная точность была бы ложью о цене. Здесь и происходит дорогая половина работы — чтение после неё почти бесплатно.",
     workTitle: "Чем обошлась загрузка",
+  },
+  graphSearch: {
+    ask: "Спросить — слова даёт память",
+    askLegacy: "Спросить по-старому, без слов",
+    busy: "Спрашиваем…",
+    empty: "По этому вопросу ничего не нашлось.",
+    errors: {
+      "empty-question": "Нечего спрашивать: вопроса нет.",
+      "graph-unreachable": "Движок графа не отвечает.",
+      refused: "Граф отказался отвечать на вопрос.",
+    },
+    forget: "Забыть всё, что загрузил стенд",
+    forgetDone: "Забыто: {n}. Удаление идёт в фоне — список опустеет за считаные секунды.",
+    found: "Нашлось: блоков сущностей — {n}.",
+    keywordsLine: "Ключевые слова, которые мы послали — темы: {high} · вещи: {low}.",
+    label: "Ваш вопрос",
+    legacyNote:
+      "Спрошено по-старому: слов мы не дали, и движок извлекал их сам — вызовом модели. Позвал он её на самом деле или ответил из своего кэша, мы не знаем и не утверждаем.",
+    matchedLine: "Узнано как сущности, которые граф уже знает: {names}.",
+    modelNone:
+      "Ходов модели не было: ключевые слова мы назвали сами, и движку нечего было извлекать.",
+    modelUnknown: "Ход модели: неизвестно — смотрите примечание ниже.",
+    placeholder: "Спросите словами, которых в тексте нет…",
+    timing: "Слова собраны за {words} мс · граф ответил за {ask} мс.",
   },
   testBench: {
     graph: {

@@ -73,15 +73,37 @@ export async function ask(
      * настройками; пока выбран быстрый путь, и это названо, а не умолчано.
      */
     context?: boolean;
+    /**
+     * КЛЮЧЕВЫЕ СЛОВА, КОТОРЫЕ ДАЁМ МЫ (189-4) — и это лечение тайного хода модели.
+     *
+     * ✗ ИЗМЕРЕНО 2026-09-12 НА ЖИВОЙ СЛУЖБЕ, ОДИН И ТОТ ЖЕ ВОПРОС:
+     *   без слов  → 3538 мс, в журнале движка `== LLM cache == saving:
+     *               hybrid:keywords:` — то есть он ЗВАЛ `gpt-4o-mini`, чтобы
+     *               вытащить слова из вопроса, и вернул их по-русски на
+     *               английский вопрос;
+     *   с нашими  → 666 мс, в журнале `Query nodes: boat, Bilbao` — ровно наши,
+     *               и ни одной строки о модели;
+     *   повтор без слов → 372 мс, но это его КЭШ, а не отсутствие вызова.
+     *
+     * 🔒 ЗНАЧИТ «КОНТЕКСТ БЕЗ ХОДА МОДЕЛИ» ВЕРНО ТОЛЬКО СО СЛОВАМИ. `only_need_context`
+     * снимает генерацию ОТВЕТА и ничего не говорит про извлечение слов. Прежний
+     * код чата слов не слал — значит и там чтение платило ход модели, молча.
+     */
+    high?: string[];
+    low?: string[];
   } = {},
 ): Promise<KnowledgeAnswer> {
   try {
+    const keywords =
+      (opts.high?.length ?? 0) + (opts.low?.length ?? 0) > 0
+        ? { hl_keywords: opts.high ?? [], ll_keywords: opts.low ?? [] }
+        : {};
     const data = await dataJson<{ response?: string; result?: string }>("/service/rag/query", {
       method: "POST",
       body: JSON.stringify(
         opts.context
-          ? { query: question, mode, only_need_context: true, enable_rerank: false }
-          : { query: question, mode },
+          ? { query: question, mode, only_need_context: true, enable_rerank: false, ...keywords }
+          : { query: question, mode, ...keywords },
       ),
     });
     const answer = data.response ?? data.result ?? null;
