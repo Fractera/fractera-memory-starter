@@ -267,13 +267,25 @@ function answer({ heard, said }) {
  * 🛑 ЗНАЧИТ ЭТО ГАРАНТИРУЕТСЯ КОНСТРУКЦИЕЙ, А НЕ ПРОСЬБОЙ В ИНСТРУКЦИИ. Правило,
  * которое можно не дать нарушить, не пишут словами.
  */
-/** Ключ памяти с диска — тот же, которым ходят приборы и внешние инструменты. */
-function memoryKey() {
+/**
+ * Секрет машины — им ходят СВОИ процессы этого сервера.
+ *
+ * 🔒 НЕ КЛЮЧ ПАМЯТИ, И ЭТО ИСПРАВЛЕНО 2026-09-12 ПО СЛОВУ ВЛАДЕЛЬЦА О ЕДИНОМ
+ * СТАНДАРТЕ. Ключ памяти выдают ЧУЖИМ инструментам, и снаружи ему открыты ровно
+ * два глагола договора. Агент памяти — не чужой инструмент: он внутри ящика,
+ * живёт на этой машине и читает её секреты.
+ */
+function machineSecret() {
   try {
-    return readFileSync(process.env.MEMORY_API_KEY_FILE ?? "/etc/fractera/memory-api-key", "utf8").trim()
-  } catch {
-    return ""
-  }
+    const file = process.env.FRACTERA_MACHINE_ENV || "/etc/fractera/secrets.env"
+    for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
+      const i = line.indexOf("=")
+      if (i > 0 && line.slice(0, i).trim() === "DATA_SECRET") {
+        return line.slice(i + 1).trim().replace(/^["']|["']$/g, "")
+      }
+    }
+  } catch { /* нет файла — вызов честно упрётся в отказ двери */ }
+  return process.env.DATA_SECRET || ""
 }
 
 async function askGraph({ question }) {
@@ -289,7 +301,7 @@ async function askGraph({ question }) {
   try {
     res = await fetch("http://127.0.0.1:3700/api/fractera/graph-search", {
       body: JSON.stringify({ question: q }),
-      headers: { "Content-Type": "application/json", "x-memory-key": memoryKey() },
+      headers: { "Content-Type": "application/json", "x-data-secret": machineSecret() },
       method: "POST",
     })
   } catch {

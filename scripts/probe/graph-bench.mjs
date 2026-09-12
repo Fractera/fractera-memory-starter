@@ -12,7 +12,7 @@
 // выглядит успехом, а искать потом нечего.
 //
 // 🔒 ТРИ НЕГАТИВНЫХ КОНТРОЛЯ, И ОНИ РАЗНЫЕ ПО ПРИРОДЕ:
-//   ① без ключа дверь обязана отказать — иначе ключ ничего не охраняет;
+//   ① без секрета машины дверь обязана отказать — иначе ключ ничего не охраняет;
 //   ② без якоря дверь обязана отказать — запись без якоря не найдётся никогда;
 //   ③ рост сущностей обязан быть НУЛЕВЫМ там, где мы ничего не клали (проверка
 //      того, что прибор меряет именно наш посев, а не чужую активность).
@@ -32,16 +32,25 @@ const KEEP = process.argv[2] === "keep"
 const BASE = process.env.MEMORY_URL ?? "http://127.0.0.1:3700"
 const DOOR = `${BASE}/api/fractera/graph-test`
 
+// 🔒 ПРИБОР — СВОЙ ПРОЦЕСС НА ЭТОЙ МАШИНЕ, И ХОДИТ ОН СЕКРЕТОМ МАШИНЫ (исправлено
+// 2026-09-12 по слову владельца о едином стандарте). ✗ Прежде он ходил ключом
+// памяти — тем, что выдают ЧУЖИМ инструментам, — и этим двери стенда
+// превращались во вторую публичную дверь мимо договора.
 const key = (() => {
   try {
-    return readFileSync(process.env.MEMORY_API_KEY_FILE ?? "/etc/fractera/memory-api-key", "utf8").trim()
-  } catch {
-    return ""
-  }
+    const file = process.env.FRACTERA_MACHINE_ENV || "/etc/fractera/secrets.env"
+    for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
+      const i = line.indexOf("=")
+      if (i > 0 && line.slice(0, i).trim() === "DATA_SECRET") {
+        return line.slice(i + 1).trim().replace(/^["']|["']$/g, "")
+      }
+    }
+  } catch { /* нет файла — скажем об этом ниже */ }
+  return process.env.DATA_SECRET || ""
 })()
 
 if (!key) {
-  console.log(`${MARK} КЛЮЧА ПАМЯТИ НЕТ НА ДИСКЕ — прогон невозможен`)
+  console.log(`${MARK} СЕКРЕТА МАШИНЫ НЕТ НА ДИСКЕ — прогон невозможен`)
   process.exit(2)
 }
 
@@ -53,7 +62,7 @@ const say = (ok, what) => {
 
 const call = async (init = {}, withKey = true) => {
   const headers = { "Content-Type": "application/json", ...(init.headers ?? {}) }
-  if (withKey) headers["x-memory-key"] = key
+  if (withKey) headers["x-data-secret"] = key
   const r = await fetch(DOOR, { ...init, headers })
   const text = await r.text()
   let json = {}
@@ -73,12 +82,12 @@ console.log(MARK)
 const noKey = await call({ method: "GET" }, false)
 say(
   noKey.status === 401 || noKey.status === 403 || noKey.status === 307,
-  `без ключа дверь отказывает: ${noKey.status}`,
+  `без секрета машины дверь отказывает: ${noKey.status}`,
 )
 
 // ── СОСТОЯНИЕ ДО ────────────────────────────────────────────────────────────
 const before = await call({ method: "GET" })
-say(before.status === 200 && before.json.ok === true, `ключом дверь отвечает: ${before.status}`)
+say(before.status === 200 && before.json.ok === true, `секретом машины дверь отвечает: ${before.status}`)
 say(before.json.ready === true, `движок графа достижим: ready=${before.json.ready}`)
 const labelsBefore = Number(before.json.labels ?? -1)
 console.log(`  сущностей до посева: ${labelsBefore}`)

@@ -23,16 +23,25 @@ const KEEP = process.argv[2] === "keep"
 const BASE = process.env.MEMORY_URL ?? "http://127.0.0.1:3700"
 const LOG = process.env.RAG_LOG ?? "/opt/fractera/services/rag/lightrag.log"
 
+// 🔒 ПРИБОР — СВОЙ ПРОЦЕСС НА ЭТОЙ МАШИНЕ, И ХОДИТ ОН СЕКРЕТОМ МАШИНЫ (исправлено
+// 2026-09-12 по слову владельца о едином стандарте). ✗ Прежде он ходил ключом
+// памяти — тем, что выдают ЧУЖИМ инструментам, — и этим двери стенда
+// превращались во вторую публичную дверь мимо договора.
 const key = (() => {
   try {
-    return readFileSync(process.env.MEMORY_API_KEY_FILE ?? "/etc/fractera/memory-api-key", "utf8").trim()
-  } catch {
-    return ""
-  }
+    const file = process.env.FRACTERA_MACHINE_ENV || "/etc/fractera/secrets.env"
+    for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
+      const i = line.indexOf("=")
+      if (i > 0 && line.slice(0, i).trim() === "DATA_SECRET") {
+        return line.slice(i + 1).trim().replace(/^["']|["']$/g, "")
+      }
+    }
+  } catch { /* нет файла — скажем об этом ниже */ }
+  return process.env.DATA_SECRET || ""
 })()
 
 if (!key) {
-  console.log(`${MARK} КЛЮЧА ПАМЯТИ НЕТ НА ДИСКЕ — прогон невозможен`)
+  console.log(`${MARK} СЕКРЕТА МАШИНЫ НЕТ НА ДИСКЕ — прогон невозможен`)
   process.exit(2)
 }
 
@@ -44,7 +53,7 @@ const say = (ok, what) => {
 
 const call = (path, init = {}, withKey = true) => {
   const headers = { "Content-Type": "application/json", ...(init.headers ?? {}) }
-  if (withKey) headers["x-memory-key"] = key
+  if (withKey) headers["x-data-secret"] = key
   return fetch(`${BASE}${path}`, { ...init, headers }).then(async (r) => {
     const text = await r.text()
     try {
@@ -209,7 +218,7 @@ const noKey = await call("/api/fractera/graph-search", {
   body: JSON.stringify({ question: "что угодно" }),
   method: "POST",
 }, false)
-say(noKey.status === 401 || noKey.status === 403 || noKey.status === 307, `без ключа отказ: ${noKey.status}`)
+say(noKey.status === 401 || noKey.status === 403 || noKey.status === 307, `без секрета машины отказ: ${noKey.status}`)
 
 // ── УБОРКА ПО СВОЕЙ МЕТКЕ ───────────────────────────────────────────────────
 // 🛑 ПРИБОР УБИРАЕТ СВОЁ, А НЕ ХРАНИЛИЩЕ. Дверь забывания знает только префикс
