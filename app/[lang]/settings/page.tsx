@@ -9,6 +9,7 @@ import { Eyebrow, H1, Lead } from "@/components/ui/typography";
 import { WorkspaceShell } from "@/components/workspace/workspace-shell";
 import { MemoryBench } from "./_components/memory-bench.client";
 import { JournalView } from "./_components/journal-view.client";
+import { GraphUpload } from "./_components/graph-upload.client";
 import { OpenAiTab } from "./_components/openai-tab";
 import { AnthropicKeySection } from "./_components/anthropic-key";
 import { PassportBody } from "./_components/passport-body.client";
@@ -247,9 +248,18 @@ async function MemoryPageBody({
                     ? ui.testBench.graph[openTab]
                     : ui.testBench.vector[openTab]}
                 </p>
-                <p className="rounded-md border border-border border-dashed p-4 text-[length:var(--fs-small)] text-muted-foreground">
-                  {ui.testBench.soon}
-                </p>
+                {/* 🔒 ПОСТРОЕННОЕ ПОКАЗЫВАЕМ, НЕПОСТРОЕННОЕ НАЗЫВАЕМ (189-2).
+                    Загрузка в граф построена — она стоит здесь; остальные пять
+                    страниц по-прежнему говорят словами, что орган строится
+                    следующим подшагом. Молчащая страница читается как поломка,
+                    а обещанная и пустая — как ложь. */}
+                {active === "graph-test" && openTab === "upload" ? (
+                  <GraphUpload words={ui.graphUpload} />
+                ) : (
+                  <p className="rounded-md border border-border border-dashed p-4 text-[length:var(--fs-small)] text-muted-foreground">
+                    {ui.testBench.soon}
+                  </p>
+                )}
               </section>
             )}
 

@@ -49,6 +49,32 @@ export type MemoryUi = {
     /** Честная строка о том, что органа ещё нет: молчащий экран читается как поломка. */
     soon: string;
   };
+  /**
+   * Слова загрузки в граф знаний (189-2).
+   *
+   * 🔒 ОТКАЗЫ ПЕРЕЧИСЛЕНЫ ПОИМЁННО, А НЕ СВЕДЕНЫ В «ЧТО-ТО ПОШЛО НЕ ТАК». Пустой
+   * якорь, пустой текст и недоступная служба чинятся по-разному, и человек
+   * обязан видеть, чем именно.
+   */
+  graphUpload: {
+    anchorsHint: string;
+    anchorsLabel: string;
+    anchorsPlaceholder: string;
+    button: string;
+    busy: string;
+    docsEmpty: string;
+    docsTitle: string;
+    errors: { "empty-text": string; "no-anchor": string; offline: string; refused: string };
+    grew: string;
+    labelsNow: string;
+    notReady: string;
+    sourceLabel: string;
+    sourcePlaceholder: string;
+    taken: string;
+    textLabel: string;
+    textPlaceholder: string;
+    waiting: string;
+  };
   /** Слова карточки ключа доступа — форму задаёт сама карточка (185). */
   apiKey: ApiKeyWords;
   memoryTest: {
@@ -345,6 +371,31 @@ const EN: MemoryUi = {
       title: "Passport",
     },
   },
+  graphUpload: {
+    anchorsHint:
+      "Without an anchor the record is accepted and then found by nobody: a question comes from a name, and a record with no link to a name has nothing to be reached by.",
+    anchorsLabel: "Anchors — who or what this is about",
+    anchorsPlaceholder: "Denis, Kremlin",
+    button: "Transform and save",
+    busy: "The model is reading your text…",
+    docsEmpty: "The graph holds nothing yet.",
+    docsTitle: "What the graph holds",
+    errors: {
+      "empty-text": "There is no text to load.",
+      "no-anchor": "Name at least one anchor — otherwise the record cannot be found later.",
+      offline: "The graph engine is not answering. Nothing was loaded.",
+      refused: "The graph refused the document.",
+    },
+    grew: "Entities grew: {from} → {to}.",
+    labelsNow: "Entities in the graph: {n}.",
+    notReady: "The graph engine is not reachable from here — loading is unavailable.",
+    sourceLabel: "Name it (optional)",
+    sourcePlaceholder: "my-notes",
+    taken: "Accepted in {ms} ms. Relations are built in the background — the list below refreshes itself.",
+    textLabel: "Your text",
+    textPlaceholder: "Paste what memory should learn…",
+    waiting: "Building…",
+  },
   testBench: {
     graph: {
       search:
@@ -609,6 +660,31 @@ const RU: MemoryUi = {
   },
   subtitle:
     "Служба памяти говорит сама за себя: отправьте ей фразу, посмотрите ответ и то, что она из него построила.",
+  graphUpload: {
+    anchorsHint:
+      "Без якоря запись примут, а найти её не сможет никто: вопрос приходит от имени, и у записи без связи с именем нет ничего, чем её достать.",
+    anchorsLabel: "Якоря — к кому или к чему это относится",
+    anchorsPlaceholder: "Денис, Кремль",
+    button: "Преобразовать и сохранить",
+    busy: "Модель читает ваш текст…",
+    docsEmpty: "В графе пока ничего нет.",
+    docsTitle: "Что лежит в графе",
+    errors: {
+      "empty-text": "Нечего загружать: текста нет.",
+      "no-anchor": "Назовите хотя бы один якорь — иначе запись потом не найти.",
+      offline: "Движок графа не отвечает. Ничего не загружено.",
+      refused: "Граф отказался принять документ.",
+    },
+    grew: "Сущностей стало больше: {from} → {to}.",
+    labelsNow: "Сущностей в графе: {n}.",
+    notReady: "Движок графа отсюда недостижим — загрузка недоступна.",
+    sourceLabel: "Как назвать (необязательно)",
+    sourcePlaceholder: "мои-заметки",
+    taken: "Принято за {ms} мс. Связи строятся в фоне — список ниже обновляется сам.",
+    textLabel: "Ваш текст",
+    textPlaceholder: "Вставьте то, что память должна выучить…",
+    waiting: "Строится…",
+  },
   testBench: {
     graph: {
       search:
