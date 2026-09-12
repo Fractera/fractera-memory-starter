@@ -57,6 +57,8 @@ const SELF_GUARDED = new Set([
   "/api/fractera/bench-cases",
   "/api/fractera/graph-search",
   "/api/fractera/graph-test",
+  "/api/fractera/vector-search",
+  "/api/fractera/vector-test",
   "/api/fractera/memory-test",
   "/api/me",
   "/api/fractera/pty-ticket",

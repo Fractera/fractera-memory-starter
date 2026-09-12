@@ -113,6 +113,35 @@ export type MemoryUi = {
     title: string;
     why: string;
   };
+  /**
+   * Слова стенда векторного хранилища (189-6).
+   *
+   * 🔒 ОДИН НАБОР НА ЗАГРУЗКУ И ПОИСК: у вектора это две половины одного
+   * действия, между ними нет фонового построения связей, как у графа.
+   */
+  vectorBench: {
+    ask: string;
+    askLabel: string;
+    askPlaceholder: string;
+    asking: string;
+    busy: string;
+    button: string;
+    costNote: string;
+    cutHint: string;
+    errors: { "empty-text": string; offline: string; refused: string; "store-unreachable": string };
+    forget: string;
+    hits: string;
+    inStore: string;
+    nearestWas: string;
+    nothing: string;
+    notConfigured: string;
+    sourceLabel: string;
+    sourcePlaceholder: string;
+    stored: string;
+    textLabel: string;
+    textPlaceholder: string;
+    timing: string;
+  };
   graphSearch: {
     ask: string;
     askLegacy: string;
@@ -473,6 +502,36 @@ const EN: MemoryUi = {
     title: "Case book",
     why: "Why (optional)",
   },
+  vectorBench: {
+    ask: "Search by meaning",
+    askLabel: "Your question",
+    askPlaceholder: "Ask about the meaning, not the wording…",
+    asking: "Searching…",
+    busy: "Computing embeddings…",
+    button: "Transform and save",
+    costNote:
+      "No model reads this text: only embeddings are computed. That is why loading here is far cheaper and faster than into the graph — and why no knowledge of relations comes out of it.",
+    cutHint:
+      "The text is split into pieces by blank lines: a paragraph is the natural unit of meaning. Very short pieces are attached to the previous one — a fragment close to everything is close to nothing.",
+    errors: {
+      "empty-text": "There is no text to load.",
+      offline: "The store is not answering. Nothing was loaded.",
+      refused: "The store refused the text.",
+      "store-unreachable": "The store is not answering.",
+    },
+    forget: "Forget everything the bench loaded",
+    hits: "Hits closer than {threshold}: {n}.",
+    inStore: "In the bench collection: {n} pieces · model {model}.",
+    nearestWas: "The nearest was {score} —",
+    nothing: "Nothing closer than {threshold}. The store always returns its nearest piece; this one is too far to count as an answer.",
+    notConfigured: "The vector store is not configured on this machine — loading is unavailable.",
+    sourceLabel: "Name it (optional)",
+    sourcePlaceholder: "my-notes",
+    stored: "Stored {n} pieces in {ms} ms · {dims} dimensions each.",
+    textLabel: "Your text",
+    textPlaceholder: "Paste what memory should be able to find by meaning…",
+    timing: "Answered in {ms} ms, no model turn.",
+  },
   graphSearch: {
     ask: "Ask — memory supplies the keywords",
     askLegacy: "Ask the old way, without keywords",
@@ -806,6 +865,37 @@ const RU: MemoryUi = {
       "Прогонов: {total} · нашло то: {good} · не то: {bad} · без вердикта: {pending} · ответ в среднем: {avg} мс.",
     title: "Корпус случаев",
     why: "Почему (необязательно)",
+  },
+  vectorBench: {
+    ask: "Найти по смыслу",
+    askLabel: "Ваш вопрос",
+    askPlaceholder: "Спрашивайте о смысле, а не о формулировке…",
+    asking: "Ищем…",
+    busy: "Считаем встраивания…",
+    button: "Преобразовать и сохранить",
+    costNote:
+      "Этот текст не читает ни одна модель: считаются только встраивания. Поэтому загрузка сюда заметно дешевле и быстрее, чем в граф, — и поэтому же знания о связях отсюда не возникает.",
+    cutHint:
+      "Текст режется на куски по пустым строкам: абзац и есть естественная единица смысла. Совсем короткие прилепляются к предыдущему — обрывок, близкий ко всему, не близок ни к чему.",
+    errors: {
+      "empty-text": "Нечего загружать: текста нет.",
+      offline: "Хранилище не отвечает. Ничего не загружено.",
+      refused: "Хранилище отказалось принять текст.",
+      "store-unreachable": "Хранилище не отвечает.",
+    },
+    forget: "Забыть всё, что загрузил стенд",
+    hits: "Попаданий ближе {threshold}: {n}.",
+    inStore: "В коллекции стенда: кусков {n} · модель {model}.",
+    nearestWas: "Ближайшее было {score} —",
+    nothing:
+      "Ничего ближе {threshold}. Хранилище всегда возвращает свой ближайший кусок; этот слишком далёк, чтобы считаться ответом.",
+    notConfigured: "Векторное хранилище на этой машине не настроено — загрузка недоступна.",
+    sourceLabel: "Как назвать (необязательно)",
+    sourcePlaceholder: "мои-заметки",
+    stored: "Уложено кусков: {n} за {ms} мс · по {dims} измерений в каждом.",
+    textLabel: "Ваш текст",
+    textPlaceholder: "Вставьте то, что память должна уметь находить по смыслу…",
+    timing: "Ответ за {ms} мс, без хода модели.",
   },
   graphSearch: {
     ask: "Спросить — слова даёт память",

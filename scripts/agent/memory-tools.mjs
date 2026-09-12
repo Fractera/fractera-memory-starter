@@ -141,6 +141,25 @@ const TOOLS = [
     },
     name: "ask_graph",
   },
+  {
+    // 🔒 НАЗНАЧЕНИЕ И ЦЕНА, БЕЗ ПОВОДОВ — тот же закон, что у соседнего
+    // инструмента. Отличие названо одним словом «по смыслу»: без него два
+    // инструмента выглядят одинаково, и выбор между ними становится гаданием.
+    // 🛑 ОГРАНИЧЕНИЕ СКАЗАНО ПРЯМО В ОПИСАНИИ, А НЕ ТОЛЬКО В НАВЫКЕ: этот
+    // уровень включает зовущий, и инструмент, молчащий об этом, будет позван не
+    // вовремя.
+    description:
+      "Поиск по смыслу, когда слова вопроса и слова записи разные. Возвращает куски текста с числом " +
+      "близости. Включается требованием зовущего, а не твоим выбором. Как пользоваться — навык use-vector-store.",
+    inputSchema: {
+      properties: {
+        question: { description: "Вопрос обычными словами", type: "string" },
+      },
+      required: ["question"],
+      type: "object",
+    },
+    name: "search_vectors",
+  },
 ]
 
 // ── ИСПОЛНИТЕЛИ ──────────────────────────────────────────────────────────────
@@ -323,9 +342,45 @@ async function askGraph({ question }) {
   return body
 }
 
+/**
+ * Найти по смыслу.
+ *
+ * 🔒 ПОРОГ ПРИМЕНЯЕТ ДВЕРЬ, А НЕ АГЕНТ, И НАРУЖУ ЕДЕТ УЖЕ СУЖДЕНИЕ. Отдай мы
+ * агенту сырые числа — он начал бы выбирать порог сам, и у одной способности
+ * стало бы два правила: одно в коде, другое в его рассуждении.
+ * 🛑 «НИЧЕГО ПОДХОДЯЩЕГО» НАЗЫВАЕТ БЛИЖАЙШЕЕ ЧИСЛОМ: промах на 0.31 и промах на
+ * 0.08 ведут человека в разные стороны.
+ */
+async function searchVectors({ question }) {
+  const q = String(question ?? "").trim()
+  if (!q) return "Пустой вопрос — искать нечего."
+
+  let res
+  try {
+    res = await fetch("http://127.0.0.1:3700/api/fractera/vector-search", {
+      body: JSON.stringify({ question: q }),
+      headers: { "Content-Type": "application/json", "x-data-secret": machineSecret() },
+      method: "POST",
+    })
+  } catch {
+    return "Векторное хранилище не отвечает. Отвечай тем, что знаешь без него."
+  }
+  if (!res.ok) return "Векторное хранилище не отвечает. Отвечай тем, что знаешь без него."
+  const a = await res.json().catch(() => ({}))
+
+  if (!a.found) {
+    const near = a.nearest ? ` Ближайшее было ${a.nearest.score.toFixed(3)}.` : ""
+    return `Ничего подходящего ближе порога ${a.threshold}.${near}`
+  }
+  return a.near
+    .map((p) => `[${p.score.toFixed(3)}] ${p.text}`)
+    .join("\n\n")
+}
+
 const RUN = {
   answer,
   ask_graph: askGraph,
+  search_vectors: searchVectors,
   make_new_kind: makeNewKind,
   promote_to_list: promoteToList,
   what_i_already_know: whatIKnow,
