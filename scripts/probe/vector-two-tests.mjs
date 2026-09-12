@@ -131,7 +131,7 @@ let hitsA = 0
 let exactA = 0
 let amongA = 0
 for (const { mark, q } of A) {
-  const r = await call("/api/fractera/vector-search", { body: JSON.stringify({ question: q }), method: "POST" })
+  const r = await call("/api/fractera/vector-search", { body: JSON.stringify({ probe: true, question: q }), method: "POST" })
   const top = r.json.near?.[0] ?? r.json.nearest
   const score = top ? Number(top.score).toFixed(3) : "—"
   if (top) rightScores.push(Number(top.score))
@@ -180,7 +180,7 @@ console.log("\n### B · границы: три вопроса заведомо �
 console.log("ВОПРОС                                        | ЖДЁМ | ПОЛУЧИЛИ | БЛИЗОСТЬ")
 let rightB = 0
 for (const { q, should } of B) {
-  const r = await call("/api/fractera/vector-search", { body: JSON.stringify({ question: q }), method: "POST" })
+  const r = await call("/api/fractera/vector-search", { body: JSON.stringify({ probe: true, question: q }), method: "POST" })
   const top = r.json.near?.[0] ?? r.json.nearest
   const score = top ? Number(top.score).toFixed(3) : "—"
   if (top) (should ? rightScores : wrongScores).push(Number(top.score))

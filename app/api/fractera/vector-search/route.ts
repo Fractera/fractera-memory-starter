@@ -35,6 +35,10 @@ export async function POST(request: Request) {
 
   const question = String(body.question ?? "").trim()
   if (!question) return deny("empty-question", 400)
+  // 🔒 ПРОГОН ПРИБОРА В ЧЕЛОВЕЧЕСКИЙ КОРПУС НЕ ПОПАДАЕТ — то же правило, что у
+  // соседней двери, и признак едет полем, а не словом в вопросе: здесь текст
+  // вопроса уезжает в эмбеддинг, и метка исказила бы измеряемое.
+  const probe = body.probe === true
 
   const started = Date.now()
   const r = await recall({ collection: BENCH_COLLECTION, k: 5, query: question })
@@ -47,7 +51,7 @@ export async function POST(request: Request) {
   const found = r.near.length > 0
   const best = r.pieces[0]
 
-  const noted = await noteRun({
+  const noted = probe ? { id: null, ok: false } : await noteRun({
     askMs,
     entities: r.near.length,
     found,

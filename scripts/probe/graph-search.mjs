@@ -152,7 +152,7 @@ say(ready, `граф извлёк нашего героя и готов отве
 // доказывало бы работу подстроки, а не графа.
 const before1 = logLines()
 const ours = await call("/api/fractera/graph-search", {
-  body: JSON.stringify({ question: `кто чинит клавесины для консерватории ${stamp}` }),
+  body: JSON.stringify({ probe: true, question: `кто чинит клавесины для консерватории ${stamp}` }),
   method: "POST",
 })
 await letLogSettle()
@@ -184,7 +184,7 @@ console.log(`  цена: слова ${ours.json.wordsMs} мс, ответ гра
 // доказано; совпадут — доказывать нечего, и прибор обязан покраснеть.
 const before2 = logLines()
 const legacy = await call("/api/fractera/graph-search", {
-  body: JSON.stringify({ legacy: true, question: `кто чинит клавесины для консерватории ${stamp} по-старому` }),
+  body: JSON.stringify({ legacy: true, probe: true, question: `кто чинит клавесины для консерватории ${stamp} по-старому` }),
   method: "POST",
 })
 await letLogSettle()
@@ -208,14 +208,14 @@ console.log(`  цена старого пути: ответ графа ${legacy.
 
 // ── ПУСТОЙ ВОПРОС ОТВЕРГАЕТСЯ ───────────────────────────────────────────────
 const empty = await call("/api/fractera/graph-search", {
-  body: JSON.stringify({ question: "   " }),
+  body: JSON.stringify({ probe: true, question: "   " }),
   method: "POST",
 })
 say(empty.status === 400 && empty.json.error === "empty-question", `пустой вопрос отвергнут: ${empty.status}`)
 
 // ── БЕЗ КЛЮЧА ДВЕРЬ НЕ ПУСКАЕТ ──────────────────────────────────────────────
 const noKey = await call("/api/fractera/graph-search", {
-  body: JSON.stringify({ question: "что угодно" }),
+  body: JSON.stringify({ probe: true, question: "что угодно" }),
   method: "POST",
 }, false)
 say(noKey.status === 401 || noKey.status === 403 || noKey.status === 307, `без секрета машины отказ: ${noKey.status}`)
