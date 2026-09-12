@@ -1,62 +1,62 @@
 ---
 name: use-knowledge-graph
-description: Граф знаний памяти — хранилище связей между сущностями. Читай перед тем, как обращаться к графу: здесь инструмент, форма ответа, три возможных исхода и границы. Нужен всегда, когда ответ лежит не в значении одной сущности, а в том, как сущности связаны между собой.
+description: The memory's knowledge graph — the store of relations between entities. Read this before reaching for the graph: the tool, the shape of its answer, the three possible outcomes, and the limits. Needed whenever an answer lies not in the value of one entity but in how entities are connected.
 ---
 
-> Подсказка, а не закон. Знаешь способ лучше для случая перед тобой — делай по-своему и скажи об этом.
+> A hint, not a law. If you know a better way for the case in front of you, take it and say so.
 
-## Инструмент
+## The tool
 
 ```
 ask_graph({ question })
 ```
 
-`question` — вопрос обычными словами, теми же, какими его задал бы человек. Больше ничего готовить
-не надо: ключевые слова, режим поиска и адрес хранилища собирает код.
+`question` is the question in ordinary words — the same ones a person would use. Nothing else needs
+preparing: keywords, search mode and the address of the store are assembled by the code.
 
-Это важно знать, чтобы не тратить ход на подготовку: переписывать вопрос «под поиск», выделять из
-него термины, подставлять имена в каком-то особом виде — работа, которая уже сделана за тебя.
+Worth knowing so you don't spend a turn on work already done for you: rewriting the question "for
+search", pulling out terms, normalising names — none of that is yours to do.
 
-## Что он возвращает
+## What comes back
 
-Сущности и связи, извлечённые при загрузке знания, — в готовом виде. Это **материал для твоего
-ответа**, а не сам ответ: формулируешь ты.
+Entities and relations, extracted when the knowledge was loaded, in ready form. This is **material
+for your answer**, not the answer itself: the wording is yours.
 
-Исходов ровно три, и они означают разное:
+There are exactly three outcomes, and they mean different things:
 
-| Что пришло | Что это значит | Что делать |
+| What arrived | What it means | What to do |
 |---|---|---|
-| сущности и связи | знание есть | составь ответ; назови, откуда он собран |
-| «Связей по этому вопросу в графе нет» | хранилище живо, знания нет | отвечай тем, что знаешь; скажи, чего не хватило |
-| «Граф связей не отвечает» | сломан путь к хранилищу | скажи об этом прямо, не выдавая за незнание |
+| entities and relations | the knowledge is there | compose the answer; say what it was assembled from |
+| "no relations for this question" | the store is alive, the knowledge is not there | answer from what you know; name what was missing |
+| "the graph is not answering" | the path to the store is broken | say so plainly; do not pass it off as absence of knowledge |
 
-Второе и третье легко спутать, а цена ошибки высокая: объявив поломку незнанием, ты сообщишь
-человеку, что данных нет, — хотя они есть и просто недостижимы.
+The second and third are easy to confuse, and the mistake is expensive: reporting a breakage as
+absence tells the person there is no data — when the data exists and is merely unreachable.
 
-## Цена
+## Cost
 
-Ход модели не тратится: всю дорогую работу — чтение текста и извлечение сущностей — модель сделала
-один раз, когда знание клали в граф. Ответ приходит за доли секунды.
+No model turn is spent. The expensive work — reading the text and extracting entities — was done
+once, when the knowledge was placed into the graph. The answer arrives in fractions of a second.
 
-Отсюда соотношение, которое стоит держать в голове: дорого стоит **твой** ход, а не обращение к
-хранилищу. Лишний `ask_graph` дешевле лишнего раздумья о том, звать его или нет.
+Hence the ratio worth keeping in mind: what costs is **your own** turn, not the trip to the store.
+One extra `ask_graph` is cheaper than one extra deliberation about whether to call it.
 
-## Чем он отличается от чтения значений
+## How it differs from reading values
 
-`what_i_already_know` отдаёт **значения**, записанные у сущности. Граф отдаёт **связи между
-сущностями** — то, что полем не выражается никогда и ни в одной таблице не лежит.
+`what_i_already_know` returns **values** recorded on an entity. The graph returns **relations
+between entities** — what a field can never express and no table holds.
 
-Поводы звать здесь не перечислены намеренно: список примеров сузил бы твоё решение, а ты видишь
-вопрос целиком и решаешь лучше списка.
+Occasions to call it are deliberately not listed here: a list of examples would narrow your
+decision, and you see the whole question and judge better than a list.
 
-## Границы
+## Limits
 
-**Писать этим инструментом нельзя.** Граф пополняется, когда память кладёт в него знание. Твоё дело
-— спросить.
+**You cannot write through this tool.** The graph grows when the memory places knowledge into it.
+Your part is to ask.
 
-**Векторный поиск по смыслу — не твой выбор.** Если слова вопроса и слова записи совсем разные, а
-связи не помогли, нужен вектор; он включается только требованием зовущего и сам собой не
-поднимается.
+**Semantic vector search is not your choice.** When the words of the question and the words of the
+record are entirely different and relations did not help, the vector store is what is needed; it is
+switched on by the caller's request and never rises on its own.
 
-**Имена ищутся как есть, без падежей.** Нестрогость взята на себя кодом, поэтому спрашивай обычными
-словами и не пытайся приводить имена к начальной форме.
+**Names are matched as they are, without grammatical cases.** The code already absorbs that
+looseness, so ask in ordinary words and do not try to reduce names to a base form.
