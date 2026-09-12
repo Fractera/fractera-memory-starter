@@ -102,14 +102,13 @@ export function GraphSearch({ words }: { words: MemoryUi["graphSearch"] }) {
         >
           {busy ? words.busy : words.ask}
         </button>
-        <button
-          className="rounded-md border border-border px-4 py-2 text-[length:var(--fs-body)] disabled:opacity-50"
-          disabled={busy || !question.trim()}
-          onClick={() => void run(true)}
-          type="button"
-        >
-          {words.askLegacy}
-        </button>
+        {/* 🪦 КНОПКА «СПРОСИТЬ ПО-СТАРОМУ» УБРАНА С ЭКРАНА 2026-09-12 СЛОВОМ
+            ВЛАДЕЛЬЦА: «button Спросить по-старому, без слов to remove».
+            🔒 САМ РЕЖИМ В ДВЕРИ ОСТАЁТСЯ, И ЭТО НЕ ЗАБЫТЫЙ ХВОСТ: им прибор
+            189-4 доказывает главное утверждение шага — со словами ход модели не
+            нужен, без них она звалась. Доказательство переехало из глаз в
+            машину, а не исчезло. Удали мы режим целиком — негативный контроль
+            стало бы нечем снять, и утверждение о цене повисло бы на слове. */}
         <button
           className="ml-auto rounded-md border border-border px-4 py-2 text-[length:var(--fs-small)] text-muted-foreground disabled:opacity-50"
           disabled={busy}
