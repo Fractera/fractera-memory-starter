@@ -65,13 +65,33 @@ const logLines = () => {
 }
 
 /**
- * Звала ли служба модель за извлечением ключевых слов, пока мы спрашивали.
+ * ЧЬИМИ СЛОВАМИ СЛУЖБА ИСКАЛА — самый прямой признак того, звала ли она модель.
  *
- * 🔒 ПРИЗНАК ВЗЯТ У НЕЁ САМОЙ И ИЗМЕРЕН 2026-09-12: строка
- * `== LLM cache == saving: hybrid:keywords:` появляется РОВНО тогда, когда она
- * извлекает слова моделью. Наше намерение тут ни при чём — считает тот, кого
- * мы звали.
+ * 🔒 ОНА ПЕЧАТАЕТ ИХ САМА: `Query nodes: Пражская Консерватория, чинит, ...`.
+ * Совпали с нашими — извлекать ей было нечего, ход модели не нужен. Пришли
+ * ЧУЖИЕ (склонённые, с заглавной, «Чинить» вместо «чинит») — их сделала модель.
+ *
+ * ✗ ПЕРВАЯ РЕДАКЦИЯ ПРИБОРА СЧИТАЛА СТРОКИ `== LLM cache == saving: …keywords`
+ * И ДАЛА НОЛЬ НА ОБОИХ ПУТЯХ — то есть негативный контроль молчал там, где
+ * обязан был сработать. Измерено в тот же час: строки сохранения кэша пишутся
+ * ПОЗЖЕ ответа, и чтение сразу после вызова их не видит. Признак был верным по
+ * смыслу и негодным по времени.
+ * 🔒 УРОК ШИРЕ СЛУЧАЯ: у признака есть не только смысл, но и МОМЕНТ появления.
+ * «Строки нет» и «строки ещё нет» — разные утверждения, и различает их только
+ * второй замер.
  */
+const queryNodesSince = (from) => {
+  try {
+    const all = readFileSync(LOG, "utf8").split("\n").slice(from)
+    const line = all.filter((l) => l.includes("Query nodes:")).pop() ?? ""
+    const m = line.match(/Query nodes: (.+?)(?: \(top_k|$)/)
+    return m ? m[1].split(",").map((s) => s.trim()).filter(Boolean) : []
+  } catch {
+    return null
+  }
+}
+
+/** Сколько раз служба сохраняла в кэш извлечённые МОДЕЛЬЮ слова. */
 const keywordCallsSince = (from) => {
   try {
     const all = readFileSync(LOG, "utf8").split("\n").slice(from)
@@ -80,6 +100,9 @@ const keywordCallsSince = (from) => {
     return -1
   }
 }
+
+/** Дать службе дописать журнал: он пишется после ответа, а не вместе с ним. */
+const letLogSettle = () => new Promise((r) => setTimeout(r, 3000))
 
 console.log(MARK)
 
@@ -123,6 +146,8 @@ const ours = await call("/api/fractera/graph-search", {
   body: JSON.stringify({ question: `кто чинит клавесины для консерватории ${stamp}` }),
   method: "POST",
 })
+await letLogSettle()
+const nodes1 = queryNodesSince(before1) ?? []
 const calls1 = keywordCallsSince(before1)
 
 say(ours.status === 200 && ours.json.ok === true, `дверь поиска отвечает: ${ours.status}`)
@@ -131,9 +156,16 @@ say(
   (ours.json.keywords?.matched ?? []).length > 0,
   `узнаны настоящие метки графа: ${(ours.json.keywords?.matched ?? []).join(", ") || "ни одной"}`,
 )
+// 🔒 ГЛАВНАЯ ПРОВЕРКА НАШЕГО ПУТИ: служба искала ИМЕННО НАШИМИ словами. Значит
+// извлекать ей было нечего — ход модели не понадобился.
+const sent = (ours.json.keywords?.low ?? []).map((s) => String(s).toLowerCase())
+say(
+  nodes1.length > 0 && nodes1.every((n) => sent.includes(n.toLowerCase())),
+  `НАШ путь: служба искала нашими словами — ${nodes1.join(", ") || "строки нет"}`,
+)
 say(
   calls1 === 0,
-  `НАШ путь: служба НЕ звала модель за словами (строк в её журнале: ${calls1})`,
+  `НАШ путь: сохранений извлечённых моделью слов: ${calls1}`,
 )
 console.log(`  цена: слова ${ours.json.wordsMs} мс, ответ графа ${ours.json.askMs} мс`)
 
@@ -146,13 +178,19 @@ const legacy = await call("/api/fractera/graph-search", {
   body: JSON.stringify({ legacy: true, question: `кто чинит клавесины для консерватории ${stamp} по-старому` }),
   method: "POST",
 })
+await letLogSettle()
+const nodes2 = queryNodesSince(before2) ?? []
 const calls2 = keywordCallsSince(before2)
 
 say(legacy.status === 200, `старый путь отвечает: ${legacy.status}`)
+// 🔒 НЕГАТИВНЫЙ КОНТРОЛЬ ГЛАВНОГО УТВЕРЖДЕНИЯ: слов мы не давали — значит слова
+// в журнале ЧУЖИЕ, сделанные моделью. Совпади они с нашими, доказывать было бы
+// нечего, и прибор обязан покраснеть.
 say(
-  calls2 > 0,
-  `СТАРЫЙ путь: служба ЗВАЛА модель за словами (строк в её журнале: ${calls2})`,
+  nodes2.length > 0 && nodes2.some((n) => !sent.includes(n.toLowerCase())),
+  `СТАРЫЙ путь: служба искала СВОИМИ словами (их сделала модель) — ${nodes2.join(", ") || "строки нет"}`,
 )
+console.log(`  сохранений кэша слов на старом пути: ${calls2}`)
 say(
   legacy.json.modelTurn === "unknown",
   `старый путь честно говорит «не знаю» о ходе модели: ${legacy.json.modelTurn}`,
