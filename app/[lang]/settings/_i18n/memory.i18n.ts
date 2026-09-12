@@ -74,6 +74,17 @@ export type MemoryUi = {
     textLabel: string;
     textPlaceholder: string;
     waiting: string;
+    /**
+     * Цена загрузки словами и числами (189-3).
+     *
+     * 🔒 «КУСКОВ ПРОЧИТАНО» — ЭТО НИЖНЯЯ ГРАНИЦА ХОДОВ МОДЕЛИ, И ТАК И СКАЗАНО.
+     * Счётчика вызовов служба графа наружу не отдаёт; придуманная точность была
+     * бы ложью о цене, а умолчание — уверенным умолчанием.
+     */
+    workTitle: string;
+    workLine: string;
+    workNote: string;
+    workNone: string;
   };
   /** Слова карточки ключа доступа — форму задаёт сама карточка (185). */
   apiKey: ApiKeyWords;
@@ -395,6 +406,12 @@ const EN: MemoryUi = {
     textLabel: "Your text",
     textPlaceholder: "Paste what memory should learn…",
     waiting: "Building…",
+    workLine:
+      "Chunks read by the model: {chunks} · entities extracted: {entities} · relations: {relations}.",
+    workNone: "The graph has not reported any work yet.",
+    workNote:
+      "Chunks read is the lower bound on model turns: the engine exposes no call counter, and an invented number would be a lie about the cost. This is where the expensive half of the work happens — reading afterwards is nearly free.",
+    workTitle: "What the load cost",
   },
   testBench: {
     graph: {
@@ -684,6 +701,12 @@ const RU: MemoryUi = {
     textLabel: "Ваш текст",
     textPlaceholder: "Вставьте то, что память должна выучить…",
     waiting: "Строится…",
+    workLine:
+      "Кусков прочитано моделью: {chunks} · сущностей извлечено: {entities} · связей: {relations}.",
+    workNone: "Граф пока не отчитывался о работе.",
+    workNote:
+      "Кусков прочитано — это нижняя граница числа ходов модели: счётчика вызовов служба наружу не отдаёт, а придуманная точность была бы ложью о цене. Здесь и происходит дорогая половина работы — чтение после неё почти бесплатно.",
+    workTitle: "Чем обошлась загрузка",
   },
   testBench: {
     graph: {

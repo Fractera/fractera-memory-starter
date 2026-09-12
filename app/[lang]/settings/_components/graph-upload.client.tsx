@@ -21,11 +21,22 @@ import type { MemoryUi } from "../_i18n/memory.i18n";
 
 type Doc = { id: string; status: string; source: string | null; chunks: number };
 
+/** Отчёт службы графа о том, чем ей обошёлся разбор (189-3). */
+type Work = {
+  busy: boolean;
+  chunks: number;
+  entities: number;
+  job: string | null;
+  message: string | null;
+  relations: number;
+};
+
 type State = {
   documents: Doc[];
   labels: number;
   labelSample?: string[];
   ready: boolean;
+  work?: Work | null;
 };
 
 /** Подставить числа в строку словаря: словарь остаётся словами, а не разметкой. */
@@ -197,6 +208,35 @@ export function GraphUpload({ words }: { words: MemoryUi["graphUpload"] }) {
             : words.waiting}
         </p>
       )}
+
+      {/* 🔒 ЦЕНА ЗАГРУЗКИ — ЧИСЛАМИ САМОЙ СЛУЖБЫ ГРАФА (189-3), А НЕ НАШЕЙ
+          ОЦЕНКОЙ. Здесь живёт главное утверждение владельца: дорого платим на
+          загрузке, чтобы чтение потом было мгновенным.
+          🛑 «Кусков прочитано» названо НИЖНЕЙ ГРАНИЦЕЙ ходов модели прямо в
+          подписи: счётчика вызовов служба не отдаёт, и придуманная точность
+          была бы ложью о цене. */}
+      <section className="space-y-2">
+        <h3 className="font-medium text-[length:var(--fs-body)]">{words.workTitle}</h3>
+        {state?.work && state.work.chunks > 0 ? (
+          <>
+            <p className="text-[length:var(--fs-body)]">
+              {fill(words.workLine, {
+                chunks: state.work.chunks,
+                entities: state.work.entities,
+                relations: state.work.relations,
+              })}
+            </p>
+            {state.work.busy && (
+              <p className="text-[length:var(--fs-small)] text-muted-foreground">
+                {state.work.message ?? words.waiting}
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-[length:var(--fs-small)] text-muted-foreground">{words.workNone}</p>
+        )}
+        <p className="text-[length:var(--fs-small)] text-muted-foreground">{words.workNote}</p>
+      </section>
 
       <section className="space-y-2">
         <h3 className="font-medium text-[length:var(--fs-body)]">{words.docsTitle}</h3>

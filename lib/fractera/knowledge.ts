@@ -293,6 +293,72 @@ export async function knowledgeDocuments(): Promise<
   }
 }
 
+/**
+ * Чем обошлась загрузка — СЛОВАМИ САМОЙ СЛУЖБЫ ГРАФА (189-3).
+ *
+ * 🎯 ТРЕБОВАНИЕ ВЛАДЕЛЬЦА: «во время загрузки происходит вызов модели и создание
+ * графа знаний». Значит экран обязан показать, что модель работала, и чем это
+ * кончилось — иначе дорогая половина остаётся невидимой.
+ *
+ * 🔒 ЧИСЛА БЕРУТСЯ У ТОГО, КТО РАБОТАЛ, А НЕ У НАС. `pipeline_status` печатает
+ * собственный отчёт движка: «Chunk 1 of 1 extracted 6 Ent + 2 Rel». Своя оценка
+ * рядом с чужим измерением — второе число, которое разойдётся молча.
+ *
+ * 🛑 СЧЁТЧИКА ВЫЗОВОВ МОДЕЛИ У СЛУЖБЫ НЕТ, И ЭТО СКАЗАНО, А НЕ ЗАМЕНЕНО
+ * ПРАВДОПОДОБНЫМ. Измерено 2026-09-12: вызовы видны только в её журнале
+ * (`== LLM cache == saving`), наружу она их не отдаёт. Поэтому наружу едет
+ * ЧИСЛО КУСКОВ, прочитанных моделью, — нижняя граница ходов, честно названная
+ * нижней границей. Придуманная точность была бы ложью о цене.
+ */
+export type GraphWork = {
+  /** Идёт ли разбор прямо сейчас. */
+  busy: boolean;
+  /** Кусков прочитано моделью — нижняя граница числа её ходов. */
+  chunks: number;
+  /** Сущностей извлечено. */
+  entities: number;
+  /** Имя документа, о котором отчёт. */
+  job: string | null;
+  /** Последняя строка отчёта — её же показываем, когда разбор ещё идёт. */
+  message: string | null;
+  /** Связей извлечено. */
+  relations: number;
+};
+
+export async function graphWork(): Promise<GraphWork | null> {
+  try {
+    const d = await dataJson<{
+      busy?: boolean;
+      history_messages?: unknown;
+      job_name?: unknown;
+      latest_message?: unknown;
+    }>("/service/rag/documents/pipeline_status");
+
+    const history = Array.isArray(d.history_messages) ? d.history_messages.map(String) : [];
+    let chunks = 0;
+    let entities = 0;
+    let relations = 0;
+    for (const line of history) {
+      // «Chunk 1 of 1 extracted 6 Ent + 2 Rel chunk-…» — строка движка, слово в слово.
+      const m = line.match(/Chunk (\d+) of (\d+) extracted (\d+) Ent \+ (\d+) Rel/);
+      if (!m) continue;
+      chunks = Math.max(chunks, Number(m[2]));
+      entities += Number(m[3]);
+      relations += Number(m[4]);
+    }
+    return {
+      busy: Boolean(d.busy),
+      chunks,
+      entities,
+      job: d.job_name ? String(d.job_name) : null,
+      message: d.latest_message ? String(d.latest_message) : null,
+      relations,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /** Is the graph engine running and reachable from here. */
 export async function knowledgeReady(): Promise<boolean> {
   try {
