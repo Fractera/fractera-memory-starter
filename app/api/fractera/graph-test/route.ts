@@ -6,7 +6,7 @@ import {
   labels,
   learn,
 } from "@/lib/fractera/knowledge"
-import { fracteraSession } from "@/lib/fractera/session"
+import { benchGuard } from "@/lib/bench-guard"
 
 // ДВЕРЬ СТЕНДА ГРАФА ЗНАНИЙ (189-2).
 //
@@ -15,7 +15,10 @@ import { fracteraSession } from "@/lib/fractera/session"
 // сохранённого затем получить оценку того что найдено». Здесь первая треть:
 // загрузить и увидеть, что родилось.
 //
-// 🔒 ЗАМОК — СЕССИЯ ЧЕЛОВЕКА, РОЛЬ `architect`, И ДВЕРЬ ПРОВЕРЯЕТ ЕЁ САМА.
+// 🔒 ЗАМОК — СЕССИЯ ЧЕЛОВЕКА (роль `architect`) ЛИБО КЛЮЧ ПАМЯТИ (189-3), и
+// дверь проверяет его САМА, общим привратником `lib/bench-guard.ts`. Ключ здесь
+// затем, чтобы приборы могли прогнать стенд без браузера: два подшага подряд
+// закрывались косвенной плоскостью, потому что у скрипта нет куки.
 // Значит её имя обязано стоять в `SELF_GUARDED` привратника: перехваченная им,
 // она отдаст переадресацию, островок прочитает HTML вместо JSON — и человек
 // увидит «граф не отвечает» там, где на самом деле истекла его сессия.
@@ -30,13 +33,6 @@ import { fracteraSession } from "@/lib/fractera/session"
 const deny = (error: string, status: number) =>
   NextResponse.json({ error, ok: false }, { status })
 
-async function guard() {
-  const session = await fracteraSession()
-  if (!session) return deny("unauthorized", 401)
-  if (!session.roles.includes("architect")) return deny("forbidden", 403)
-  return null
-}
-
 /**
  * Что сейчас в графе.
  *
@@ -44,9 +40,9 @@ async function guard() {
  * из этого ИЗВЛЁК. Совпадение первого без второго и есть тот случай, когда
  * «загрузилось» выглядит успехом, а искать потом нечего.
  */
-export async function GET() {
-  const denied = await guard()
-  if (denied) return denied
+export async function GET(request: Request) {
+  const gate = await benchGuard(request)
+  if (gate.denied) return gate.denied
 
   const ready = await knowledgeReady()
   if (!ready) {
@@ -81,8 +77,8 @@ export async function GET() {
  * показать именно это различие.
  */
 export async function POST(request: Request) {
-  const denied = await guard()
-  if (denied) return denied
+  const gate = await benchGuard(request)
+  if (gate.denied) return gate.denied
 
   let body: Record<string, unknown>
   try {
