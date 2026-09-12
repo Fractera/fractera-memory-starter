@@ -38,6 +38,16 @@ So when you get "nothing suitable", that is a real answer: say the knowledge isn
 nearest score alongside it is useful — a near miss at 0.31 and a wild miss at 0.08 point the person
 in different directions.
 
+**Read every piece that comes back, not only the first.** Ranking here is approximate: the passage
+that actually answers the question is often second or third, and sometimes a plausible-looking
+neighbour sits on top. You can tell them apart — you understand the question; the store only
+measured distances. Treat the order as a suggestion and the set as the material.
+
+**And treat a single hit with care.** One piece above the threshold means the store found something
+resembling the question, not that it found the answer. When the only piece that came back doesn't
+actually contain what was asked, say so — it costs nothing, and a wrong answer delivered confidently
+costs a great deal.
+
 ## Cost
 
 No model turn for the search: only the embedding of your question is computed, which takes

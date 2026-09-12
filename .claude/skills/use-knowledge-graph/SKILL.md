@@ -22,6 +22,12 @@ search", pulling out terms, normalising names — none of that is yours to do.
 Entities and relations, extracted when the knowledge was loaded, in ready form. This is **material
 for your answer**, not the answer itself: the wording is yours.
 
+**Read what came back before trusting it.** This store has no notion of an empty result: it returns
+its nearest material for any question, including one it has never seen anything about. So the
+material can be plausible and still be about something else entirely — and unlike the vector store,
+there is no number here to warn you. You are the check: if what came back doesn't contain what was
+asked, say the knowledge isn't there rather than composing an answer out of whatever arrived.
+
 There are exactly three outcomes, and they mean different things:
 
 | What arrived | What it means | What to do |
