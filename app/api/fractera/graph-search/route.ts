@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server"
 import { ask, forgetDocuments } from "@/lib/fractera/knowledge"
 import { keywordsFor } from "@/lib/keywords"
+import { noteRun } from "@/lib/cases.mjs"
 import { benchGuard } from "@/lib/bench-guard"
 
 // ДВЕРЬ ПОИСКА ПО ГРАФУ (189-4).
@@ -67,8 +68,27 @@ export async function POST(request: Request) {
   const entities = (context.match(/Knowledge Graph Data \(Entity\)/g) ?? []).length
   const found = context.replace(/\s+/g, "").length > 80
 
+  // 🔒 ПРОГОН ЛОЖИТСЯ В КОРПУС СЛУЧАЕВ СРАЗУ, А НЕ ПО НАЖАТИЮ ВЕРДИКТА (189-5).
+  // Человек судит не всегда — а цена уже измерена, и потерять её значит
+  // потерять половину знания о прогоне. Вердикт придёт позже и прикрепится по
+  // номеру; прогон без вердикта числится НЕЗАВЕРШЁННЫМ, а не удачным.
+  // 🛑 ОТКАЗ ЗАПИСИ НЕ ЛОМАЕТ ОТВЕТ: человек спрашивал граф, а не наш учёт.
+  // Молчать о нём при этом нельзя — поэтому наружу едет `caseId: null`.
+  const noted = await noteRun({
+    askMs,
+    entities,
+    found,
+    keywords: legacy ? null : kw,
+    legacy,
+    modelTurn: legacy ? "unknown" : "none",
+    question,
+    store: "graph",
+    wordsMs,
+  })
+
   return NextResponse.json({
     askMs,
+    caseId: noted.ok ? noted.id : null,
     context,
     entities,
     found,

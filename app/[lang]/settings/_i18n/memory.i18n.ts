@@ -93,6 +93,26 @@ export type MemoryUi = {
    * «по-старому, без слов». Кнопка `legacy` существует ради доказательства, и
    * человек обязан понимать, что именно он сравнивает.
    */
+  /**
+   * Слова вкладки «Оценка» — вердикт человека и корпус случаев (189-5).
+   *
+   * 🔒 «НЕЗАВЕРШЁННЫЕ» НАЗЫВАЮТСЯ ОТДЕЛЬНЫМ СЛОВОМ, А НЕ ПРЯЧУТСЯ В «ПЛОХИЕ».
+   * Прогон без вердикта — не провал, а несудимый случай; смешав их, мы получили
+   * бы долю удачных, которая падает от того, что человек ушёл от экрана.
+   */
+  benchCases: {
+    bad: string;
+    empty: string;
+    good: string;
+    judged: string;
+    lead: string;
+    legacyMark: string;
+    modelMark: string;
+    pending: string;
+    summary: string;
+    title: string;
+    why: string;
+  };
   graphSearch: {
     ask: string;
     askLegacy: string;
@@ -438,6 +458,21 @@ const EN: MemoryUi = {
       "Chunks read is the lower bound on model turns: the engine exposes no call counter, and an invented number would be a lie about the cost. This is where the expensive half of the work happens — reading afterwards is nearly free.",
     workTitle: "What the load cost",
   },
+  benchCases: {
+    bad: "Found the wrong thing",
+    empty: "No runs yet. Ask something on the Search tab and come back.",
+    good: "Found the right thing",
+    judged: "Judged.",
+    lead:
+      "Only you can say whether the right thing was found. The engine is never allowed to grade its own work — a model retelling its own run errs in its own favour.",
+    legacyMark: "asked the old way",
+    modelMark: "model turn: {turn}",
+    pending: "awaiting your verdict",
+    summary:
+      "Runs: {total} · right: {good} · wrong: {bad} · awaiting verdict: {pending} · average answer: {avg} ms.",
+    title: "Case book",
+    why: "Why (optional)",
+  },
   graphSearch: {
     ask: "Ask — memory supplies the keywords",
     askLegacy: "Ask the old way, without keywords",
@@ -756,6 +791,21 @@ const RU: MemoryUi = {
     workNote:
       "Кусков прочитано — это нижняя граница числа ходов модели: счётчика вызовов служба наружу не отдаёт, а придуманная точность была бы ложью о цене. Здесь и происходит дорогая половина работы — чтение после неё почти бесплатно.",
     workTitle: "Чем обошлась загрузка",
+  },
+  benchCases: {
+    bad: "Нашло не то",
+    empty: "Прогонов пока нет. Спросите что-нибудь на вкладке «Поиск» и вернитесь.",
+    good: "Нашло то",
+    judged: "Вердикт записан.",
+    lead:
+      "Нашлось нужное или нет — можете сказать только вы. Оценивать собственную работу памяти запрещено: модель, пересказывающая свой прогон, ошибается в свою пользу.",
+    legacyMark: "спрошено по-старому",
+    modelMark: "ход модели: {turn}",
+    pending: "ждёт вашего вердикта",
+    summary:
+      "Прогонов: {total} · нашло то: {good} · не то: {bad} · без вердикта: {pending} · ответ в среднем: {avg} мс.",
+    title: "Корпус случаев",
+    why: "Почему (необязательно)",
   },
   graphSearch: {
     ask: "Спросить — слова даёт память",

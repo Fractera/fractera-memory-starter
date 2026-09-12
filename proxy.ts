@@ -54,6 +54,7 @@ import { type NextRequest, NextResponse } from "next/server";
 // ✗ В памяти это уже оплачено дважды: петля на кнопке «Войти» (180) и день
 // отладки терминала у чата (157-3).
 const SELF_GUARDED = new Set([
+  "/api/fractera/bench-cases",
   "/api/fractera/graph-search",
   "/api/fractera/graph-test",
   "/api/fractera/memory-test",

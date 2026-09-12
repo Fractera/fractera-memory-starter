@@ -11,6 +11,7 @@ import { MemoryBench } from "./_components/memory-bench.client";
 import { JournalView } from "./_components/journal-view.client";
 import { GraphUpload } from "./_components/graph-upload.client";
 import { GraphSearch } from "./_components/graph-search.client";
+import { BenchCases } from "./_components/bench-cases.client";
 import { OpenAiTab } from "./_components/openai-tab";
 import { AnthropicKeySection } from "./_components/anthropic-key";
 import { PassportBody } from "./_components/passport-body.client";
@@ -258,6 +259,8 @@ async function MemoryPageBody({
                   <GraphUpload words={ui.graphUpload} />
                 ) : active === "graph-test" && openTab === "search" ? (
                   <GraphSearch words={ui.graphSearch} />
+                ) : active === "graph-test" && openTab === "verdict" ? (
+                  <BenchCases words={ui.benchCases} />
                 ) : (
                   <p className="rounded-md border border-border border-dashed p-4 text-[length:var(--fs-small)] text-muted-foreground">
                     {ui.testBench.soon}
