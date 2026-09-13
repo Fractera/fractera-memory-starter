@@ -30,7 +30,9 @@
  * служба, которую нельзя менять, не ломая потребителя: он не сможет ни узнать
  * о смене, ни объяснить свой отказ.
  */
-export const CONTRACT_VERSION = "2.4.0"
+export const CONTRACT_VERSION = "2.5.0"
+
+// 🔒 2.5.0 — MINOR (194-17): методы `find_objects` и `open_object`, адрес каталога `GET /v1/objects/{id}/file`.
 
 // 🔒 2.4.0 — MINOR (194-16): `keep_object` принимает и JSON с `url`; `remember.media` получил исполнителя — каждый
 // адрес идёт тем же путём, и ответ несёт `objects`. Род вложения больше не называется: его определяет память.
@@ -226,6 +228,36 @@ export const METHODS = [
       "Сорвалась ступень хранилищ — 502 с причиной: уже положенное снято, строка осталась со статусом failed, её messageId в ответе. " +
       "Модель не ответила или кончилась подписка — 502 с причиной.",
   },
+  {
+    // 🔒 194-17: ИМЕНА ТЕ ЖЕ, ЧТО У РУК АГЕНТА, И ПУТЬ ТОТ ЖЕ — ДВЕРИ СТЕНДА ПО ПЕТЛЕ.
+    name: "find_objects",
+    about:
+      "Найти объекты памяти по смыслу вопроса — снимки, документы, записи, код, положенные keep_object или вложениями remember. " +
+      "Ищет по карточкам поиска одним встраиванием, без хода модели.",
+    params: [
+      { name: "question", type: "string", required: true, about: "Что ищем — обычной фразой, другими словами, чем в самом объекте, тоже можно" },
+    ],
+    returns:
+      "found; results — найденное ближе порога, лучшее первым: id, title, summary, kind, messageId (строка messages_that_came_into_memory), " +
+      "name, mime, size, score, preview; threshold — порог близости; lost — карточки, чей файл стёрт мимо памяти.",
+    onMiss:
+      "Ничего ближе порога — ok:true, found:false и пустой results. Это не «такого нет»: переспросите другими словами. " +
+      "Хранилище недоступно — ok:false и причина.",
+  },
+  {
+    name: "open_object",
+    about:
+      "Открыть найденный объект: карточка, текст частями для текстовых родов и адрес самого файла. " +
+      "Звать, когда саммари из find_objects не хватило для ответа.",
+    params: [
+      { name: "id", type: "string", required: true, about: "id объекта из find_objects или keep_object" },
+      { name: "from", type: "integer", required: false, about: "С какого знака продолжить текст. Не назван — с начала" },
+    ],
+    returns:
+      "card — карточка объекта; text — кусок текста (null у изображения, видео, аудио), from, shown, total и limit — где этот кусок и сколько всего; " +
+      "file — адрес самого файла: GET этот путь от адреса памяти с тем же ключом.",
+    onMiss: "Чужой или несуществующий id — ok:false и error not-found или not-ours. Хранилище недоступно — ok:false и причина.",
+  },
 ]
 
 /**
@@ -243,6 +275,7 @@ export const METHODS = [
 export const CATALOGUE = [
   { path: "GET /v1/tables", about: "имена всего, что память о человеке ведёт; часто этого довольно" },
   { path: "GET /v1/tables/{имя}", about: "описание одной таблицы — если имя не объяснило само себя" },
+  { path: "GET /v1/objects/{id}/file", about: "сам файл объекта — байты с его типом и именем; id из find_objects или keep_object" },
 ]
 
 /**

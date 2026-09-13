@@ -61,6 +61,7 @@ import { contract, CONTRACT_VERSION, METHODS, SERVICE } from "./contract.mjs"
 import { say } from "./lib/words.mjs"
 import { people, remember, recall } from "./lib/verbs.mjs"
 import { forget_journal, journal } from "./lib/journal-verbs.mjs"
+import { find_objects, open_object } from "./lib/object-verbs.mjs"
 // 🪦 `lib/page.mjs` БОЛЬШЕ НЕ ИМПОРТИРУЕТСЯ — страница журнала на голом Node
 // уехала на защищённый маршрут Next (178-6). Файл оставлен на диске: он ещё
 // пригодится тому, кто захочет служебный экран без фреймворка, и восстановить
@@ -151,7 +152,7 @@ function readBody(req) {
 // 🔒 ИСПОЛНИТЕЛИ ЗОВУТСЯ ПО ИМЕНИ ИЗ ДОГОВОРА, А НЕ ПО СПИСКУ В МАРШРУТИЗАТОРЕ.
 // Второй список разошёлся бы с договором молча — в проекте это оплачено
 // четырежды за три дня.
-const RUN = { forget_journal, journal, people, recall, remember }
+const RUN = { find_objects, forget_journal, journal, open_object, people, recall, remember }
 
 /**
  * Провести тело договора во внутреннюю дверь (194-15).
@@ -364,6 +365,38 @@ const server = createServer(async (req, res) => {
     }
     const d = await describeTable(name)
     return send(res, d.ok ? 200 : 404, d)
+  }
+
+  // ── ФАЙЛ ОБЪЕКТА (194-17) ────────────────────────────────────────────────
+  // 🔒 БАЙТЫ ТЕКУТ ПОТОКОМ ИЗ ДВЕРИ `object-file` ПО ПЕТЛЕ, С ЕЁ ТИПОМ И ИМЕНЕМ: файл до 200 МБ не собирается в
+  // память процесса, а тип и имя — те, что записаны при сохранении, а не угаданы здесь.
+  if (req.method === "GET" && /^\/v1\/objects\/[^/]+\/file$/.test(path)) {
+    if (!SECRET) {
+      return send(res, 503, { error: "no-machine-secret", ok: false, what_happened: say("inside-memory") })
+    }
+    const id = decodeURIComponent(path.split("/")[3] ?? "")
+    const up = httpRequest(
+      {
+        headers: { "x-data-secret": SECRET },
+        host: "127.0.0.1",
+        method: "GET",
+        path: `/api/fractera/object-file?id=${encodeURIComponent(id)}`,
+        port: PORT,
+      },
+      (answer) => {
+        const h = { "cache-control": "no-store", "content-type": answer.headers["content-type"] ?? "application/octet-stream" }
+        if (answer.headers["content-disposition"]) h["content-disposition"] = answer.headers["content-disposition"]
+        if (answer.headers["content-length"]) h["content-length"] = answer.headers["content-length"]
+        res.writeHead(answer.statusCode ?? 502, h)
+        answer.pipe(res)
+      },
+    )
+    up.on("error", (e) => {
+      if (res.headersSent) return res.destroy()
+      send(res, 502, { error: "inside-memory", ok: false, what_happened: say("inside-memory"), why: String(e.message).slice(0, 200) })
+    })
+    up.end()
+    return
   }
 
   // Методы договора: имя в пути, тело — параметры.

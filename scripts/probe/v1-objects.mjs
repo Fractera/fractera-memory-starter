@@ -13,6 +13,7 @@
 //
 // Запуск на сервере: node scripts/probe/v1-objects.mjs
 
+import { createHash } from "node:crypto"
 import { readFileSync } from "node:fs"
 
 const BASE = process.env.MEMORY_URL ?? "https://memory.aifa.dev"
@@ -183,6 +184,35 @@ say(objs.length === 2, `remember вернул objects по каждому вло
 say(objs[0]?.ok === false && objs[0]?.error === "url-forbidden", `вложение в петлю → ${objs[0]?.error}`)
 say(objs[1]?.ok === true && Boolean(objs[1]?.messageId), `вложение README → ok, messageId ${objs[1]?.messageId}, род ${objs[1]?.kind}`)
 say(!(jr.params ?? []).some((p) => p.name === "media" && p.state === "bad_form"), "media больше не отвергается формой без kind")
+
+// ── 194-17: чтение снаружи ──────────────────────────────────────────────────
+const call = async (method, body) => {
+  const r = await fetch(`${BASE}/v1/${method}`, { body: JSON.stringify(body), headers: { "Content-Type": "application/json", "x-memory-key": MEMORY_KEY }, method: "POST" })
+  return { j: await r.json().catch(() => ({})), status: r.status }
+}
+const sha = (b) => createHash("sha256").update(b).digest("hex")
+say(["find_objects", "open_object"].every((n) => (c.methods ?? []).some((x) => x.name === n)) && (c.catalogue ?? []).some((x) => String(x.path).includes("/v1/objects/{id}/file")), "договор называет find_objects, open_object и адрес файла")
+const textId = objs[1]?.id
+if (textId) {
+  const f = await call("find_objects", { question: "движок памяти для ИИ-агентов с графом знаний и векторным поиском" })
+  const hit = (f.j.results ?? []).find((x) => x.id === textId)
+  say(f.status === 200 && f.j.ok === true && Boolean(hit) && hit.messageId === objs[1].messageId && hit.kind === "markdown", `find_objects: найдено ${(f.j.results ?? []).length}, README ${hit ? "на месте" : "НЕТ"}, messageId ${hit?.messageId}, kind ${hit?.kind}, score ${hit?.score}`)
+  const o = await call("open_object", { id: textId })
+  say(o.j.ok === true && String(o.j.text ?? "").length > 200 && o.j.file === `/v1/objects/${textId}/file`, `open_object: текст ${String(o.j.text ?? "").length} из ${o.j.total}, file ${o.j.file}`)
+}
+if (ju.object?.id) {
+  const fr = await fetch(`${BASE}/v1/objects/${ju.object.id}/file`, { headers: { "x-memory-key": MEMORY_KEY } })
+  const got = new Uint8Array(await fr.arrayBuffer())
+  say(fr.status === 200 && sha(got) === sha(bytes), `файл объекта: ${fr.status}, ${got.length} байт, тип ${fr.headers.get("content-type")}, sha256 совпадает: ${sha(got) === sha(bytes)}`)
+  const fn = await fetch(`${BASE}/v1/objects/${ju.object.id}/file`)
+  say(fn.status === 401, `файл без ключа → ${fn.status}`)
+}
+const nf = await call("find_objects", { question: "Несуществующийпеликанноль квазарный зимородок" })
+say(nf.j.ok === true && !(nf.j.results ?? []).some((x) => x.id === textId || x.id === ju.object?.id), `негатив поиска: found ${nf.j.found}, результатов ${(nf.j.results ?? []).length}, объектов прибора среди них нет`)
+const bad = await call("open_object", { id: "00000000-0000-0000-0000-000000000000" })
+say(bad.j.ok === false && ["not-found", "not-ours"].includes(bad.j.error), `open_object чужого id → ${bad.j.error}`)
+const badFile = await fetch(`${BASE}/v1/objects/00000000-0000-0000-0000-000000000000/file`, { headers: { "x-memory-key": MEMORY_KEY } })
+say(badFile.status === 404, `файл чужого id → ${badFile.status}`)
 
 // ── уборка по метке ─────────────────────────────────────────────────────────
 // 🔒 ДОКУМЕНТ ГРАФА УДАЛЯЕТСЯ ТОЛЬКО ПОСЛЕ РАЗБОРА (находка 194-4), И ЖДАТЬ НАДО КАЖДЫЙ, А НЕ ОДИН.
