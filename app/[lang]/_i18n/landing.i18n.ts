@@ -29,6 +29,8 @@ export type LandingWords = {
     primary: string;
     secondary: string;
   };
+  /** Оглавление страницы (194-12): надпись над списком и подпись навигации для экранного диктора. */
+  toc: { heading: string; label: string };
   problem: { title: string; lead: string; body: string };
   router: {
     title: string;
@@ -197,7 +199,7 @@ const EN: LandingWords = {
           },
           {
             feature: "Native multimodality",
-            ours: "Built in: audio, video, PDF, images",
+            ours: "Built in: audio, video, images, PDF, Markdown, HTML, source code",
             rivals: ["Requires external parsers", "Requires external parsers", "Text focused"],
           },
           {
@@ -285,7 +287,7 @@ const EN: LandingWords = {
         q: "Can it answer questions about a place by coordinates, not by a word?",
       },
       {
-        a: "Voice notes, images, video, PDF and HTML. The pipeline lives inside the engine: audio is transcribed, images are captioned and read by OCR, video has its track transcribed and its key frames captioned, PDFs are parsed with an OCR fallback. The original binary stays in the built-in object store and is referenced from answers by id.",
+        a: "Voice notes, images, video, PDF, Markdown, HTML and source code (TypeScript, Python, SQL and more). Every file gets a full description detailed enough for another AI to reconstruct it, and a summary of about 50 words: speech is transcribed by OpenAI whisper-1 with timestamps, a video is split into its sound track and frames on one timeline, and pictures, documents, pages and code are read by Claude — code is never executed. The original stays in the built-in object store next to its full description and is referenced from answers by id.",
         q: "What can I send besides text?",
       },
       {
@@ -319,13 +321,14 @@ const EN: LandingWords = {
   },
   seo: {
     description:
-      "Self-hosted memory engine for AI agents: knowledge graph, vector and relational stores, built-in object storage, geospatial lat/lon radius recall, native voice, image, video and PDF input, zero-token deterministic reads and champion/challenger skill evolution. One REST API, open source.",
+      "Self-hosted memory engine for AI agents: knowledge graph, vector and relational stores, built-in object storage, geospatial lat/lon radius recall, native voice, image, video, PDF, Markdown, HTML and source-code input, zero-token deterministic reads and champion/challenger skill evolution. One REST API, open source.",
     title: "Fractera Memory — self-hosted memory engine for AI agents",
   },
+  toc: { heading: "On this page", label: "Contents" },
   hero: {
     badges: ["Zero per-request fees", "Zero vendor lock-in", "Full privacy on your server"],
     body:
-      "The engine ingests raw, unstructured real-world input — text, images, voice notes, whole PDF documents, video, precise spatial-temporal coordinates and dates — and turns it into an indexed knowledge graph and structured relational stores, without unnecessary model calls and without per-request token costs.",
+      "The engine ingests raw, unstructured real-world input — text, images, voice notes, video, whole PDF documents, Markdown and HTML pages, source code, precise spatial-temporal coordinates and dates — and turns it into an indexed knowledge graph and structured relational stores, without unnecessary model calls and without per-request token costs.",
     eyebrow: "Fractera Memory Starter",
     lead:
       "An autonomous, self-hosted long-term memory engine and the cognitive core for AI agents. Built to work as the architect's personal command centre through Telegram and a unified REST API, it closes the gap between a volatile context window and real cognitive continuity.",
@@ -381,10 +384,12 @@ const EN: LandingWords = {
   },
   media: {
     items: [
-      { body: "Local speech-to-text transcription through a Whisper pipeline.", title: "Audio" },
-      { body: "Scene captioning through vision, plus OCR text extraction.", title: "Images" },
-      { body: "Audio track extracted and transcribed, key frames processed by vision.", title: "Video" },
-      { body: "Native text parsing, OCR fallback for scans, structural summarisation.", title: "PDF and documents" },
+      { body: "Speech-to-text by OpenAI whisper-1, with a timestamp on every segment.", title: "Audio" },
+      { body: "Read by a vision model: every element, its position, colours and all visible text.", title: "Images" },
+      { body: "The sound track is transcribed and six frames are read — one timeline, frames between the lines.", title: "Video" },
+      { body: "The document is read whole: its structure and its content, tables row by row.", title: "PDF" },
+      { body: "Markdown is kept as the document it renders into; HTML as a page and as its source.", title: "Markdown and HTML" },
+      { body: "Source code is described — purpose, structure, exports — with the source verbatim, and never run.", title: "Source code" },
     ],
     lead: "Not a preprocessor bolted on the side. The pipeline lives inside the engine.",
     title: "Native multimodality",
@@ -430,7 +435,7 @@ const EN: LandingWords = {
     cheapCost: "Zero tokens, no model, sub-10 ms",
     deepBranch: "Levels 4–5 · vector search and deep reasoning",
     deepCost: "A model turn: hypothesis chains and reports",
-    inbox: "Incoming stream — text, geolocation, voice, images, PDF, video, dates",
+    inbox: "Incoming stream — text, geolocation, voice, images, video, PDF, Markdown, HTML, code, dates",
     lead: "One entry point, one router, two very different costs behind it.",
     routerBox: "Deterministic multi-level router",
     title: "How a request travels",
@@ -465,7 +470,7 @@ const EN: LandingWords = {
       { body: "Tabular structures, typed facts, exact entity properties.", title: "Relational store" },
       { body: "High-dimensional semantic embeddings for fuzzy similarity search.", title: "Vector store" },
       { body: "Directional links between entities, people and events.", title: "Knowledge graph" },
-      { body: "Local binary storage for raw attachments: PDF, images, audio, video.", title: "Object store" },
+      { body: "Whole files on your server — images, audio, video, PDF, Markdown, HTML, code — each next to its full description.", title: "Object store" },
     ],
     lead: "Four layers, one contract. The caller never learns which of them answered.",
     title: "Four unified storage tiers",
@@ -531,7 +536,7 @@ const RU: LandingWords = {
           },
           {
             feature: "Родная мультимодальность",
-            ours: "Встроена: звук, видео, PDF, изображения",
+            ours: "Встроена: звук, видео, изображения, PDF, Markdown, HTML, исходный код",
             rivals: ["Нужны внешние парсеры", "Нужны внешние парсеры", "Ориентирован на текст"],
           },
           {
@@ -619,7 +624,7 @@ const RU: LandingWords = {
         q: "Умеет ли она отвечать про место по координатам, а не по слову?",
       },
       {
-        a: "Голосовые заметки, изображения, видео, PDF и HTML. Конвейер живёт внутри памяти: звук расшифровывается, изображение описывается зрением и читается OCR, у видео расшифровывается дорожка и разбираются ключевые кадры, PDF разбирается с запасным OCR. Оригинал остаётся во встроенном объектном хранилище и адресуется из ответа по id.",
+        a: "Голосовые заметки, изображения, видео, PDF, Markdown, HTML и исходный код (TypeScript, Python, SQL и другие). Каждый файл получает полное описание — настолько подробное, что другой ИИ восстановит по нему сам объект, — и саммари примерно в 50 слов: речь расшифровывает OpenAI whisper-1 с метками времени, видео разбирается на звуковую дорожку и кадры на одной шкале, а картинки, документы, страницы и код читает Claude — код при этом никогда не запускается. Оригинал остаётся во встроенном объектном хранилище рядом со своим полным описанием и адресуется из ответа по id.",
         q: "Что можно присылать, кроме текста?",
       },
       {
@@ -653,13 +658,14 @@ const RU: LandingWords = {
   },
   seo: {
     description:
-      "Автономная память для ИИ-агентов на вашем сервере: граф знаний, векторное и реляционное хранилища, встроенное объектное хранилище, поиск по координатам и радиусу, приём голоса, изображений, видео и PDF, детерминированное чтение за ноль токенов и эволюция навыков через A/B. Один REST API, открытый код.",
+      "Автономная память для ИИ-агентов на вашем сервере: граф знаний, векторное и реляционное хранилища, встроенное объектное хранилище, поиск по координатам и радиусу, приём голоса, изображений, видео, PDF, Markdown, HTML и исходного кода, детерминированное чтение за ноль токенов и эволюция навыков через A/B. Один REST API, открытый код.",
     title: "Fractera Memory — автономная память для ИИ-агентов на вашем сервере",
   },
+  toc: { heading: "На этой странице", label: "Оглавление" },
   hero: {
     badges: ["Ноль комиссий за запрос", "Ноль зависимости от поставщика", "Полная приватность на вашем сервере"],
     body:
-      "Память превращает необработанные мультимодальные данные — текст, изображения, голосовые заметки, PDF-документы, видео, геолокацию и временные метки — в индексированный граф знаний и реляционные структуры, без лишних вызовов языковых моделей и расходов на токены.",
+      "Память превращает необработанные мультимодальные данные — текст, изображения, голосовые заметки, видео, PDF-документы, страницы Markdown и HTML, исходный код, геолокацию и временные метки — в индексированный граф знаний и реляционные структуры, без лишних вызовов языковых моделей и расходов на токены.",
     eyebrow: "Fractera Memory Starter",
     lead:
       "Автономная система долгосрочной памяти и когнитивный мозг для ИИ-агентов, служащая персональным пультом управления архитектора через Telegram и REST API. Она ликвидирует разрыв между ограниченным контекстным окном модели и полноценной когнитивной непрерывностью.",
@@ -715,10 +721,12 @@ const RU: LandingWords = {
   },
   media: {
     items: [
-      { body: "Локальный перевод речи в текст конвейером Whisper.", title: "Звук" },
-      { body: "Описание сцен зрением плюс распознавание текста через OCR.", title: "Изображения" },
-      { body: "Извлечение аудиодорожки, расшифровка и анализ ключевых кадров.", title: "Видео" },
-      { body: "Извлечение текста, OCR для сканов и краткое структурное резюме.", title: "PDF и документы" },
+      { body: "Речь в текст — OpenAI whisper-1, с меткой времени у каждого фрагмента.", title: "Звук" },
+      { body: "Читает модель со зрением: каждый элемент, его место, цвета и весь видимый текст.", title: "Изображения" },
+      { body: "Звуковая дорожка расшифровывается, шесть кадров прочитываются — одна шкала, кадры между репликами.", title: "Видео" },
+      { body: "Документ читается целиком: структура и содержание, таблицы построчно.", title: "PDF" },
+      { body: "Markdown хранится тем документом, которым становится; HTML — страницей и её исходником.", title: "Markdown и HTML" },
+      { body: "Исходный код описывается — назначение, устройство, экспорт — и хранится дословно, но никогда не запускается.", title: "Исходный код" },
     ],
     lead: "Не препроцессор, который приделывают сбоку. Конвейер живёт внутри памяти.",
     title: "Нативная мультимодальность",
@@ -764,7 +772,7 @@ const RU: LandingWords = {
     cheapCost: "0 токенов, без ИИ, задержка меньше 10 мс",
     deepBranch: "Уровни 4–5 · векторы и глубокие рассуждения",
     deepCost: "Вызов языковой модели: цепочки гипотез и отчёты",
-    inbox: "Входящий поток — текст, геолокация, голос, фото, PDF, видео, даты",
+    inbox: "Входящий поток — текст, геолокация, голос, фото, видео, PDF, Markdown, HTML, код, даты",
     lead: "Один вход, один роутер и две очень разные цены за ним.",
     routerBox: "Детерминированный многоуровневый роутер",
     title: "Как проходит запрос",
@@ -799,7 +807,7 @@ const RU: LandingWords = {
       { body: "Табличные структуры, типизированные факты, явные свойства объектов.", title: "Реляционное хранилище" },
       { body: "Семантический поиск и работа с нечётким текстом.", title: "Векторное хранилище" },
       { body: "Направленные связи между сущностями, людьми и событиями.", title: "Граф знаний" },
-      { body: "Хранение бинарных файлов — PDF, аудио, видео, фото — на вашем сервере.", title: "Объектное хранилище" },
+      { body: "Файлы целиком на вашем сервере — фото, аудио, видео, PDF, Markdown, HTML, код — каждый рядом со своим полным описанием.", title: "Объектное хранилище" },
     ],
     lead: "Четыре хранилища под одной обёрткой. Зовущий никогда не узнаёт, которое из них ответило.",
     title: "Четыре хранилища под одним договором",

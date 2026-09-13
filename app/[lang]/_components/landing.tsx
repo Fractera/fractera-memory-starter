@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Eyebrow, H1, Lead } from "@/components/ui/typography";
 import { landingWords } from "../_i18n/landing.i18n";
+import { LandingToc } from "./landing-toc";
 import { breadcrumbSchema, faqSchema, FRACTERA_PROJECT_URL, softwareSchema, urlFor, webSiteSchema } from "@/lib/seo";
 
 // ПУБЛИЧНЫЙ ЛЕНДИНГ ПАМЯТИ (186).
@@ -131,6 +132,34 @@ export function Landing({ base, lang }: { base: string; lang: string }) {
           </div>
         </div>
       </section>
+
+      {/* ── ОГЛАВЛЕНИЕ (194-12) ──────────────────────────────────────────────
+          🔒 Порядок и id — ровно те, что у разделов ниже, заголовки — те же ключи словаря. Каждое
+          `#id` сверяется с `id=` отданной страницы прибором; новый раздел добавляется сюда той же правкой. */}
+      <LandingToc
+        heading={w.toc.heading}
+        items={[
+          { id: "concept", text: w.problem.title },
+          { id: "router", text: w.router.title },
+          { id: "schema", text: w.schema.title },
+          { id: "ladder", text: w.ladder.title },
+          { id: "scope", text: w.scope.title },
+          { id: "artifacts", text: w.artifacts.title },
+          { id: "memoization", text: w.memoization.title },
+          { id: "evolution", text: w.evolution.title },
+          { id: "stores", text: w.stores.title },
+          { id: "media", text: w.media.title },
+          { id: "bench", text: w.bench.title },
+          { id: "comparison", text: w.comparison.title },
+          { id: "api", text: w.api.title },
+          { id: "install", text: w.install.title },
+          { id: "principles", text: w.principles.title },
+          { id: "faq", text: w.faq.title },
+          { id: "project", text: w.project.label },
+          { id: "cta", text: w.cta.title },
+        ]}
+        label={w.toc.label}
+      />
 
       {/* ── ЗАДАЧА И ЧЁРНЫЙ ЯЩИК ─────────────────────────────────────────── */}
       <Section id="concept" lead={w.problem.lead} title={w.problem.title}>
