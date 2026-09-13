@@ -1,0 +1,6 @@
+{
+  "deep-passage-miss-is-not-absence/with_skill#1": [true, "«деталь лежит глубоко внутри документа и в карточку не попадает»; «поиск по карточкам его не покажет — это „ни одна карточка не совпала“, а не „такого нет“»"],
+  "deep-passage-miss-is-not-absence/with_skill#2": [true, "выдан f8056618-… skill-evolution-pipeline.md, подтверждён чтением §1"],
+  "deep-passage-miss-is-not-absence/without_skill#1": [false, "назван неверный механизм: «поиск объекта целиком оценивает документ по общему смыслу» — на деле ищется карточка (имя, описание, начало), а не смысл документа целиком; о карточке ни слова"],
+  "deep-passage-miss-is-not-absence/without_skill#2": [true, "выдан f8056618-… skill-evolution-pipeline.md, подтверждён чтением §1"]
+}

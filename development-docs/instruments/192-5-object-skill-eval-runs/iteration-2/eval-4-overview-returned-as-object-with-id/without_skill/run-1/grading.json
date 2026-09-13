@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "evidence": "keep_object вернул id: 60e91250-b4a9-477b-999c-37060f8f8f9a",
+      "passed": true,
+      "text": "Агент вызвал keep_object (есть в журнале вызовов)"
+    },
+    {
+      "evidence": "id сохранённого в ответе: да",
+      "passed": true,
+      "text": "Итоговый ответ содержит идентификатор сохранённого документа"
+    },
+    {
+      "evidence": "в сохранённом документе ссылок на id: 6210b9b9, 771c252a, b81b27c0, 70dc58ec (4)",
+      "passed": true,
+      "text": "Сохранённый документ ссылается на id не меньше чем трёх из: 6210b9b9 (multilingual-content), 771c252a (multilingual-auth-forms), b81b27c0 (scale-site-language-expansion), 70dc58ec (translate-pending-runner)"
+    },
+    {
+      "evidence": "длина ответа 3341 знаков",
+      "passed": false,
+      "text": "Итоговый ответ короче 1500 знаков — таблица целиком не пересказана, едет id и саммари"
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "pass_rate": 0.75,
+    "passed": 3,
+    "total": 4
+  }
+}

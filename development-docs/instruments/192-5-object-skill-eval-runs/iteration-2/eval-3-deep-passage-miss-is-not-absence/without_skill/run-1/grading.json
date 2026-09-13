@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "evidence": "назван неверный механизм: «поиск объекта целиком оценивает документ по общему смыслу» — на деле ищется карточка (имя, описание, начало), а не смысл документа целиком; о карточке ни слова",
+      "passed": false,
+      "text": "Ответ называет предел поиска объектов: ищется карточка / начало документа, глубина не видна"
+    },
+    {
+      "evidence": "выдан f8056618-… skill-evolution-pipeline.md, подтверждён чтением §1",
+      "passed": true,
+      "text": "Ответ не выдаёт как результат документ, отличный от skill-evolution-pipeline.md (f8056618-…)"
+    },
+    {
+      "evidence": "вызовы: find_objects, open_object, open_object, open_object, open_object, open_object, open_object, find_objects, ask_graph, find_objects, find_objects, open_object",
+      "passed": true,
+      "text": "Агент не вызывал search_vectors (уровень включает зовущий)"
+    },
+    {
+      "evidence": "открыто документов, не оказавшихся ответом: 3",
+      "passed": false,
+      "text": "Открыто не больше одного документа, который не оказался ответом (open_object по id, отличным от f8056618-…)"
+    }
+  ],
+  "summary": {
+    "failed": 2,
+    "pass_rate": 0.5,
+    "passed": 2,
+    "total": 4
+  }
+}

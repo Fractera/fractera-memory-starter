@@ -1,0 +1,25 @@
+{
+  "expectations": [
+    {
+      "evidence": "первый id в ответе: 5e7b92c5-97c5-4583-adee-6adb51c866b7",
+      "passed": true,
+      "text": "Первый идентификатор, названный в ответе как результат, — английский PDF 5e7b92c5-97c5-4583-adee-6adb51c866b7"
+    },
+    {
+      "evidence": "первый id не русский PDF (5e7b92c5-97c5-4583-adee-6adb51c866b7)",
+      "passed": true,
+      "text": "Русский PDF f426b478-46b3-45f7-b0f7-bcb5fc597f3b не выдан как ответ (упомянут разве что как отвергнутый двойник)"
+    },
+    {
+      "evidence": "вызовы: find_objects",
+      "passed": true,
+      "text": "Агент вызывал find_objects (есть в журнале вызовов)"
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "pass_rate": 1,
+    "passed": 3,
+    "total": 3
+  }
+}
