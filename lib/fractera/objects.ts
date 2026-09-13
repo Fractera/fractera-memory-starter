@@ -1,6 +1,6 @@
 import { dataFetch, dataJson, dataService } from "./data-service";
 import { forgetDocuments, learn } from "./knowledge";
-import { getMessage, insertMessage } from "@/lib/messages.mjs";
+import { getMessage, getMessageByObject, insertMessage } from "@/lib/messages.mjs";
 import type { PreviewItem } from "@/_tools/object-view/client/object-preview.client";
 import { kindOf, messageKindOf } from "@/lib/describe.mjs";
 import { isCodeName } from "@/_tools/code-view/types/code-langs.mjs";
@@ -459,6 +459,32 @@ export async function fileOf(
     // Код, положенный до 194-10, мог лечь `video/mp2t` — отдаём его текстом по имени, а не по записи.
     const mime = isCodeName(String(row.name ?? "")) ? CODE_MIME : String(row.mime_type ?? "");
     return { body: await res.arrayBuffer(), mime, name: String(row.name ?? key), ok: true };
+  } catch {
+    return { error: "store-unreachable", ok: false };
+  }
+}
+
+/**
+ * Что легло в память про найденный объект (194-9): тот же ответ, что у `messageView`, но от объекта.
+ *
+ * 🔒 ТОЛЬКО СВОЁ — карточка в коллекции памяти, как у `fileOf`.
+ * 🔒 СТРОКИ МОЖЕТ НЕ БЫТЬ, И ЭТО НЕ ОТКАЗ: объект, положенный до таблицы сообщений, показывается файлом и
+ * описанием, а экран говорит словами, что строки нет, — вместо пустого места или ошибки.
+ */
+export async function objectView(
+  objectId: string,
+): Promise<
+  | { ok: true; media: PreviewItem; object: ObjectCard; row: Record<string, unknown> | null }
+  | { ok: false; error: string }
+> {
+  const key = String(objectId ?? "").trim();
+  if (!key) return { error: "no-id", ok: false };
+  try {
+    if (!(await ownIds()).has(key)) return { error: "not-ours", ok: false };
+    const media = (await mediaRows()).get(key);
+    if (!media) return { error: "not-found", ok: false };
+    const row = (await getMessageByObject(key)) as Record<string, unknown> | null;
+    return { media: previewItemOf(media), object: cardOf(media), ok: true, row };
   } catch {
     return { error: "store-unreachable", ok: false };
   }

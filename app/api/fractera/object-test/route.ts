@@ -1,6 +1,6 @@
 // @api стенд объектного хранилища: положить файл целиком и увидеть, что легло
 import { NextResponse } from "next/server"
-import { forget, keep, messageView, status } from "@/lib/fractera/objects"
+import { forget, keep, messageView, objectView, status } from "@/lib/fractera/objects"
 import { benchGuard } from "@/lib/bench-guard"
 
 // ДВЕРЬ СТЕНДА ОБЪЕКТНОГО ХРАНИЛИЩА (192-1).
@@ -29,6 +29,13 @@ export async function GET(request: Request) {
   const gate = await benchGuard(request)
   if (gate.denied) return gate.denied
   // 194-5: `?message=<n>` — что легло в память по номеру сообщения; без параметра — прежний список.
+  // 194-9: `?object=<id>` — то же про найденный объект; строки может не быть (`row: null`), и это не отказ.
+  const objectId = new URL(request.url).searchParams.get("object")
+  if (objectId !== null) {
+    const v = await objectView(objectId)
+    if (!v.ok) return deny(v.error, v.error === "store-unreachable" ? 502 : v.error === "no-id" ? 400 : 404)
+    return NextResponse.json(v)
+  }
   const message = new URL(request.url).searchParams.get("message")
   if (message !== null) {
     const v = await messageView(Number(message))

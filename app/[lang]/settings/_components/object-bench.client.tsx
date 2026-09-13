@@ -25,7 +25,6 @@ type Answer = {
   nearest: { id: string; name: string; score: number } | null;
   threshold: number;
 };
-type Opened = { card: Card; shown: number; text: string | null; total: number };
 
 const fill = (s: string, v: Record<string, string | number>) =>
   Object.entries(v).reduce((acc, [k, val]) => acc.replaceAll(`{${k}}`, String(val)), s);
@@ -48,6 +47,104 @@ type Described = {
   tags: string[];
   title: string;
 };
+
+/**
+ * «Что легло в память» — ОДИН блок на загрузку и на поиск (194-9).
+ *
+ * 🎯 СЛОВО ВЛАДЕЛЬЦА 2026-09-13: «на вкладке поиск нужно повторить тот же самый интерфейс, который у нас находится
+ * в загрузке… и полное описание, и саммари, и запись в таблице, и сам объект».
+ * 🔒 ОДНА ВЁРСТКА, А НЕ ДВЕ: копия блока во вкладке поиска разошлась бы с загрузкой на первой правке.
+ * 🔒 СТРОКИ МОЖЕТ НЕ БЫТЬ: объект, положенный до таблицы сообщений, показывается файлом и описанием, а про
+ * отсутствие строки сказано словами — пустое место читалось бы как поломка.
+ */
+function SavedView({
+  onClose,
+  saved,
+  words,
+}: {
+  onClose?: () => void;
+  saved: Saved;
+  words: MemoryUi["objectBench"];
+}) {
+  const row = saved.row;
+  return (
+    <section className="space-y-4 rounded-md border border-border p-4">
+      <div className="flex items-center gap-3">
+        <h3 className="font-medium text-[length:var(--fs-body)]">{words.savedTitle}</h3>
+        {onClose && (
+          <button
+            className="ml-auto rounded-md border border-border px-3 py-1 text-[length:var(--fs-small)]"
+            onClick={onClose}
+            type="button"
+          >
+            {words.close}
+          </button>
+        )}
+      </div>
+
+      {saved.media && (
+        <div className="space-y-2">
+          <p className="font-medium text-[length:var(--fs-small)]">{words.savedFile}</p>
+          {/* 🔒 ОБЪЕКТ ПОКАЗЫВАЕТ ПЕРЕНЕСЁННЫЙ ИНСТРУМЕНТ, А НЕ СВОЯ ВЁРСТКА (194-8, слово владельца:
+              «скопировать и вставить жёстко перенести и адаптировать»). Своё превью 194-5 удалено. */}
+          <ObjectPreview fileUrl={fileUrl(saved.media.id)} inline item={saved.media} labels={words.preview} />
+        </div>
+      )}
+
+      {saved.object?.about && (
+        <div className="space-y-2">
+          <p className="font-medium text-[length:var(--fs-small)]">{words.savedFull}</p>
+          <p className="max-h-80 overflow-y-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-[length:var(--fs-body)]">
+            {saved.object.about}
+          </p>
+        </div>
+      )}
+
+      {!row && (
+        <p className="rounded-md border border-border border-dashed p-3 text-[length:var(--fs-small)] text-muted-foreground">
+          {words.savedNoRow}
+        </p>
+      )}
+
+      {row && typeof row.summary === "string" && row.summary && (
+        <div className="space-y-2">
+          <p className="font-medium text-[length:var(--fs-small)]">{words.savedSummary}</p>
+          <p className="rounded-md bg-muted/40 p-3 text-[length:var(--fs-body)]">{row.summary}</p>
+        </div>
+      )}
+
+      {row && (
+        <div className="space-y-2">
+          <p className="font-medium text-[length:var(--fs-small)]">{words.savedRow}</p>
+          {/* 🔒 ОДНА СТРОКА, ВСЕ КОЛОНКИ, ГОРИЗОНТАЛЬНАЯ ПРОКРУТКА В СВОЁМ КОНТЕЙНЕРЕ (слово владельца 2026-09-13).
+              Порядок колонок — тот, что отдала база: экран не решает, какие поля важнее. */}
+          <div className="overflow-x-auto rounded-md border border-border">
+            <table className="min-w-max border-collapse font-mono text-[length:var(--fs-small)]">
+              <thead>
+                <tr>
+                  {Object.keys(row).map((k) => (
+                    <th className="whitespace-nowrap border-b border-border bg-muted/40 px-3 py-2 text-left font-medium" key={k}>
+                      {k}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  {Object.entries(row).map(([k, v]) => (
+                    <td className="max-w-[28rem] truncate whitespace-nowrap px-3 py-2 align-top" key={k} title={v == null ? "" : String(v)}>
+                      {v == null ? <span className="text-muted-foreground">null</span> : String(v)}
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
 
 export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
   const [file, setFile] = useState<File | null>(null);
@@ -323,64 +420,7 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
         </p>
       )}
 
-      {saved?.row && (
-        <section className="space-y-4 rounded-md border border-border p-4">
-          <h3 className="font-medium text-[length:var(--fs-body)]">{words.savedTitle}</h3>
-
-          {saved.media && (
-            <div className="space-y-2">
-              <p className="font-medium text-[length:var(--fs-small)]">{words.savedFile}</p>
-              {/* 🔒 ОБЪЕКТ ПОКАЗЫВАЕТ ПЕРЕНЕСЁННЫЙ ИНСТРУМЕНТ, А НЕ СВОЯ ВЁРСТКА (194-8, слово владельца:
-                  «скопировать и вставить жёстко перенести и адаптировать»). Своё превью 194-5 удалено. */}
-              <ObjectPreview fileUrl={fileUrl(saved.media.id)} inline item={saved.media} labels={words.preview} />
-            </div>
-          )}
-
-          {saved.object?.about && (
-            <div className="space-y-2">
-              <p className="font-medium text-[length:var(--fs-small)]">{words.savedFull}</p>
-              <p className="max-h-80 overflow-y-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-[length:var(--fs-body)]">
-                {saved.object.about}
-              </p>
-            </div>
-          )}
-
-          {typeof saved.row.summary === "string" && saved.row.summary && (
-            <div className="space-y-2">
-              <p className="font-medium text-[length:var(--fs-small)]">{words.savedSummary}</p>
-              <p className="rounded-md bg-muted/40 p-3 text-[length:var(--fs-body)]">{saved.row.summary}</p>
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <p className="font-medium text-[length:var(--fs-small)]">{words.savedRow}</p>
-            {/* 🔒 ОДНА СТРОКА, ВСЕ КОЛОНКИ, ГОРИЗОНТАЛЬНАЯ ПРОКРУТКА В СВОЁМ КОНТЕЙНЕРЕ (слово владельца 2026-09-13).
-                Порядок колонок — тот, что отдала база: экран не решает, какие поля важнее. */}
-            <div className="overflow-x-auto rounded-md border border-border">
-              <table className="min-w-max border-collapse font-mono text-[length:var(--fs-small)]">
-                <thead>
-                  <tr>
-                    {Object.keys(saved.row).map((k) => (
-                      <th className="whitespace-nowrap border-b border-border bg-muted/40 px-3 py-2 text-left font-medium" key={k}>
-                        {k}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    {Object.entries(saved.row).map(([k, v]) => (
-                      <td className="max-w-[28rem] truncate whitespace-nowrap px-3 py-2 align-top" key={k} title={v == null ? "" : String(v)}>
-                        {v == null ? <span className="text-muted-foreground">null</span> : String(v)}
-                      </td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-      )}
+      {saved?.row && <SavedView saved={saved} words={words} />}
 
       <p className="text-[length:var(--fs-small)] text-muted-foreground">{words.costNote}</p>
 
@@ -407,7 +447,7 @@ export function ObjectSearch({ words }: { words: MemoryUi["objectBench"] }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [answer, setAnswer] = useState<Answer | null>(null);
-  const [opened, setOpened] = useState<Opened | null>(null);
+  const [opened, setOpened] = useState<Saved | null>(null);
 
   const known = words.errors as Record<string, string>;
 
@@ -435,20 +475,18 @@ export function ObjectSearch({ words }: { words: MemoryUi["objectBench"] }) {
     }
   }
 
+  // 194-9: «Открыть» показывает то же, что загрузка, — дверью `?object=`, а не текстом `object-open`.
+  // Дверь `object-open` жива: ею читает документы агент памяти.
   async function openObject(id: string) {
     setError(null);
     try {
-      const r = await fetch("/api/fractera/object-open", {
-        body: JSON.stringify({ id }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      const j = (await r.json()) as Opened & { error?: string; ok?: boolean };
+      const r = await fetch(`/api/fractera/object-test?object=${encodeURIComponent(id)}`, { cache: "no-store" });
+      const j = (await r.json()) as Saved & { error?: string; ok?: boolean };
       if (!r.ok || !j.ok) {
         setError(known[String(j.error)] ?? known.refused);
         return;
       }
-      setOpened(j);
+      setOpened({ media: j.media ?? null, object: j.object ?? null, row: j.row ?? null });
     } catch {
       setError(words.errors.offline);
     }
@@ -529,33 +567,7 @@ export function ObjectSearch({ words }: { words: MemoryUi["objectBench"] }) {
         </div>
       )}
 
-      {opened && (
-        <div className="space-y-2 rounded-md border border-border p-4">
-          <div className="flex items-center gap-3">
-            <p className="font-medium text-[length:var(--fs-body)]">{opened.card.name}</p>
-            <button
-              className="ml-auto rounded-md border border-border px-3 py-1 text-[length:var(--fs-small)]"
-              onClick={() => setOpened(null)}
-              type="button"
-            >
-              {words.close}
-            </button>
-          </div>
-          {opened.text === null ? (
-            <p className="text-[length:var(--fs-small)] text-muted-foreground">{words.binary}</p>
-          ) : (
-            <>
-              {/* 🔒 ПРЕДЕЛ НАЗЫВАЕТСЯ ЧИСЛОМ: молча обрезанный документ читается как целый. */}
-              <p className="text-[length:var(--fs-small)] text-muted-foreground">
-                {fill(words.shown, { shown: opened.shown, total: opened.total })}
-              </p>
-              <pre className="max-h-96 overflow-auto whitespace-pre-wrap font-mono text-[length:var(--fs-small)]">
-                {opened.text}
-              </pre>
-            </>
-          )}
-        </div>
-      )}
+      {opened && <SavedView onClose={() => setOpened(null)} saved={opened} words={words} />}
     </div>
   );
 }

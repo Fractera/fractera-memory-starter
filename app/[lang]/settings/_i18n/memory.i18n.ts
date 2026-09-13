@@ -172,6 +172,8 @@ export type MemoryUi = {
     savedFile: string;
     savedFull: string;
     savedMissing: string;
+    /** 194-9: у найденного объекта нет строки — он лёг до таблицы сообщений. */
+    savedNoRow: string;
     savedRow: string;
     savedSummary: string;
     savedTitle: string;
@@ -650,6 +652,7 @@ const EN: MemoryUi = {
     savedFile: "File — in the object store",
     savedFull: "Full description — kept next to the file",
     savedMissing: "The object was stored, but its record could not be read back.",
+    savedNoRow: "This object has no row in messages_that_came_into_memory: it was stored before the table existed. The file and its description are shown.",
     savedRow: "Row in messages_that_came_into_memory",
     savedSummary: "Summary — in the table row and the search card",
     savedTitle: "What went into memory",
@@ -1122,6 +1125,7 @@ const RU: MemoryUi = {
     savedFile: "Файл — в объектном хранилище",
     savedFull: "Полное описание — рядом с файлом",
     savedMissing: "Объект сохранён, но прочитать его запись не удалось.",
+    savedNoRow: "У этого объекта нет строки в messages_that_came_into_memory: он сохранён раньше, чем появилась таблица. Показаны файл и его описание.",
     savedRow: "Строка messages_that_came_into_memory",
     savedSummary: "Саммари — в строке таблицы и в карточке поиска",
     savedTitle: "Что легло в память",
