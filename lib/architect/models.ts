@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from "node:fs"
 import { machineEnv, writeMachineEnv } from "@/lib/fractera/machine-env"
+import { readAnthropicKeyState } from "@/lib/architect/anthropic-key"
 import { dataJson } from "@/lib/fractera/data-service"
 
 // МОДЕЛИ, КОТОРЫМИ РАБОТАЕТ ПАМЯТЬ, — ОДНО МЕСТО ЧТЕНИЯ И ЗАПИСИ (189-7).
@@ -30,9 +31,17 @@ export const THINK_KEY = "MEMORY_THINK_MODEL"
  * командную строку составляет тот, кто открыл страницу.
  */
 export const THINK_MODELS = [
-  { id: "opus", why: "самая сильная; разбирает сложную фразу точнее прочих" },
-  { id: "sonnet", why: "быстрее и дешевле; хватает на простой разбор" },
-  { id: "haiku", why: "самая быстрая; для коротких однозначных фраз" },
+  {
+    id: "fable",
+    // 🔒 ДОСТУП ЧЕРЕЗ КЛЮЧ API, А НЕ ЧЕРЕЗ ПОДПИСКУ — слово владельца 2026-09-13.
+    // Это не примечание, а условие выбора: без ключа разбор начнёт отказывать, и
+    // человек пойдёт чинить память вместо того, чтобы вставить ключ этажом выше.
+    needsKey: true,
+    why: "новейшая; доступна только по ключу Anthropic, подписка её не открывает",
+  },
+  { id: "opus", needsKey: false, why: "самая сильная из доступных по подписке; точнее прочих на сложной фразе" },
+  { id: "sonnet", needsKey: false, why: "быстрее и дешевле; хватает на простой разбор" },
+  { id: "haiku", needsKey: false, why: "самая быстрая; для коротких однозначных фраз" },
 ] as const
 
 /**
@@ -45,12 +54,12 @@ export const EMBED_MODELS = [
   {
     dims: 3072,
     id: "text-embedding-3-large",
-    why: "измерено на русском корпусе: находит нужное 5 раз из 5, и находка чётко отделена от постороннего",
+    why: "находит нужное надёжнее и отделяет находку от постороннего; работает через языковую границу — вопрос на одном языке, запись на другом",
   },
   {
     dims: 1536,
     id: "text-embedding-3-small",
-    why: "вшестеро дешевле и втрое быстрее на загрузке; на русском находила 3 из 5, и отделить находку от мусора было нечем",
+    why: "вшестеро дешевле и втрое быстрее на загрузке, но на неанглийском тексте путает близкое с подходящим",
   },
 ] as const
 
@@ -60,6 +69,15 @@ const DATA_ENV = process.env.DATA_ENV_FILE ?? "/opt/fractera/services/data/.env"
 export type ModelsState = {
   /** Чем память думает сейчас. */
   think: string
+  /**
+   * Задан ли ключ Anthropic — от него зависит, какие модели вообще доступны.
+   *
+   * 🔒 КАРТОЧКА МОДЕЛИ ЗНАЕТ ПРО КАРТОЧКУ КЛЮЧА, И ЭТО НЕ ЛИШНЯЯ СВЯЗЬ. Выбор
+   * модели, требующей ключа, при отсутствующем ключе — это отказ, который
+   * всплывёт не здесь, а в первом же разборе фразы, и выглядеть будет как
+   * поломка памяти.
+   */
+  hasKey: boolean
   /** Чем считает смысл — по словам самого слоя данных, а не по нашему файлу. */
   embed: { configured: boolean; count: number; dims: number; model: string; reachable: boolean }
 }
@@ -74,6 +92,7 @@ export type ModelsState = {
  */
 export async function readModels(): Promise<ModelsState> {
   const think = machineEnv(THINK_KEY) || "opus"
+  const hasKey = readAnthropicKeyState().configured
 
   try {
     const s = await dataJson<{ configured?: boolean; dims?: number; model?: string }>(
@@ -91,6 +110,7 @@ export async function readModels(): Promise<ModelsState> {
         model: String(s.model ?? ""),
         reachable: true,
       },
+      hasKey,
       think,
     }
   } catch {
@@ -98,14 +118,25 @@ export async function readModels(): Promise<ModelsState> {
     // жить без него, и карточка обязана сказать это словами.
     return {
       embed: { configured: false, count: 0, dims: 0, model: "", reachable: false },
+      hasKey,
       think,
     }
   }
 }
 
-/** Сменить модель размышления. Применяется сразу: её читают в момент вызова. */
+/**
+ * Сменить модель размышления. Применяется сразу: её читают в момент вызова.
+ *
+ * 🔒 ЗАПРЕТ НА МОДЕЛЬ БЕЗ КЛЮЧА СТОИТ ЗДЕСЬ, А НЕ ТОЛЬКО НА КНОПКЕ. Кнопка —
+ * удобство, дверь — граница: защита, живущая на экране, снимается любым прямым
+ * вызовом, и тогда память молча начнёт отказывать на каждом разборе.
+ */
 export function setThinkModel(id: string): { ok: boolean; error?: string } {
-  if (!THINK_MODELS.some((m) => m.id === id)) return { error: "unknown-model", ok: false }
+  const chosen = THINK_MODELS.find((m) => m.id === id)
+  if (!chosen) return { error: "unknown-model", ok: false }
+  if (chosen.needsKey && !readAnthropicKeyState().configured) {
+    return { error: "needs-anthropic-key", ok: false }
+  }
   return writeMachineEnv(THINK_KEY, id) ? { ok: true } : { error: "write-failed", ok: false }
 }
 

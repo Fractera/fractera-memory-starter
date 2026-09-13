@@ -16,11 +16,12 @@ import { SettingsCard } from "./settings-card";
 // данных, а не смена настройки. Сведи их в одну карточку с общей кнопкой — и
 // человек однажды нажмёт вторую, думая про первую.
 
-type Choice = { id: string; why: string; dims?: number };
+type Choice = { id: string; why: string; dims?: number; needsKey?: boolean };
 
 type State = {
   choices: { embed: Choice[]; think: Choice[] };
   embed: { configured: boolean; count: number; dims: number; model: string; reachable: boolean };
+  hasKey: boolean;
   think: string;
 };
 
@@ -93,23 +94,34 @@ export function ModelSections() {
           и дороже каждый вызов; расход идёт из той же подписки, которой живёт бот.
         </Small>
 
+        {/* 🔒 ЗАПЕРТАЯ МОДЕЛЬ ГОВОРИТ, ЧЕМ ОНА ОТПЕРТА, А НЕ ПРОСТО СЕРЕЕТ.
+            Недоступная кнопка без объяснения читается как поломка; здесь же
+            рядом, этажом выше, стоит ровно то, чего не хватает. */}
         <div className="mt-4 space-y-2">
-          {(s?.choices.think ?? []).map((m) => (
-            <button
-              className={`w-full rounded-md border p-3 text-left ${
-                s?.think === m.id ? "border-primary bg-primary/5" : "border-border"
-              } disabled:opacity-50`}
-              disabled={busy || s?.think === m.id}
-              key={m.id}
-              onClick={() => void choose("think", m.id)}
-              type="button"
-            >
-              <span className="block font-medium text-[length:var(--fs-body)]">{m.id}</span>
-              <span className="block text-[length:var(--fs-small)] text-muted-foreground">
-                {m.why}
-              </span>
-            </button>
-          ))}
+          {(s?.choices.think ?? []).map((m) => {
+            const locked = Boolean(m.needsKey) && !s?.hasKey;
+            return (
+              <button
+                className={`w-full rounded-md border p-3 text-left ${
+                  s?.think === m.id ? "border-primary bg-primary/5" : "border-border"
+                } disabled:opacity-50`}
+                disabled={busy || s?.think === m.id || locked}
+                key={m.id}
+                onClick={() => void choose("think", m.id)}
+                type="button"
+              >
+                <span className="block font-medium text-[length:var(--fs-body)]">{m.id}</span>
+                <span className="block text-[length:var(--fs-small)] text-muted-foreground">
+                  {m.why}
+                </span>
+                {locked && (
+                  <span className="mt-1 block text-[length:var(--fs-small)]">
+                    Недоступна: ключ Anthropic не задан. Он задаётся карточкой выше.
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </SettingsCard>
 
@@ -200,6 +212,7 @@ const REASONS: Record<string, string> = {
   "already-set": "Эта модель уже стоит.",
   "data-unreachable": "Слой данных не отвечает — сменить модель встраиваний сейчас нельзя.",
   "env-missing": "Файл настроек слоя данных не найден на этой машине.",
+  "needs-anthropic-key": "Этой модели нужен ключ Anthropic — подписка её не открывает. Задайте ключ карточкой выше.",
   "index-drop-failed": "Настройка записана, но старый индекс снести не удалось. Уберите его вручную до перезапуска.",
   "store-not-empty": "В хранилище есть записи. Смена модели сделала бы их нечитаемыми — сперва очистите склад.",
   unknown: "Не удалось сохранить. Попробуйте ещё раз.",
