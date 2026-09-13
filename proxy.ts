@@ -56,6 +56,7 @@ import { type NextRequest, NextResponse } from "next/server";
 const SELF_GUARDED = new Set([
   "/api/fractera/bench-cases",
   "/api/fractera/graph-search",
+  "/api/fractera/models",
   "/api/fractera/graph-test",
   "/api/fractera/vector-search",
   "/api/fractera/vector-test",

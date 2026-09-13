@@ -15,6 +15,7 @@ import { BenchCases } from "./_components/bench-cases.client";
 import { VectorSearch, VectorUpload } from "./_components/vector-bench.client";
 import { OpenAiTab } from "./_components/openai-tab";
 import { AnthropicKeySection } from "./_components/anthropic-key";
+import { ModelSections } from "./_components/models.client";
 import { PassportBody } from "./_components/passport-body.client";
 import { ApiDoc } from "./_components/api-doc";
 import { memoryUi } from "./_i18n/memory.i18n";
@@ -285,7 +286,16 @@ async function MemoryPageBody({
                 Слово владельца: «в кнопку настройки скопируй то же самое решение
                 которое у нас существует для подключения Anthropic ключа».
                 Карточка, форма и дверь — те же файлы, что у чата, байт в байт. */}
-            {active === "settings" && <AnthropicKeySection />}
+            {/* 🔒 РАЗДЕЛ «НАСТРОЙКИ» — ТРИ КАРТОЧКИ С 189-7 (заказ владельца:
+                «в настройки пробрасывай настройки модели»). Ключ доступа стоит
+                первым: без него не работает ничего; модели ниже — ими работа
+                делается. */}
+            {active === "settings" && (
+              <>
+                <AnthropicKeySection />
+                <ModelSections />
+              </>
+            )}
           </div>
         </WorkspaceShell>
       </div>
