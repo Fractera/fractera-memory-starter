@@ -44,6 +44,11 @@ const CHECKS = {
     MANUAL[`${key}#1`] ?? [false, "НЕ ОЦЕНЕНО ЧТЕНИЕМ"],
     MANUAL[`${key}#2`] ?? [false, "НЕ ОЦЕНЕНО ЧТЕНИЕМ"],
     [!calls(log).some((c) => c.tool === "search_vectors"), `вызовы: ${calls(log).map((c) => c.tool).join(", ")}`],
+    // Признак добавлен в итерации 2 ДО её прогона — под правило о слабых попаданиях.
+    (() => {
+      const wasted = new Set(calls(log).filter((c) => c.tool === "open_object").map((c) => JSON.parse(c.args).id).filter((id) => id !== SKILLEVO))
+      return [wasted.size <= 1, `открыто документов, не оказавшихся ответом: ${wasted.size}`]
+    })(),
   ],
   "overview-returned-as-object-with-id": (a, log) => {
     const kept = [...log.matchAll(/Сохранено: id=([0-9a-f-]{36})/g)].map((m) => m[1])
