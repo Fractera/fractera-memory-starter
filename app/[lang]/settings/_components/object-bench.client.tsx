@@ -30,6 +30,17 @@ const fill = (s: string, v: Record<string, string | number>) =>
 
 const TEXT_EXT = /\.(csv|html?|json|markdown|md|tsv|txt|xml|ya?ml)$/i;
 
+/** Что модель сказала о файле, кроме двух полей, которые правит человек (194-3). */
+type Described = {
+  anchors: string[];
+  described_by: string;
+  kind: string;
+  language: string;
+  ms: number;
+  tags: string[];
+  title: string;
+};
+
 export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
   const [file, setFile] = useState<File | null>(null);
   const [about, setAbout] = useState("");
@@ -51,7 +62,63 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
     void load();
   }, [load]);
 
+  // 194-3: ОПИСАНИЕ МОДЕЛЬЮ ДО СОХРАНЕНИЯ. Саммари живёт в прежнем `about` — оно и есть карточка
+  // поиска; полное описание — отдельное поле. Оба правятся человеком до «Сохранить объект».
+  const [full, setFull] = useState("");
+  const [described, setDescribed] = useState<Described | null>(null);
+  const [describing, setDescribing] = useState(false);
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!describing) return;
+    setSeconds(0);
+    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [describing]);
+
   const needsAbout = file !== null && !TEXT_EXT.test(file.name);
+
+  /** Выбран новый файл — прежнее описание к нему не относится. */
+  function choose(next: File | null) {
+    setFile(next);
+    setDescribed(null);
+    setFull("");
+    setAbout("");
+    setError(null);
+    setDone(null);
+  }
+
+  async function describeFile() {
+    if (!file) return;
+    setDescribing(true);
+    setError(null);
+    setDone(null);
+    try {
+      const form = new FormData();
+      form.append("file", file, file.name);
+      const r = await fetch("/api/fractera/object-test/describe", { body: form, method: "POST" });
+      const j = (await r.json()) as Partial<Described> & { error?: string; full?: string; ok?: boolean; summary?: string };
+      if (!r.ok || !j.ok || typeof j.full !== "string" || typeof j.summary !== "string") {
+        setError(words.describeErrors[String(j.error)] ?? words.describeErrors.failed);
+        return;
+      }
+      setFull(j.full);
+      setAbout(j.summary);
+      setDescribed({
+        anchors: j.anchors ?? [],
+        described_by: j.described_by ?? "",
+        kind: j.kind ?? "",
+        language: j.language ?? "und",
+        ms: j.ms ?? 0,
+        tags: j.tags ?? [],
+        title: j.title ?? "",
+      });
+    } catch {
+      setError(words.describeErrors.failed);
+    } finally {
+      setDescribing(false);
+    }
+  }
 
   async function send() {
     if (!file) return;
@@ -62,6 +129,16 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
       const form = new FormData();
       form.append("file", file, file.name);
       form.append("about", about);
+      // 🔒 ВСЁ, ЧТО СКАЗАЛА МОДЕЛЬ, ЕДЕТ ВМЕСТЕ С ФАЙЛОМ — дверь сохранения принимает это в 194-4.
+      form.append("full", full);
+      if (described) {
+        form.append("title", described.title);
+        form.append("tags", JSON.stringify(described.tags));
+        form.append("anchors", JSON.stringify(described.anchors));
+        form.append("described_by", described.described_by);
+        form.append("describe_ms", String(described.ms));
+        form.append("language", described.language);
+      }
       const r = await fetch("/api/fractera/object-test", { body: form, method: "POST" });
       const j = (await r.json()) as {
         cardChars?: number;
@@ -80,6 +157,8 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
       );
       setFile(null);
       setAbout("");
+      setFull("");
+      setDescribed(null);
       void load();
     } catch {
       setError(words.errors.offline);
@@ -116,21 +195,58 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
         <input
           className="peer sr-only"
           id="obj-file"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => choose(e.target.files?.[0] ?? null)}
           onClick={(e) => {
             e.currentTarget.value = "";
           }}
           type="file"
         />
-        <label
-          className="inline-flex cursor-pointer items-center rounded-md border border-primary px-4 py-2 font-medium text-[length:var(--fs-body)] text-primary hover:bg-primary/10 peer-focus-visible:ring-2 peer-focus-visible:ring-primary"
-          htmlFor="obj-file"
-        >
-          {words.chooseFile}
-        </label>
+        {/* 🔒 «ПОЛУЧИТЬ ОПИСАНИЕ» СТОИТ СПРАВА ОТ «ВЫБРАТЬ ФАЙЛ» И ПОЯВЛЯЕТСЯ ТОЛЬКО С ФАЙЛОМ (слово
+            владельца 2026-09-13). Без файла описывать нечего, и кнопка, которая ничего не делает, врёт. */}
+        <div className="flex flex-wrap items-center gap-3">
+          <label
+            className="inline-flex cursor-pointer items-center rounded-md border border-primary px-4 py-2 font-medium text-[length:var(--fs-body)] text-primary hover:bg-primary/10 peer-focus-visible:ring-2 peer-focus-visible:ring-primary"
+            htmlFor="obj-file"
+          >
+            {words.chooseFile}
+          </label>
+          {file && (
+            <button
+              className="inline-flex items-center rounded-md border border-primary bg-primary/10 px-4 py-2 font-medium text-[length:var(--fs-body)] text-primary hover:bg-primary/20 disabled:opacity-50"
+              disabled={describing || busy}
+              onClick={() => void describeFile()}
+              type="button"
+            >
+              {describing ? fill(words.describing, { s: seconds }) : words.describe}
+            </button>
+          )}
+        </div>
         <p className="text-[length:var(--fs-small)] text-muted-foreground">
           {file ? file.name : words.noFile}
         </p>
+        {described && (
+          <p className="text-[length:var(--fs-small)] text-muted-foreground">
+            {fill(words.describedBy, {
+              by: described.described_by,
+              lang: described.language,
+              s: Math.round(described.ms / 1000),
+            })}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <label className="block font-medium text-[length:var(--fs-small)]" htmlFor="obj-full">
+          {words.fullLabel}
+        </label>
+        <textarea
+          className="h-64 w-full rounded-md border border-border bg-background px-3 py-2 text-[length:var(--fs-body)]"
+          id="obj-full"
+          onChange={(e) => setFull(e.target.value)}
+          placeholder={words.fullPlaceholder}
+          value={full}
+        />
+        <p className="text-[length:var(--fs-small)] text-muted-foreground">{words.fullHint}</p>
       </div>
 
       <div className="space-y-2">
@@ -138,7 +254,7 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
           {words.aboutLabel}
         </label>
         <textarea
-          className="h-24 w-full rounded-md border border-border bg-background px-3 py-2 text-[length:var(--fs-body)]"
+          className="h-28 w-full rounded-md border border-border bg-background px-3 py-2 text-[length:var(--fs-body)]"
           id="obj-about"
           onChange={(e) => setAbout(e.target.value)}
           placeholder={words.aboutPlaceholder}
@@ -150,7 +266,7 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
       <div className="flex flex-wrap gap-3">
         <button
           className="rounded-md bg-primary px-4 py-2 font-medium text-[length:var(--fs-body)] text-primary-foreground disabled:opacity-50"
-          disabled={busy || !file || (needsAbout && !about.trim())}
+          disabled={busy || describing || !file || (needsAbout && !about.trim())}
           onClick={() => void send()}
           type="button"
         >

@@ -157,6 +157,14 @@ export type MemoryUi = {
     fileLabel: string;
     chooseFile: string;
     noFile: string;
+    /** 194-3: описание файла моделью до сохранения. */
+    describe: string;
+    describing: string;
+    describedBy: string;
+    describeErrors: Record<string, string>;
+    fullHint: string;
+    fullLabel: string;
+    fullPlaceholder: string;
     forget: string;
     forgot: string;
     hits: string;
@@ -560,8 +568,8 @@ const EN: MemoryUi = {
   },
   objectBench: {
     aboutHint:
-      "Required for pictures, PDFs, audio and video: nobody reads inside them, so your words are the only thing the object will be found by. For a text file it is optional — its opening goes into the card anyway.",
-    aboutLabel: "What this is — in words",
+      "About 50 words: what the object is and what it is about. The object is found by this summary. Required for pictures, PDFs, audio and video; for a text file it is optional.",
+    aboutLabel: "Summary",
     aboutPlaceholder: "Diagram of the development loop, from an admin request to deploy",
     ask: "Find the object",
     askLabel: "What are you looking for",
@@ -572,7 +580,7 @@ const EN: MemoryUi = {
     button: "Store the object",
     close: "Close",
     costNote:
-      "No model reads the file. The object is kept whole, and only its card is turned into a fingerprint of meaning — so loading costs one embedding, whatever the size of the file.",
+      "Storing costs one embedding, whatever the size of the file. «Get description» is optional and costs one model turn: audio is transcribed by OpenAI, everything else is read by Claude on the owner's subscription — the same quota the Telegram bot uses.",
     empty: "The object store holds nothing yet.",
     errors: {
       "card-failed": "The file was accepted but its card was not; the file was removed again, nothing is half-stored.",
@@ -588,6 +596,29 @@ const EN: MemoryUi = {
     fileLabel: "File",
     chooseFile: "Choose file",
     noFile: "No file chosen",
+    describe: "Get description",
+    describing: "The model is describing the file… {s} s",
+    describedBy: "Described by {by} in {s} s · content language: {lang}. Read and correct both fields before storing.",
+    describeErrors: {
+      "describe-answer-unusable": "The model answered in the wrong shape. Try again or write the description yourself.",
+      "describe-empty-file": "The file is empty.",
+      "describe-ffmpeg-failed": "The video could not be split into a sound track and frames.",
+      "describe-kind-unsupported": "Files of this kind are not described. Write the description yourself.",
+      "describe-too-large": "The file is larger than 20 MB.",
+      failed: "The description failed. You can write it yourself.",
+      "model-key-missing": "There is no OpenAI key on this machine — audio cannot be transcribed.",
+      "model-key-rejected": "The OpenAI key was rejected — it has to be replaced.",
+      "model-quota-exhausted": "The OpenAI account has run out of paid tokens.",
+      "model-unreachable": "OpenAI did not accept the file or is not answering.",
+      "think-not-authorized": "Claude on this server is not signed in to a subscription.",
+      "think-quota-exhausted": "The Claude subscription limit on the server is used up. Try again after it resets.",
+      "think-subscription-disabled": "Subscription access for Claude is disabled.",
+      "think-timed-out": "The model took too long (over 5 minutes).",
+    },
+    fullHint:
+      "So detailed that an AI could reconstruct the object from this text alone. Kept next to the file in the object store.",
+    fullLabel: "Full description",
+    fullPlaceholder: "Composition, every element and its position, colours, all visible text…",
     forget: "Forget every object memory holds",
     forgot: "Forgotten: {n}.",
     hits: "Objects closer than {threshold}: {n}.",
@@ -981,8 +1012,8 @@ const RU: MemoryUi = {
   },
   objectBench: {
     aboutHint:
-      "Обязательно для картинок, PDF, звука и видео: внутрь них никто не смотрит, и ваши слова — единственное, по чему объект найдут. Для текстового файла необязательно — его начало и так ляжет в карточку.",
-    aboutLabel: "Что это — словами",
+      "Примерно 50 слов: что это за объект и о чём он. По этому саммари объект потом находят. Обязательно для картинок, PDF, звука и видео; для текстового файла необязательно.",
+    aboutLabel: "Саммари",
     aboutPlaceholder: "Схема цикла разработки: от запроса администратора до выкладки",
     ask: "Найти объект",
     askLabel: "Что вы ищете",
@@ -993,7 +1024,7 @@ const RU: MemoryUi = {
     button: "Сохранить объект",
     close: "Закрыть",
     costNote:
-      "Файл не читает ни одна модель. Объект хранится целиком, а в отпечаток смысла превращается только его карточка — поэтому загрузка стоит одного встраивания, каким бы большим ни был файл.",
+      "Сохранение стоит одного встраивания, каким бы большим ни был файл. «Получить описание» — по желанию и стоит одного хода модели: звук расшифровывает OpenAI, всё остальное читает Claude по подписке владельца — из той же квоты, что и Telegram-бот.",
     empty: "В объектном хранилище пока ничего нет.",
     errors: {
       "card-failed": "Файл принят, а карточка — нет; файл тут же удалён, наполовину ничего не лежит.",
@@ -1009,6 +1040,29 @@ const RU: MemoryUi = {
     fileLabel: "Файл",
     chooseFile: "Выбрать файл",
     noFile: "Файл не выбран",
+    describe: "Получить описание",
+    describing: "Модель описывает файл… {s} с",
+    describedBy: "Описал: {by}, за {s} с · язык содержимого: {lang}. Прочитайте и поправьте оба поля до сохранения.",
+    describeErrors: {
+      "describe-answer-unusable": "Модель ответила не по форме. Попробуйте ещё раз или опишите сами.",
+      "describe-empty-file": "Файл пустой.",
+      "describe-ffmpeg-failed": "Видео не удалось разобрать на звуковую дорожку и кадры.",
+      "describe-kind-unsupported": "Файлы такого рода не описываются. Опишите сами.",
+      "describe-too-large": "Файл больше 20 МБ.",
+      failed: "Описание не получилось. Можно написать его самому.",
+      "model-key-missing": "На машине нет ключа OpenAI — звук расшифровать нечем.",
+      "model-key-rejected": "Ключ OpenAI отвергнут — его нужно заменить.",
+      "model-quota-exhausted": "На счёте OpenAI кончились оплаченные токены.",
+      "model-unreachable": "OpenAI не принял файл или не отвечает.",
+      "think-not-authorized": "Claude на сервере не вошёл в подписку.",
+      "think-quota-exhausted": "Лимит подписки Claude на сервере исчерпан. Попробуйте после сброса.",
+      "think-subscription-disabled": "Доступ Claude по подписке отключён.",
+      "think-timed-out": "Модель думала слишком долго (больше 5 минут).",
+    },
+    fullHint:
+      "Настолько подробно, чтобы ИИ мог восстановить объект по одному этому тексту. Хранится рядом с файлом в объектном хранилище.",
+    fullLabel: "Полное описание",
+    fullPlaceholder: "Композиция, каждый элемент и его место, цвета, весь видимый текст…",
     forget: "Забыть все объекты памяти",
     forgot: "Забыто: {n}.",
     hits: "Объектов ближе {threshold}: {n}.",
