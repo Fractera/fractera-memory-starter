@@ -44,7 +44,7 @@ export type MemoryUi = {
    */
   testBench: {
     /** Названия трёх страниц: загрузка · поиск · оценка. */
-    tabs: Record<TestTab | "skill", string>;
+    tabs: Record<TestTab | "skill" | "bench", string>;
     /** Лид каждой страницы у графа и у вектора — что человек здесь делает. */
     graph: Record<TestTab, string>;
     vector: Record<TestTab, string>;
@@ -54,6 +54,8 @@ export type MemoryUi = {
     soon: string;
     /** Файла навыка на диске нет — сказано словами, а не пустым экраном (194-6). */
     skillMissing: string;
+    /** Лид страницы «Навык» у любого стенда (194-19). */
+    skillLead: string;
   };
   /**
    * Слова загрузки в граф знаний (189-2).
@@ -782,9 +784,12 @@ const EN: MemoryUi = {
         "Only you can say whether the right thing was found. The numbers next to your verdict — seconds and model turns — are measured, not guessed.",
     },
     skillMissing:
-      "The skill file .claude/skills/describe-incoming-object/SKILL.md is not on this server — the delivery did not bring it.",
+      "The skill file {path} is not on this server — the delivery did not bring it.",
+    skillLead:
+      "The instructions the memory agent follows with this store — the very files it reads, byte for byte. Each opens on a click.",
     soon: "This control is built in the next sub-step. Nothing is hidden here: today the page only shows what it will hold.",
     tabs: {
+      bench: "Test",
       search: "Search",
       skill: "Skill",
       upload: "Load",
@@ -1276,9 +1281,12 @@ const RU: MemoryUi = {
         "Нашлось нужное или нет — можете сказать только вы. Числа рядом с вашим вердиктом — секунды и ходы модели — измерены, а не прикинуты.",
     },
     skillMissing:
-      "Файла навыка .claude/skills/describe-incoming-object/SKILL.md на этом сервере нет — доставка его не привезла.",
+      "Файла навыка {path} на этом сервере нет — доставка его не привезла.",
+    skillLead:
+      "Инструкции, по которым агент памяти работает с этим хранилищем, — те самые файлы, которые он читает, байт в байт. Каждая открывается нажатием.",
     soon: "Этот орган строится следующим подшагом. Здесь ничего не спрятано: сегодня страница показывает только то, что будет на ней стоять.",
     tabs: {
+      bench: "Тест",
       search: "Поиск",
       skill: "Навык",
       upload: "Загрузка",

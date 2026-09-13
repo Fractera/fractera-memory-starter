@@ -27,7 +27,9 @@ import {
   MEMORY_SECTIONS,
   resolveMemorySection,
 } from "./_lib/memory-sections";
-import { hrefOfTestTab, isTestSection, resolveTestTab, tabsOf } from "./_lib/test-tabs";
+import { hrefOfTestTab, isStandSection, isTestSection, resolveTestTab, tabsOf, type TestTab } from "./_lib/test-tabs";
+import { skillsOf } from "./_lib/stand-skills";
+import { StandSkills, type StandSkill } from "./_components/stand-skills";
 import { passportOutline } from "./_lib/passport-outline";
 
 // СТРАНИЦА ПАМЯТИ — СКОПИРОВАНА СО СЛУЖБЫ ЧАТА И УРЕЗАНА (178-2).
@@ -149,9 +151,9 @@ async function MemoryPageBody({
   // владелец обязан уметь прислать ссылку на то, что он видит.
   const openTab = resolveTestTab(
     typeof sp.tab === "string" ? sp.tab : undefined,
-    isTestSection(active) ? active : undefined,
+    isStandSection(active) ? active : undefined,
   );
-  const testTabs = isTestSection(active)
+  const testTabs = isStandSection(active)
     ? tabsOf(active).map((t) => ({
         active: t === openTab,
         href: hrefOfTestTab(lang, active, t),
@@ -162,17 +164,23 @@ async function MemoryPageBody({
   // 🔒 НАВЫК ЧИТАЕТСЯ С ДИСКА НА КАЖДЫЙ ЗАПРОС, КАК ПАСПОРТ (194-6): правка файла навыка видна на
   // следующей загрузке, без сборки. Это тот самый файл, который читает агент, — второй копии нет.
   // 🛑 ЧИТАЕМ ТОЛЬКО КОГДА ВКЛАДКА ОТКРЫТА.
-  let skill = "";
-  if (active === "object-test" && openTab === "skill") {
-    try {
-      skill = await readFile(
-        join(process.cwd(), ".claude", "skills", "describe-incoming-object", "SKILL.md"),
-        "utf8",
-      );
-    } catch {
-      skill = "";
-    }
-  }
+// 🔒 С 194-19 НАВЫКИ ЕСТЬ У КАЖДОГО СТЕНДА, И ИХ МОЖЕТ БЫТЬ НЕСКОЛЬКО: имена — из `stand-skills.ts`.
+  const skills: StandSkill[] =
+    isStandSection(active) && openTab === "skill"
+      ? await Promise.all(
+          skillsOf(active).map(async (name) => {
+            const path = join(".claude", "skills", name, "SKILL.md");
+            try {
+              return { name, path, text: await readFile(join(process.cwd(), path), "utf8") };
+            } catch {
+              return { name, path, text: "" };
+            }
+          }),
+        )
+      : [];
+  const skillWords = { missing: ui.testBench.skillMissing };
+  /** Страница трёх стендов хранилищ: «Тест» бывает только у теста памяти, сюда он не доходит. */
+  const pageTab = openTab as TestTab;
 
   return (
     <main className="min-h-screen bg-background">
@@ -252,13 +260,17 @@ async function MemoryPageBody({
                 </p>
               ))}
 
-            {active === "memory-test" && (
+            {active === "memory-test" && openTab !== "skill" && (
               <MemoryBench
                 lang={lang}
                 supported={supportedParams()}
                 tablesWords={ui.memoryTables}
                 testWords={ui.memoryTest}
               />
+            )}
+
+            {active === "memory-test" && openTab === "skill" && (
+              <StandSkills items={skills} words={skillWords} />
             )}
 
             {/* 🔒 ВКЛАДКА API — ДОКУМЕНТАЦИЯ ДЛЯ ВНЕШНИХ ИНСТРУМЕНТОВ (185).
@@ -278,13 +290,13 @@ async function MemoryPageBody({
                   {ui.testBench.tabs[openTab]}
                 </h2>
                 <p className="max-w-3xl text-[length:var(--fs-body)] text-muted-foreground">
-                  {active === "object-test"
-                    ? ui.testBench.object[openTab]
-                    : openTab === "skill"
-                      ? ""
+                  {openTab === "skill"
+                    ? ui.testBench.skillLead
+                    : active === "object-test"
+                      ? ui.testBench.object[pageTab]
                       : active === "graph-test"
-                        ? ui.testBench.graph[openTab]
-                        : ui.testBench.vector[openTab]}
+                        ? ui.testBench.graph[pageTab]
+                        : ui.testBench.vector[pageTab]}
                 </p>
                 {/* 🔒 ВВОДНЫЙ ТЕКСТ СТЕНДА ОБЪЕКТОВ — СВЁРНУТОЙ КАРТОЧКОЙ ПОД ОПИСАНИЕМ (слово владельца
                     2026-09-13: «занимает слишком много места… разместить вверху сразу под описанием…
@@ -336,18 +348,8 @@ async function MemoryPageBody({
                   <ObjectUpload words={ui.objectBench} />
                 ) : active === "object-test" && openTab === "search" ? (
                   <ObjectSearch words={ui.objectBench} />
-                ) : active === "object-test" && openTab === "skill" ? (
-                  // 🔒 ТЕКСТ КАК ЕСТЬ, БАЙТ В БАЙТ: человек видит ровно то, что прочитает агент, а не
-                  // отрисовку, которая могла бы спрятать строку.
-                  skill ? (
-                    <pre className="overflow-x-auto whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-4 font-mono text-[length:var(--fs-small)]">
-                      {skill}
-                    </pre>
-                  ) : (
-                    <p className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-[length:var(--fs-small)]">
-                      {ui.testBench.skillMissing}
-                    </p>
-                  )
+                ) : openTab === "skill" ? (
+                  <StandSkills items={skills} words={skillWords} />
                 ) : (
                   <p className="rounded-md border border-border border-dashed p-4 text-[length:var(--fs-small)] text-muted-foreground">
                     {ui.testBench.soon}

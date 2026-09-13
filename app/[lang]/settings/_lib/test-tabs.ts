@@ -23,9 +23,11 @@ export type TestTab = (typeof TEST_TABS)[number];
  *
  * 🎯 СЛОВО ВЛАДЕЛЬЦА 2026-09-13: «текст навыка на английском языке положи в эту же вкладку: есть кнопка
  * загрузка, есть кнопка поиск, есть кнопка оценка, а дальше сделать кнопка навык».
- * 🔒 ОБЩИЕ ТРИ НЕ ТРОНУТЫ: у графа и вектора навыка этой вкладки нет, и пустая «Навык» там врала бы.
+ * 🪦 «ОБЩИЕ ТРИ НЕ ТРОНУТЫ: у графа и вектора навыка этой вкладки нет» — СНЯТО 2026-09-13 (194-19) словом
+ * владельца «Да, делай вкладки навыков»: у графа и вектора навыки есть (`use-knowledge-graph`, `use-vector-store`),
+ * и вкладка теперь у каждого стенда. Какие именно — `stand-skills.ts`.
  */
-export type StandTab = TestTab | "skill";
+export type StandTab = TestTab | "skill" | "bench";
 
 /** Разделы, у которых есть эти три страницы. */
 // 🔒 ТРИ СТЕНДА С 192-3: объектное хранилище встало той же формой, а не своей.
@@ -38,8 +40,21 @@ export function isTestSection(v: unknown): v is TestSection {
 }
 
 /** Страницы стенда по порядку. */
-export function tabsOf(section: TestSection): readonly StandTab[] {
-  return section === "object-test" ? [...TEST_TABS, "skill"] : TEST_TABS;
+/**
+ * Разделы со строкой вкладок (194-19): три стенда хранилищ и тест памяти.
+ *
+ * 🔒 ТЕСТ ПАМЯТИ — НЕ `TestSection`, И ЭТО НАМЕРЕННО: у него нет страниц «загрузка · поиск · оценка», его стенд —
+ * один экран. Поэтому он получает свои две вкладки — «Тест» и «Навык», — а блок трёх страниц его не касается.
+ */
+export const STAND_SECTIONS = [...TEST_SECTIONS, "memory-test"] as const;
+export type StandSection = (typeof STAND_SECTIONS)[number];
+
+export function isStandSection(v: unknown): v is StandSection {
+  return typeof v === "string" && (STAND_SECTIONS as readonly string[]).includes(v);
+}
+
+export function tabsOf(section: StandSection): readonly StandTab[] {
+  return section === "memory-test" ? ["bench", "skill"] : [...TEST_TABS, "skill"];
 }
 
 /**
@@ -50,12 +65,13 @@ export function tabsOf(section: TestSection): readonly StandTab[] {
  * угодно, и «нет такой вкладки» человек читает как поломку проекта.
  * 🔒 `?tab=skill` У СТЕНДА БЕЗ ЭТОЙ СТРАНИЦЫ — ТОЖЕ НЕИЗВЕСТНОЕ ЗНАЧЕНИЕ.
  */
-export function resolveTestTab(raw: string | undefined, section?: TestSection): StandTab {
+export function resolveTestTab(raw: string | undefined, section?: StandSection): StandTab {
   const allowed: readonly string[] = section ? tabsOf(section) : TEST_TABS;
-  return typeof raw === "string" && allowed.includes(raw) ? (raw as StandTab) : "upload";
+  if (typeof raw === "string" && allowed.includes(raw)) return raw as StandTab;
+  return section === "memory-test" ? "bench" : "upload";
 }
 
 /** Адрес страницы стенда. */
-export function hrefOfTestTab(lang: string, section: TestSection, tab: StandTab): string {
+export function hrefOfTestTab(lang: string, section: StandSection, tab: StandTab): string {
   return `/${lang}/settings?section=${section}&tab=${tab}`;
 }
