@@ -180,6 +180,8 @@ export type MemoryUi = {
      * извлекается… попадает в… хранится…»). По каждому роду — только то, что делает код сегодня.
      */
     intro: {
+      /** Заголовок свёрнутой карточки: он один виден, пока карточка закрыта. */
+      cardTitle: string;
       paragraphs: string[];
       kindsTitle: string;
       kinds: { title: string; body: string }[];
@@ -664,6 +666,7 @@ const EN: MemoryUi = {
     savedMissing: "The object was stored, but its record could not be read back.",
     savedNoRow: "This object has no row in messages_that_came_into_memory: it was stored before the table existed. The file and its description are shown.",
     intro: {
+      cardTitle: "How an object is stored, and what the service accepts",
       paragraphs: [
         "Every object is written to four places at once, or to none: the file itself and its full description go to the object store; the summary goes to a row of messages_that_came_into_memory and to the search card in the vector store; and when the description names people, places or products, a document goes to the knowledge graph. If any step fails, what was already written is removed and the row is kept as failed, with the reason.",
         "That is what lets memory find an object by every rule of its architecture: cheaply — by the meaning of the search card, with one embedding and no model turn; exactly — by the title and tags in the table row (the stand does not use this path yet); and deeply — through the graph, when the question is about how things are connected.",
@@ -1156,6 +1159,7 @@ const RU: MemoryUi = {
     savedMissing: "Объект сохранён, но прочитать его запись не удалось.",
     savedNoRow: "У этого объекта нет строки в messages_that_came_into_memory: он сохранён раньше, чем появилась таблица. Показаны файл и его описание.",
     intro: {
+      cardTitle: "Как объект ложится в память и какие объекты поддерживает служба",
       paragraphs: [
         "Каждый объект ложится сразу в четыре места или ни в одно: сам файл и его полное описание — в объектное хранилище; саммари — в строку таблицы messages_that_came_into_memory и в карточку поиска векторного хранилища; а если в описании названы люди, места или продукты — документ в граф знаний. Сорвалась любая ступень — уже записанное снимается, а строка остаётся со статусом failed и причиной.",
         "Благодаря этому объект находится по всем правилам архитектуры памяти: дёшево — по смыслу карточки поиска, одним встраиванием и без хода модели; точно — по названию и тегам в строке таблицы (стенд этот путь пока не использует); глубоко — через граф, когда вопрос о том, как вещи связаны.",

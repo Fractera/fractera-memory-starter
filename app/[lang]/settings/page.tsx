@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Suspense } from "react";
 import { headers } from "next/headers";
+import { Layers } from "lucide-react";
 import { METHODS } from "@/contract.mjs";
 import { publicMemoryUrl, publicSiteUrl } from "@/lib/fractera/auth-url";
 import { PageCrumbs } from "@/components/nav/page-crumbs.server";
@@ -19,6 +20,7 @@ import { AnthropicKeySection } from "./_components/anthropic-key";
 import { ModelSections } from "./_components/models.client";
 import { PassportBody } from "./_components/passport-body.client";
 import { ApiDoc } from "./_components/api-doc";
+import { SettingsCard } from "./_components/settings-card";
 import { memoryUi } from "./_i18n/memory.i18n";
 import {
   hrefOfMemorySection,
@@ -270,27 +272,6 @@ async function MemoryPageBody({
                 говорите так или не так, до логики».
                 🛑 ПУСТАЯ СТРАНИЦА ГОВОРИТ, ПОЧЕМУ ОНА ПУСТА. Молчащий экран
                 читается как поломка — в этом проекте оплачено не раз. */}
-            {/* 🔒 ВВОДНЫЙ ТЕКСТ СТЕНДА ОБЪЕКТОВ (слово владельца 2026-09-13: «Совершенно не отражает смысл»).
-                Стоит над вкладками: он о службе целиком, а не об одной вкладке. */}
-            {active === "object-test" && (
-              <section className="space-y-3 rounded-md border border-border bg-muted/20 p-4">
-                {ui.objectBench.intro.paragraphs.map((p) => (
-                  <p className="max-w-3xl text-[length:var(--fs-body)]" key={p.slice(0, 32)}>
-                    {p}
-                  </p>
-                ))}
-                <h3 className="pt-2 font-medium text-[length:var(--fs-body)]">{ui.objectBench.intro.kindsTitle}</h3>
-                <ul className="max-w-3xl space-y-2">
-                  {ui.objectBench.intro.kinds.map((k) => (
-                    <li className="text-[length:var(--fs-small)]" key={k.title}>
-                      <span className="font-medium text-[length:var(--fs-body)]">{k.title}</span>
-                      <span className="text-muted-foreground"> — {k.body}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
             {isTestSection(active) && (
               <section className="space-y-4">
                 <h2 className="font-medium text-[length:var(--fs-h3)]">
@@ -305,6 +286,34 @@ async function MemoryPageBody({
                         ? ui.testBench.graph[openTab]
                         : ui.testBench.vector[openTab]}
                 </p>
+                {/* 🔒 ВВОДНЫЙ ТЕКСТ СТЕНДА ОБЪЕКТОВ — СВЁРНУТОЙ КАРТОЧКОЙ ПОД ОПИСАНИЕМ (слово владельца
+                    2026-09-13: «занимает слишком много места… разместить вверху сразу под описанием…
+                    скрыт как вкладка аккордеона которая закрыта»). Раскрытие делает details браузера через
+                    SettingsCard — та же реализация, что у карточек настроек, без островка. Текст о службе
+                    целиком, поэтому стоит на каждой вкладке стенда объектов. */}
+                {active === "object-test" && (
+                  <SettingsCard
+                    bodyClassName="space-y-3 p-4"
+                    icon={<Layers className="size-4 text-muted-foreground" />}
+                    mark={{ "data-object-intro": "" }}
+                    title={ui.objectBench.intro.cardTitle}
+                  >
+                    {ui.objectBench.intro.paragraphs.map((p) => (
+                      <p className="max-w-3xl text-[length:var(--fs-body)]" key={p.slice(0, 32)}>
+                        {p}
+                      </p>
+                    ))}
+                    <h3 className="pt-2 font-medium text-[length:var(--fs-body)]">{ui.objectBench.intro.kindsTitle}</h3>
+                    <ul className="max-w-3xl space-y-2">
+                      {ui.objectBench.intro.kinds.map((k) => (
+                        <li className="text-[length:var(--fs-small)]" key={k.title}>
+                          <span className="font-medium text-[length:var(--fs-body)]">{k.title}</span>
+                          <span className="text-muted-foreground"> — {k.body}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </SettingsCard>
+                )}
                 {/* 🔒 ПОСТРОЕННОЕ ПОКАЗЫВАЕМ, НЕПОСТРОЕННОЕ НАЗЫВАЕМ (189-2).
                     Загрузка в граф построена — она стоит здесь; остальные пять
                     страниц по-прежнему говорят словами, что орган строится
