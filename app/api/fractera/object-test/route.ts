@@ -81,9 +81,14 @@ export async function POST(request: Request) {
   }
   const ms = Number(text("describe_ms"))
 
+  // 194-13: кто прислал — из самого замка, а не со слов формы: у сессии это email архитектора, у прибора —
+  // секрет машины. Поле `author` формы берётся первым только для приборов и будущих входов (API, Telegram).
+  const author = text("author") ?? ("email" in gate.who && gate.who.email ? gate.who.email : "прибор (секрет машины)")
   const r = await keep({
     about,
     anchors: list("anchors"),
+    author,
+    source: text("source") ?? "stand",
     bytes,
     described_by: text("described_by"),
     describe_ms: Number.isFinite(ms) ? ms : undefined,

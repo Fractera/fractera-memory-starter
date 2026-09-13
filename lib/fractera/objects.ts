@@ -192,6 +192,8 @@ function previewOf(card: string): string {
 export async function keep(input: {
   about: string;
   anchors?: string[];
+  /** Кто прислал: email архитектора на стенде, имя человека в Telegram, `who` договора в API (194-13). */
+  author?: string;
   bytes: Uint8Array;
   described_by?: string;
   describe_ms?: number;
@@ -221,6 +223,7 @@ export async function keep(input: {
   /** Строка таблицы — общая для удачи и отказа; отказ пишет её со своей причиной. */
   const row = (extra: Record<string, unknown>) =>
     insertMessage({
+      author: input.author || null,
       described_by: input.described_by || null,
       describe_ms: Number.isFinite(input.describe_ms) ? input.describe_ms : null,
       direction: "remember",
@@ -296,22 +299,30 @@ export async function keep(input: {
     return fail("card-failed");
   }
 
-  // Документ графа — имя по объекту, чтобы забывание находило своё по своей метке.
-  let ragSource: string | null = null;
-  if (Array.isArray(input.anchors)) {
-    ragSource = `object/${item.id}`;
-    const tags = Array.isArray(input.tags) && input.tags.length ? `\nТеги: ${input.tags.join(", ")}.` : "";
-    const g = await learn({
-      anchors: input.anchors,
-      origin: `объект памяти «${name}»`,
-      source: ragSource,
-      text: `${title || name}\n\n${about}${tags}`,
-    });
-    if (!g.accepted) {
-      await dropVector();
-      await dropMedia();
-      return fail(`graph-refused: ${g.refused ?? "unknown"}`);
-    }
+  // 🔒 ДОКУМЕНТ ГРАФА ПИШЕТСЯ ВСЕГДА, С ПОЛНЫМ ОПИСАНИЕМ И ПРОИСХОЖДЕНИЕМ (194-13). Слово владельца: «нужно
+  // полное описание отправлять в граф… информации о том, откуда поступил этот объект… реальный источник,
+  // например Telegram от Рома Армстронг, должна быть написана дата». ✗ До 194-13 в граф уходили только название
+  // и саммари, и только когда модель дала якоря: объект, сохранённый без описания моделью, в граф не попадал.
+  // Имя документа — по объекту, чтобы забывание находило своё по своей метке.
+  // 🔒 ЯКОРЯ: от модели; не переданы — название объекта. ПЕРЕДАНЫ, НО ВСЕ ПУСТЫЕ — это ошибка присланного, и
+  // граф честно отказывает (откат ниже), а не молча подменяется названием.
+  const ragSource = `object/${item.id}`;
+  const SOURCE_WORDS: Record<string, string> = { api: "API памяти", stand: "тестовый стенд памяти", telegram: "Telegram" };
+  const sourceWord = SOURCE_WORDS[input.source || "stand"] ?? String(input.source);
+  const when = new Date().toISOString().replace(/\.\d{3}Z$/, " UTC").replace("T", " ");
+  const origin = `${sourceWord}${input.author ? `, прислал ${input.author}` : ""}, ${when}, файл «${name}»`;
+  const anchors = Array.isArray(input.anchors) ? input.anchors : [title || name];
+  const tagLine = Array.isArray(input.tags) && input.tags.length ? `\n\nТеги: ${input.tags.join(", ")}.` : "";
+  const g = await learn({
+    anchors,
+    origin,
+    source: ragSource,
+    text: `${title || name}\n\n${full || about}${tagLine}\n\nОбъект памяти id=${item.id}; саммари: ${about}`,
+  });
+  if (!g.accepted) {
+    await dropVector();
+    await dropMedia();
+    return fail(`graph-refused: ${g.refused ?? "unknown"}`);
   }
 
   const saved = await row({
