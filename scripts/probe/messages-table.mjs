@@ -42,7 +42,12 @@ const good = await sql(
   `INSERT INTO ${MESSAGES} (created_at, direction, kind, status, who) VALUES (?, 'remember', 'image', 'described', 'probe-194')`,
   [nowIso()],
 )
-say(good.ok === true, `законная строка принята: ${JSON.stringify(good).slice(0, 90)}`)
+// 🔒 «ПРИНЯТА» ДОКАЗЫВАЕТСЯ СЧЁТОМ, А НЕ ОТВЕТОМ ДВЕРИ. Ответ `{ok:true, rows:[]}` одинаков
+// и у записавшей, и у ничего не сделавшей вставки; а оба отказа приходят одним `data-http-500`.
+// Без счёта негативный контроль ослеп бы: сломанная запись выглядела бы как работающий `CHECK`.
+const count = async () => (await sql(`SELECT COUNT(*) AS n FROM ${MESSAGES} WHERE who = 'probe-194'`)).rows?.[0]?.n
+const landed = await count()
+say(good.ok === true && landed === 1, `законная строка легла: ответ ${JSON.stringify(good).slice(0, 60)}, строк ${landed}`)
 
 const bad = await sql(
   `INSERT INTO ${MESSAGES} (created_at, direction, kind, status, who) VALUES (?, 'delete', 'image', 'described', 'probe-194')`,
@@ -55,6 +60,7 @@ const badKind = await sql(
   [nowIso()],
 )
 say(badKind.ok === false, `негатив: kind='spreadsheet' отвергнут: ${JSON.stringify(badKind).slice(0, 120)}`)
+say((await count()) === 1, `после двух отказов строк по-прежнему ${await count()} — отказы ничего не записали`)
 
 await sql(`DELETE FROM ${MESSAGES} WHERE who = 'probe-194'`)
 const left = await sql(`SELECT COUNT(*) AS n FROM ${MESSAGES} WHERE who = 'probe-194'`)
