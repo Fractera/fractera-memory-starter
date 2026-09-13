@@ -70,6 +70,14 @@ export type ObjectCard = {
 };
 
 export type ObjectHit = ObjectCard & {
+  /**
+   * Первая строка содержимого из карточки, до 160 знаков.
+   *
+   * 🔒 ЗАВЕДЕНА ПО ИЗМЕРЕНИЮ 192-2: двойники одного предмета (en/ru, md/pdf) стоят
+   * рядом в выдаче, и различить их по имени файла нельзя. Заголовок документа
+   * называет язык и предмет без лишнего хода `open`.
+   */
+  preview: string;
   score: number;
   /** Ниже порога: вернулось ближайшее, а не подходящее. */
   far: boolean;
@@ -126,6 +134,12 @@ function buildCard(name: string, about: string, content: string | null): string 
   if (about.trim()) lines.push(`about: ${about.trim()}`);
   if (content && content.trim()) lines.push("", content.trim().slice(0, CARD_TEXT_CHARS));
   return lines.join("\n");
+}
+
+/** Первая строка содержимого карточки — после строк `name:` и `about:`. */
+function previewOf(card: string): string {
+  const body = card.split("\n").filter((l) => l.trim() && !/^(name|about): /.test(l));
+  return (body[0] ?? "").trim().slice(0, 160);
 }
 
 /**
@@ -214,7 +228,7 @@ export async function find(input: { k?: number; question: string }): Promise<
   | { ok: false; error: string; hits: []; near: []; lost: 0 }
 > {
   try {
-    const r = await dataJson<{ results?: { refId?: string; score: number }[] }>("/vectors/search", {
+    const r = await dataJson<{ results?: { refId?: string; score: number; text?: string }[] }>("/vectors/search", {
       body: JSON.stringify({ collection: OBJECT_COLLECTION, k: input.k ?? 5, query: input.question }),
       method: "POST",
     });
@@ -228,7 +242,7 @@ export async function find(input: { k?: number; question: string }): Promise<
         continue;
       }
       const score = Number(p.score);
-      hits.push({ ...cardOf(m), far: score < OBJECT_NEAR, score });
+      hits.push({ ...cardOf(m), far: score < OBJECT_NEAR, preview: previewOf(String(p.text ?? "")), score });
     }
     return { hits, lost, near: hits.filter((h) => !h.far), ok: true };
   } catch {

@@ -160,6 +160,55 @@ const TOOLS = [
     },
     name: "search_vectors",
   },
+  {
+    // 🔒 ТРЕТЬЕ ХРАНИЛИЩЕ — ТОЙ ЖЕ ФОРМОЙ ОПИСАНИЯ: назначение и цена, без поводов
+    // (192-4). Отличие от соседей названо одним словом «целиком»: граф отдаёт
+    // связи, вектор — кусок, этот склад — саму вещь с идентификатором.
+    description:
+      "Найти объект целиком — документ, изображение, PDF — по смыслу вопроса. Возвращает id, имя, род и число " +
+      "близости; ходов модели не стоит. Как пользоваться — навык use-object-store.",
+    inputSchema: {
+      properties: {
+        question: { description: "Что ищется — обычными словами", type: "string" },
+      },
+      required: ["question"],
+      type: "object",
+    },
+    name: "find_objects",
+  },
+  {
+    description:
+      "Открыть объект памяти по id: текстовый отдаёт содержимое кусками с названным пределом, двоичный — " +
+      "только карточку. Как пользоваться — навык use-object-store.",
+    inputSchema: {
+      properties: {
+        from: { description: "С какого знака продолжить, если прошлый ответ сказал «дальше с N»", type: "number" },
+        id: { description: "Идентификатор из find_objects или из прежнего ответа", type: "string" },
+      },
+      required: ["id"],
+      type: "object",
+    },
+    name: "open_object",
+  },
+  {
+    // 🔒 РУКА ЗАПИСИ ЕСТЬ ТОЛЬКО У ЭТОГО ХРАНИЛИЩА, И ПРИЧИНА В ТОМ, КТО АВТОР.
+    // Граф и вектор наполняет код памяти; объект-ответ (паспорт §14.2) сочиняет
+    // сам агент. Без этой руки обещание его инструкции «ответ бывает объектом,
+    // наружу едет идентификатор» — способность, названная и отсутствующая.
+    description:
+      "Сохранить составленный тобой текстовый документ (Markdown) как объект и получить его id — когда ответом " +
+      "является документ, а не фраза. Как пользоваться — навык use-object-store.",
+    inputSchema: {
+      properties: {
+        about: { description: "Одна-две фразы: что это за документ и о чём — по ним его найдут потом", type: "string" },
+        name: { description: "Имя файла словами через дефис, например may-august-income-detailed.md", type: "string" },
+        text: { description: "Содержимое документа целиком, Markdown", type: "string" },
+      },
+      required: ["name", "text", "about"],
+      type: "object",
+    },
+    name: "keep_object",
+  },
 ]
 
 // ── ИСПОЛНИТЕЛИ ──────────────────────────────────────────────────────────────
@@ -377,9 +426,110 @@ async function searchVectors({ question }) {
     .join("\n\n")
 }
 
+// ── ОБЪЕКТНОЕ ХРАНИЛИЩЕ (192-4) ─────────────────────────────────────────────
+//
+// 🔒 ТРИ РУКИ ИДУТ ЧЕРЕЗ ТЕ ЖЕ ДВЕРИ, ЧТО И СТЕНД (`object-*`): у агента и у
+// человека на стенде один путь, иначе стенд проверяет не то, чем работает агент.
+// 🔒 ОТКАЗЫ РАЗЛИЧАЮТСЯ СЛОВАМИ: «не отвечает» — путь сломан; «ничего ближе
+// порога» — склад жив, вещи нет; «не памяти» — id чужой. Смешав первое со
+// вторым, агент скажет «такого нет», когда оно есть и недоступно.
+
+const OBJECTS_DOWN = "Объектное хранилище не отвечает. Отвечай тем, что знаешь без него, и скажи, что объекты недоступны."
+
+async function objectDoor(path, body) {
+  try {
+    const res = await fetch(`http://127.0.0.1:3700/api/fractera/${path}`, {
+      body: JSON.stringify(body),
+      headers: { "Content-Type": "application/json", "x-data-secret": machineSecret() },
+      method: "POST",
+    })
+    const j = await res.json().catch(() => ({}))
+    return { j, status: res.status }
+  } catch {
+    return { j: {}, status: 0 }
+  }
+}
+
+const kind = (h) => `${h.mime || "род не назван"} · ${h.size} байт · ${h.text ? "текст читается" : "содержимое не читается"}`
+
+async function findObjects({ question }) {
+  const q = String(question ?? "").trim()
+  if (!q) return "Пустой вопрос — искать нечего."
+  const { j, status } = await objectDoor("object-search", { question: q })
+  if (status !== 200 || !j.ok) return OBJECTS_DOWN
+
+  const lost = j.lost ? `\nКарточек без файла: ${j.lost} — файл удалили мимо памяти.` : ""
+  if (!j.found) {
+    const near = j.nearest ? ` Ближайшее было ${j.nearest.score.toFixed(3)} — ${j.nearest.name}.` : " Объектов в памяти нет."
+    return `Ничего подходящего ближе порога ${j.threshold}.${near}${lost}`
+  }
+  const lines = j.near.map((h) => {
+    const about = h.about ? `\n  описание: ${h.about}` : ""
+    const preview = h.preview ? `\n  начало: ${h.preview}` : ""
+    return `[${h.score.toFixed(3)}] id=${h.id} · ${h.name} · ${kind(h)}${about}${preview}`
+  })
+  return `Объектов ближе порога ${j.threshold}: ${j.near.length}.\n\n${lines.join("\n\n")}${lost}`
+}
+
+async function openObject({ from, id }) {
+  const key = String(id ?? "").trim()
+  if (!key) return "Не назван id объекта."
+  const { j, status } = await objectDoor("object-open", { from: Number(from ?? 0) || 0, id: key })
+  if (status === 0 || status === 502) return OBJECTS_DOWN
+  if (!j.ok) {
+    if (j.error === "not-found") return `Объекта с id ${key} нет.`
+    if (j.error === "not-ours") return `id ${key} принадлежит медиатеке платформы, а не памяти — открыть его нельзя.`
+    if (j.error === "file-missing") return `Карточка объекта ${key} есть, а файла на складе нет — его удалили мимо памяти.`
+    return OBJECTS_DOWN
+  }
+  const c = j.card
+  const head = `id=${c.id} · ${c.name} · ${kind(c)}${c.about ? `\nописание: ${c.about}` : ""}`
+  // 🛑 ДВОИЧНЫЙ ОБЪЕКТ НЕ ПОЛУЧАЕТ СОДЕРЖИМОГО, И ЭТО СКАЗАНО ПРЯМО: иначе модель
+  // перескажет описание как увиденное.
+  if (j.text === null) {
+    return `${head}\n\nСодержимое этого рода память не читает — есть только карточка выше. Ссылайся на объект по id.`
+  }
+  const end = j.from + j.shown
+  const more = end < j.total ? `\nДальше: open_object({ id: "${c.id}", from: ${end} }).` : "\nЭто конец документа."
+  return `${head}\nПоказаны знаки ${j.from}–${end} из ${j.total}.${more}\n\n${j.text}`
+}
+
+const TEXT_NAME = /\.(csv|html?|json|markdown|md|tsv|txt|xml|ya?ml)$/i
+
+async function keepObject({ about, name, text }) {
+  const body = String(text ?? "")
+  const what = String(about ?? "").trim()
+  let file = String(name ?? "").trim().replace(/[\\/]/g, "-")
+  if (!body.trim()) return "Пустой документ — сохранять нечего."
+  if (!what) return "Не сказано, что это за документ: без описания его не найдут потом."
+  if (!file) return "Не названо имя файла."
+  // 🔒 РУКА КЛАДЁТ ТОЛЬКО ТЕКСТ: двоичного артефакта агент не порождает.
+  if (!TEXT_NAME.test(file)) file = `${file}.md`
+
+  const form = new FormData()
+  form.append("file", new Blob([body], { type: "text/markdown" }), file)
+  form.append("about", what)
+  let res
+  try {
+    res = await fetch("http://127.0.0.1:3700/api/fractera/object-test", {
+      body: form,
+      headers: { "x-data-secret": machineSecret() },
+      method: "POST",
+    })
+  } catch {
+    return OBJECTS_DOWN
+  }
+  const j = await res.json().catch(() => ({}))
+  if (!res.ok || !j.ok) return `Документ не сохранён: ${j.error ?? `код ${res.status}`}.`
+  return `Сохранено: id=${j.object.id} · ${j.object.name} · ${j.object.size} байт. Этот id и есть ссылка на документ в твоём ответе.`
+}
+
 const RUN = {
   answer,
   ask_graph: askGraph,
+  find_objects: findObjects,
+  keep_object: keepObject,
+  open_object: openObject,
   search_vectors: searchVectors,
   make_new_kind: makeNewKind,
   promote_to_list: promoteToList,
