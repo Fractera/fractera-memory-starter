@@ -25,7 +25,7 @@ import {
   MEMORY_SECTIONS,
   resolveMemorySection,
 } from "./_lib/memory-sections";
-import { hrefOfTestTab, isTestSection, resolveTestTab, TEST_TABS } from "./_lib/test-tabs";
+import { hrefOfTestTab, isTestSection, resolveTestTab, tabsOf } from "./_lib/test-tabs";
 import { passportOutline } from "./_lib/passport-outline";
 
 // СТРАНИЦА ПАМЯТИ — СКОПИРОВАНА СО СЛУЖБЫ ЧАТА И УРЕЗАНА (178-2).
@@ -145,14 +145,32 @@ async function MemoryPageBody({
   // правке; здесь различается только то, откуда берутся пункты.
   // 🔒 ОТКРЫТАЯ СТРАНИЦА ЖИВЁТ В АДРЕСЕ (`?tab=`), А НЕ В СОСТОЯНИИ ОСТРОВКА:
   // владелец обязан уметь прислать ссылку на то, что он видит.
-  const openTab = resolveTestTab(typeof sp.tab === "string" ? sp.tab : undefined);
+  const openTab = resolveTestTab(
+    typeof sp.tab === "string" ? sp.tab : undefined,
+    isTestSection(active) ? active : undefined,
+  );
   const testTabs = isTestSection(active)
-    ? TEST_TABS.map((t) => ({
+    ? tabsOf(active).map((t) => ({
         active: t === openTab,
         href: hrefOfTestTab(lang, active, t),
         label: ui.testBench.tabs[t],
       }))
     : undefined;
+
+  // 🔒 НАВЫК ЧИТАЕТСЯ С ДИСКА НА КАЖДЫЙ ЗАПРОС, КАК ПАСПОРТ (194-6): правка файла навыка видна на
+  // следующей загрузке, без сборки. Это тот самый файл, который читает агент, — второй копии нет.
+  // 🛑 ЧИТАЕМ ТОЛЬКО КОГДА ВКЛАДКА ОТКРЫТА.
+  let skill = "";
+  if (active === "object-test" && openTab === "skill") {
+    try {
+      skill = await readFile(
+        join(process.cwd(), ".claude", "skills", "describe-incoming-object", "SKILL.md"),
+        "utf8",
+      );
+    } catch {
+      skill = "";
+    }
+  }
 
   return (
     <main className="min-h-screen bg-background">
@@ -258,11 +276,13 @@ async function MemoryPageBody({
                   {ui.testBench.tabs[openTab]}
                 </h2>
                 <p className="max-w-3xl text-[length:var(--fs-body)] text-muted-foreground">
-                  {active === "graph-test"
-                    ? ui.testBench.graph[openTab]
-                    : active === "object-test"
-                      ? ui.testBench.object[openTab]
-                      : ui.testBench.vector[openTab]}
+                  {active === "object-test"
+                    ? ui.testBench.object[openTab]
+                    : openTab === "skill"
+                      ? ""
+                      : active === "graph-test"
+                        ? ui.testBench.graph[openTab]
+                        : ui.testBench.vector[openTab]}
                 </p>
                 {/* 🔒 ПОСТРОЕННОЕ ПОКАЗЫВАЕМ, НЕПОСТРОЕННОЕ НАЗЫВАЕМ (189-2).
                     Загрузка в граф построена — она стоит здесь; остальные пять
@@ -286,6 +306,18 @@ async function MemoryPageBody({
                   <ObjectUpload words={ui.objectBench} />
                 ) : active === "object-test" && openTab === "search" ? (
                   <ObjectSearch words={ui.objectBench} />
+                ) : active === "object-test" && openTab === "skill" ? (
+                  // 🔒 ТЕКСТ КАК ЕСТЬ, БАЙТ В БАЙТ: человек видит ровно то, что прочитает агент, а не
+                  // отрисовку, которая могла бы спрятать строку.
+                  skill ? (
+                    <pre className="overflow-x-auto whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-4 font-mono text-[length:var(--fs-small)]">
+                      {skill}
+                    </pre>
+                  ) : (
+                    <p className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-[length:var(--fs-small)]">
+                      {ui.testBench.skillMissing}
+                    </p>
+                  )
                 ) : (
                   <p className="rounded-md border border-border border-dashed p-4 text-[length:var(--fs-small)] text-muted-foreground">
                     {ui.testBench.soon}

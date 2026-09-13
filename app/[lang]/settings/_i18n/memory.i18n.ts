@@ -44,14 +44,16 @@ export type MemoryUi = {
    */
   testBench: {
     /** Названия трёх страниц: загрузка · поиск · оценка. */
-    tabs: Record<TestTab, string>;
+    tabs: Record<TestTab | "skill", string>;
     /** Лид каждой страницы у графа и у вектора — что человек здесь делает. */
     graph: Record<TestTab, string>;
     vector: Record<TestTab, string>;
-    /** Лиды стенда объектного хранилища (192-3). */
-    object: Record<TestTab, string>;
+    /** Лиды стенда объектного хранилища (192-3); с 194-6 — и страницы «Навык». */
+    object: Record<TestTab | "skill", string>;
     /** Честная строка о том, что органа ещё нет: молчащий экран читается как поломка. */
     soon: string;
+    /** Файла навыка на диске нет — сказано словами, а не пустым экраном (194-6). */
+    skillMissing: string;
   };
   /**
    * Слова загрузки в граф знаний (189-2).
@@ -711,9 +713,12 @@ const EN: MemoryUi = {
       verdict:
         "Only you can say whether the right thing was found. The numbers next to your verdict — seconds and model turns — are measured, not guessed.",
     },
+    skillMissing:
+      "The skill file .claude/skills/describe-incoming-object/SKILL.md is not on this server — the delivery did not bring it.",
     soon: "This control is built in the next sub-step. Nothing is hidden here: today the page only shows what it will hold.",
     tabs: {
       search: "Search",
+      skill: "Skill",
       upload: "Load",
       verdict: "Verdict",
     },
@@ -730,6 +735,8 @@ const EN: MemoryUi = {
         "Ask for the thing, not a quote from it. The store returns whole objects — document, picture, PDF — each with an id and a closeness score; an unrelated question must return nothing.",
       upload:
         "Put a file as it is. It is kept whole; what makes it findable is its card — the name, your description and, for a text file, its opening. Nobody looks inside a picture or a PDF, so describe those in words.",
+      skill:
+        "The skill the memory agent will follow when a file arrives from the API: describe it, store it whole, answer by id. This is the file itself, read from disk on every load — the same text the agent reads.",
       verdict:
         "The same verdict and the same case book as the other two stores — three stores judged by one form.",
     },
@@ -1163,9 +1170,12 @@ const RU: MemoryUi = {
       verdict:
         "Нашлось нужное или нет — можете сказать только вы. Числа рядом с вашим вердиктом — секунды и ходы модели — измерены, а не прикинуты.",
     },
+    skillMissing:
+      "Файла навыка .claude/skills/describe-incoming-object/SKILL.md на этом сервере нет — доставка его не привезла.",
     soon: "Этот орган строится следующим подшагом. Здесь ничего не спрятано: сегодня страница показывает только то, что будет на ней стоять.",
     tabs: {
       search: "Поиск",
+      skill: "Навык",
       upload: "Загрузка",
       verdict: "Оценка",
     },
@@ -1182,6 +1192,8 @@ const RU: MemoryUi = {
         "Спрашивайте о самой вещи, а не цитату из неё. Хранилище вернёт объекты целиком — документ, картинку, PDF — с идентификатором и близостью; посторонний вопрос обязан не найти ничего.",
       upload:
         "Положите файл как есть. Он хранится целиком, а находит его карточка — имя, ваше описание и, у текстового файла, его начало. Внутрь картинки и PDF никто не смотрит, поэтому их описывайте словами.",
+      skill:
+        "Навык, по которому агент памяти будет действовать, когда файл придёт через API: описать, сохранить целиком, ответить номерами. Это сам файл, прочитанный с диска при каждой загрузке, — тот же текст, что читает агент. Навык написан по-английски: машинный слой памяти одноязычен.",
       verdict:
         "Тот же вердикт и тот же корпус случаев, что у двух других хранилищ, — три хранилища судятся одной формой.",
     },
