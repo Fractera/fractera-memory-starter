@@ -447,7 +447,8 @@ export function ObjectSearch({ words }: { words: MemoryUi["objectBench"] }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [answer, setAnswer] = useState<Answer | null>(null);
-  const [opened, setOpened] = useState<Saved | null>(null);
+  // 194-9, поправка владельца: блок «Что легло в память» стоит у КАЖДОГО найденного объекта сразу, без «Открыть».
+  const [views, setViews] = useState<Record<string, Saved | "failed">>({});
 
   const known = words.errors as Record<string, string>;
 
@@ -455,7 +456,7 @@ export function ObjectSearch({ words }: { words: MemoryUi["objectBench"] }) {
     setBusy(true);
     setError(null);
     setAnswer(null);
-    setOpened(null);
+    setViews({});
     try {
       const r = await fetch("/api/fractera/object-search", {
         body: JSON.stringify({ question }),
@@ -468,6 +469,7 @@ export function ObjectSearch({ words }: { words: MemoryUi["objectBench"] }) {
         return;
       }
       setAnswer(j);
+      void loadViews(j.found ? j.near.map((h) => h.id) : []);
     } catch {
       setError(words.errors.offline);
     } finally {
@@ -475,21 +477,25 @@ export function ObjectSearch({ words }: { words: MemoryUi["objectBench"] }) {
     }
   }
 
-  // 194-9: «Открыть» показывает то же, что загрузка, — дверью `?object=`, а не текстом `object-open`.
+  // 194-9: у каждого найденного объекта сразу тот же блок, что после загрузки, — дверью `?object=`.
+  // 🎯 Слово владельца: «я делаю поиск и получаю в этом поиске и полное описание, и саммари, и запись в таблице,
+  // и сам объект». ✗ Первая редакция прятала блок за кнопкой «Открыть» — владелец её не нажал и решил, что
+  // обновления нет: список найденного выглядел как прежде.
   // Дверь `object-open` жива: ею читает документы агент памяти.
-  async function openObject(id: string) {
-    setError(null);
-    try {
-      const r = await fetch(`/api/fractera/object-test?object=${encodeURIComponent(id)}`, { cache: "no-store" });
-      const j = (await r.json()) as Saved & { error?: string; ok?: boolean };
-      if (!r.ok || !j.ok) {
-        setError(known[String(j.error)] ?? known.refused);
-        return;
-      }
-      setOpened({ media: j.media ?? null, object: j.object ?? null, row: j.row ?? null });
-    } catch {
-      setError(words.errors.offline);
-    }
+  async function loadViews(ids: string[]) {
+    await Promise.all(
+      ids.map(async (id) => {
+        try {
+          const r = await fetch(`/api/fractera/object-test?object=${encodeURIComponent(id)}`, { cache: "no-store" });
+          const j = (await r.json()) as Saved & { ok?: boolean };
+          const view: Saved | "failed" =
+            r.ok && j.ok ? { media: j.media ?? null, object: j.object ?? null, row: j.row ?? null } : "failed";
+          setViews((prev) => ({ ...prev, [id]: view }));
+        } catch {
+          setViews((prev) => ({ ...prev, [id]: "failed" }));
+        }
+      }),
+    );
   }
 
   return (
@@ -540,14 +546,15 @@ export function ObjectSearch({ words }: { words: MemoryUi["objectBench"] }) {
                       {h.score.toFixed(3)} · {h.mime || "—"} · {h.size} · {h.id}
                     </p>
                     <p className="font-medium text-[length:var(--fs-body)]">{h.name}</p>
-                    {h.about && <p className="text-[length:var(--fs-small)]">{h.about}</p>}
-                    <button
-                      className="rounded-md border border-border px-3 py-1 text-[length:var(--fs-small)]"
-                      onClick={() => void openObject(h.id)}
-                      type="button"
-                    >
-                      {words.open}
-                    </button>
+                    {views[h.id] === undefined ? (
+                      <p className="text-[length:var(--fs-small)] text-muted-foreground">{words.preview.reading}</p>
+                    ) : views[h.id] === "failed" ? (
+                      <p className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-[length:var(--fs-small)]">
+                        {words.savedMissing}
+                      </p>
+                    ) : (
+                      <SavedView saved={views[h.id] as Saved} words={words} />
+                    )}
                   </li>
                 ))}
               </ul>
@@ -567,7 +574,6 @@ export function ObjectSearch({ words }: { words: MemoryUi["objectBench"] }) {
         </div>
       )}
 
-      {opened && <SavedView onClose={() => setOpened(null)} saved={opened} words={words} />}
     </div>
   );
 }
