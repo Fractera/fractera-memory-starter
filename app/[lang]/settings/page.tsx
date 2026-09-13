@@ -13,6 +13,7 @@ import { GraphUpload } from "./_components/graph-upload.client";
 import { GraphSearch } from "./_components/graph-search.client";
 import { BenchCases } from "./_components/bench-cases.client";
 import { VectorSearch, VectorUpload } from "./_components/vector-bench.client";
+import { ObjectSearch, ObjectUpload } from "./_components/object-bench.client";
 import { OpenAiTab } from "./_components/openai-tab";
 import { AnthropicKeySection } from "./_components/anthropic-key";
 import { ModelSections } from "./_components/models.client";
@@ -259,7 +260,9 @@ async function MemoryPageBody({
                 <p className="max-w-3xl text-[length:var(--fs-body)] text-muted-foreground">
                   {active === "graph-test"
                     ? ui.testBench.graph[openTab]
-                    : ui.testBench.vector[openTab]}
+                    : active === "object-test"
+                      ? ui.testBench.object[openTab]
+                      : ui.testBench.vector[openTab]}
                 </p>
                 {/* 🔒 ПОСТРОЕННОЕ ПОКАЗЫВАЕМ, НЕПОСТРОЕННОЕ НАЗЫВАЕМ (189-2).
                     Загрузка в граф построена — она стоит здесь; остальные пять
@@ -279,6 +282,10 @@ async function MemoryPageBody({
                   <VectorUpload words={ui.vectorBench} />
                 ) : active === "vector-test" && openTab === "search" ? (
                   <VectorSearch words={ui.vectorBench} />
+                ) : active === "object-test" && openTab === "upload" ? (
+                  <ObjectUpload words={ui.objectBench} />
+                ) : active === "object-test" && openTab === "search" ? (
+                  <ObjectSearch words={ui.objectBench} />
                 ) : (
                   <p className="rounded-md border border-border border-dashed p-4 text-[length:var(--fs-small)] text-muted-foreground">
                     {ui.testBench.soon}

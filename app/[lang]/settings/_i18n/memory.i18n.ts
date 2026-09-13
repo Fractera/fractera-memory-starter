@@ -48,6 +48,8 @@ export type MemoryUi = {
     /** Лид каждой страницы у графа и у вектора — что человек здесь делает. */
     graph: Record<TestTab, string>;
     vector: Record<TestTab, string>;
+    /** Лиды стенда объектного хранилища (192-3). */
+    object: Record<TestTab, string>;
     /** Честная строка о том, что органа ещё нет: молчащий экран читается как поломка. */
     soon: string;
   };
@@ -121,6 +123,51 @@ export type MemoryUi = {
    * 🔒 ОДИН НАБОР НА ЗАГРУЗКУ И ПОИСК: у вектора это две половины одного
    * действия, между ними нет фонового построения связей, как у графа.
    */
+  /**
+   * Слова стенда объектного хранилища (192-3).
+   *
+   * 🔒 ОТКАЗЫ ПОИМЁННЫ, КАК У СОСЕДЕЙ: объект без описания, чужой объект,
+   * пропавший файл и молчащий склад чинятся по-разному.
+   */
+  objectBench: {
+    aboutHint: string;
+    aboutLabel: string;
+    aboutPlaceholder: string;
+    ask: string;
+    askLabel: string;
+    askPlaceholder: string;
+    asking: string;
+    binary: string;
+    busy: string;
+    button: string;
+    close: string;
+    costNote: string;
+    empty: string;
+    errors: {
+      "card-failed": string;
+      "empty-file": string;
+      "no-about": string;
+      "not-found": string;
+      "not-ours": string;
+      offline: string;
+      refused: string;
+      "store-unreachable": string;
+      "too-large": string;
+    };
+    fileLabel: string;
+    forget: string;
+    forgot: string;
+    hits: string;
+    inStore: string;
+    lost: string;
+    nearestWas: string;
+    nothing: string;
+    notConfigured: string;
+    open: string;
+    shown: string;
+    stored: string;
+    timing: string;
+  };
   vectorBench: {
     ask: string;
     askLabel: string;
@@ -454,6 +501,10 @@ const EN: MemoryUi = {
       hint: "The same three steps against the vector store: load, search by meaning, judge what came back.",
       title: "Vector store test",
     },
+    "object-test": {
+      hint: "The same three steps against the object store: put a whole file, find the thing itself by meaning, judge what came back.",
+      title: "Object store test",
+    },
     passport: {
       hint: "What memory is and how it works — written before it is built. Read it, approve it or change it; the code comes after.",
       title: "Passport",
@@ -504,6 +555,48 @@ const EN: MemoryUi = {
       "Runs: {total} · right: {good} · wrong: {bad} · awaiting verdict: {pending} · average answer: {avg} ms.",
     title: "Case book",
     why: "Why (optional)",
+  },
+  objectBench: {
+    aboutHint:
+      "Required for pictures, PDFs, audio and video: nobody reads inside them, so your words are the only thing the object will be found by. For a text file it is optional — its opening goes into the card anyway.",
+    aboutLabel: "What this is — in words",
+    aboutPlaceholder: "Diagram of the development loop, from an admin request to deploy",
+    ask: "Find the object",
+    askLabel: "What are you looking for",
+    askPlaceholder: "Describe the thing, not the words inside it…",
+    asking: "Searching…",
+    binary: "This kind is not read: here is its card. Refer to it by id.",
+    busy: "Storing the file and its card…",
+    button: "Store the object",
+    close: "Close",
+    costNote:
+      "No model reads the file. The object is kept whole, and only its card is turned into a fingerprint of meaning — so loading costs one embedding, whatever the size of the file.",
+    empty: "The object store holds nothing yet.",
+    errors: {
+      "card-failed": "The file was accepted but its card was not; the file was removed again, nothing is half-stored.",
+      "empty-file": "There is no file to store.",
+      "no-about": "Describe this object in words — a picture or PDF without a description could never be found.",
+      "not-found": "There is no object with this id.",
+      "not-ours": "This file belongs to the platform media library, not to memory.",
+      offline: "The store is not answering. Nothing was stored.",
+      refused: "The store refused the file.",
+      "store-unreachable": "The store is not answering.",
+      "too-large": "The file is larger than 20 MB.",
+    },
+    fileLabel: "File",
+    forget: "Forget every object memory holds",
+    forgot: "Forgotten: {n}.",
+    hits: "Objects closer than {threshold}: {n}.",
+    inStore: "Objects in memory: {n}.",
+    lost: "Cards without a file: {n} — the file was deleted outside memory.",
+    nearestWas: "The nearest was {score} —",
+    nothing:
+      "Nothing closer than {threshold}. The store always has a nearest object; this one is too far to count as an answer.",
+    notConfigured: "The card store (vectors) is not configured on this machine — objects cannot be found.",
+    open: "Open",
+    shown: "Shown {shown} of {total} characters.",
+    stored: "Stored {name} · {size} bytes · card {card} characters · {ms} ms.",
+    timing: "Answered in {ms} ms, no model turn.",
   },
   vectorBench: {
     ask: "Search by meaning",
@@ -581,6 +674,14 @@ const EN: MemoryUi = {
         "The same text becomes a fingerprint of its meaning. No model reads it; only the embeddings are computed, and that is much cheaper.",
       verdict:
         "The same verdict, the same case book. Two stores judged by one form, so their numbers can be compared at all.",
+    },
+    object: {
+      search:
+        "Ask for the thing, not a quote from it. The store returns whole objects — document, picture, PDF — each with an id and a closeness score; an unrelated question must return nothing.",
+      upload:
+        "Put a file as it is. It is kept whole; what makes it findable is its card — the name, your description and, for a text file, its opening. Nobody looks inside a picture or a PDF, so describe those in words.",
+      verdict:
+        "The same verdict and the same case book as the other two stores — three stores judged by one form.",
     },
   },
   subtitle:
@@ -817,6 +918,10 @@ const RU: MemoryUi = {
       hint: "Те же три шага для векторного хранилища: загрузить, найти по смыслу, оценить найденное.",
       title: "Тест векторного хранилища",
     },
+    "object-test": {
+      hint: "Те же три шага для объектного хранилища: положить файл целиком, найти саму вещь по смыслу, оценить найденное.",
+      title: "Тест объектного хранилища",
+    },
     passport: {
       hint: "Что такое память и как она работает — написанное раньше, чем построено. Читаете, утверждаете или меняете; код идёт после.",
       title: "Паспорт",
@@ -869,6 +974,48 @@ const RU: MemoryUi = {
       "Прогонов: {total} · нашло то: {good} · не то: {bad} · без вердикта: {pending} · ответ в среднем: {avg} мс.",
     title: "Корпус случаев",
     why: "Почему (необязательно)",
+  },
+  objectBench: {
+    aboutHint:
+      "Обязательно для картинок, PDF, звука и видео: внутрь них никто не смотрит, и ваши слова — единственное, по чему объект найдут. Для текстового файла необязательно — его начало и так ляжет в карточку.",
+    aboutLabel: "Что это — словами",
+    aboutPlaceholder: "Схема цикла разработки: от запроса администратора до выкладки",
+    ask: "Найти объект",
+    askLabel: "Что вы ищете",
+    askPlaceholder: "Опишите саму вещь, а не слова внутри неё…",
+    asking: "Ищем…",
+    binary: "Этот род не читается: вот его карточка. Ссылайтесь на объект по идентификатору.",
+    busy: "Кладём файл и его карточку…",
+    button: "Сохранить объект",
+    close: "Закрыть",
+    costNote:
+      "Файл не читает ни одна модель. Объект хранится целиком, а в отпечаток смысла превращается только его карточка — поэтому загрузка стоит одного встраивания, каким бы большим ни был файл.",
+    empty: "В объектном хранилище пока ничего нет.",
+    errors: {
+      "card-failed": "Файл принят, а карточка — нет; файл тут же удалён, наполовину ничего не лежит.",
+      "empty-file": "Нечего сохранять: файла нет.",
+      "no-about": "Опишите объект словами — картинку или PDF без описания не найдёт никто.",
+      "not-found": "Объекта с таким идентификатором нет.",
+      "not-ours": "Этот файл принадлежит медиатеке платформы, а не памяти.",
+      offline: "Хранилище не отвечает. Ничего не сохранено.",
+      refused: "Хранилище отказалось принять файл.",
+      "store-unreachable": "Хранилище не отвечает.",
+      "too-large": "Файл больше 20 МБ.",
+    },
+    fileLabel: "Файл",
+    forget: "Забыть все объекты памяти",
+    forgot: "Забыто: {n}.",
+    hits: "Объектов ближе {threshold}: {n}.",
+    inStore: "Объектов в памяти: {n}.",
+    lost: "Карточек без файла: {n} — файл удалили мимо памяти.",
+    nearestWas: "Ближайшее было {score} —",
+    nothing:
+      "Ничего ближе {threshold}. У хранилища всегда есть ближайший объект; этот слишком далёк, чтобы считаться ответом.",
+    notConfigured: "Склад карточек (векторы) на этой машине не настроен — объекты не найти.",
+    open: "Открыть",
+    shown: "Показано {shown} из {total} знаков.",
+    stored: "Сохранён {name} · {size} байт · карточка {card} знаков · {ms} мс.",
+    timing: "Ответ за {ms} мс, без хода модели.",
   },
   vectorBench: {
     ask: "Найти по смыслу",
@@ -947,6 +1094,14 @@ const RU: MemoryUi = {
         "Тот же текст превращается в отпечаток смысла. Модель его не читает — считаются только встраивания, и это заметно дешевле.",
       verdict:
         "Тот же вердикт и тот же корпус случаев. Два хранилища судятся одной формой — иначе их числа не с чем сравнивать.",
+    },
+    object: {
+      search:
+        "Спрашивайте о самой вещи, а не цитату из неё. Хранилище вернёт объекты целиком — документ, картинку, PDF — с идентификатором и близостью; посторонний вопрос обязан не найти ничего.",
+      upload:
+        "Положите файл как есть. Он хранится целиком, а находит его карточка — имя, ваше описание и, у текстового файла, его начало. Внутрь картинки и PDF никто не смотрит, поэтому их описывайте словами.",
+      verdict:
+        "Тот же вердикт и тот же корпус случаев, что у двух других хранилищ, — три хранилища судятся одной формой.",
     },
   },
   title: "Память",

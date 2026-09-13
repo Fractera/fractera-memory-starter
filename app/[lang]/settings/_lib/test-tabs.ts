@@ -19,7 +19,8 @@ export const TEST_TABS = ["upload", "search", "verdict"] as const;
 export type TestTab = (typeof TEST_TABS)[number];
 
 /** Разделы, у которых есть эти три страницы. */
-export const TEST_SECTIONS = ["graph-test", "vector-test"] as const;
+// 🔒 ТРИ СТЕНДА С 192-3: объектное хранилище встало той же формой, а не своей.
+export const TEST_SECTIONS = ["graph-test", "vector-test", "object-test"] as const;
 
 export type TestSection = (typeof TEST_SECTIONS)[number];
 
