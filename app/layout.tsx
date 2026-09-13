@@ -64,8 +64,11 @@ export default function RootLayout({
   // языка у человека — она станет единственным источником, и это будет одна
   // правка в `use-ui-lang`.
   return (
+    // `scroll-smooth` — тот же приём, что у `<html>` стартера на 3000 (194-12, слово владельца: «ты забыл добавить
+    // плавную прокрутку»). `motion-reduce:scroll-auto` — адаптация: у источника её нет, а плавность выключается
+    // у того, кто попросил систему убрать движение.
     <html
-      className={`${geist.variable} ${geistMono.variable}`}
+      className={`${geist.variable} ${geistMono.variable} scroll-smooth motion-reduce:scroll-auto`}
       lang="en"
       suppressHydrationWarning
     >

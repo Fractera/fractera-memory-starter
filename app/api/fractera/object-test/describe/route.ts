@@ -1,6 +1,6 @@
 // @api стенд объектного хранилища: описать выбранный файл моделью до сохранения
 import { NextResponse } from "next/server"
-import { describe, MAX_BYTES } from "@/lib/describe.mjs"
+import { describe } from "@/lib/describe.mjs"
 import { benchGuard } from "@/lib/bench-guard"
 
 // ДВЕРЬ «ПОЛУЧИТЬ ОПИСАНИЕ» (194-2).
@@ -29,7 +29,6 @@ export async function POST(request: Request) {
 
   const file = form.get("file")
   if (!(file instanceof Blob)) return deny("empty-file", 400)
-  if (file.size > MAX_BYTES) return deny("describe-too-large", 413)
 
   const name = String(form.get("name") ?? (file as File).name ?? "").trim()
   const bytes = new Uint8Array(await file.arrayBuffer())

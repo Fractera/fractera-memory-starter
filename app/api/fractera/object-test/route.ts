@@ -22,8 +22,8 @@ import { benchGuard } from "@/lib/bench-guard"
 const deny = (error: string, status: number) =>
   NextResponse.json({ error, ok: false }, { status })
 
-/** Предел файла стенда. Слой данных принимает 200 МБ; стенду и агенту столько не нужно. */
-const MAX_BYTES = 20 * 1024 * 1024
+// 🪦 ПРЕДЕЛ 20 МБ СНЯТ 2026-09-13 СЛОВОМ ВЛАДЕЛЬЦА («не должно быть никакого лимита по килобайтам»).
+// 🛑 Физические пределы названы: nginx и слой данных принимают файл до 200 МБ.
 
 export async function GET(request: Request) {
   const gate = await benchGuard(request)
@@ -51,7 +51,6 @@ export async function POST(request: Request) {
 
   const file = form.get("file")
   if (!(file instanceof Blob)) return deny("empty-file", 400)
-  if (file.size > MAX_BYTES) return deny("too-large", 413)
 
   const name = String(form.get("name") ?? (file as File).name ?? "").trim()
   const about = String(form.get("about") ?? "").trim()

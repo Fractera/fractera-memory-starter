@@ -38,7 +38,9 @@ function Section({
   title: string;
 }) {
   return (
-    <section className="border-border border-t py-12 first:border-t-0" id={id}>
+    // `scroll-mt-16` (194-12): шапка липкая и высотой `h-14` — без отступа заголовок раздела, к которому ведёт
+    // оглавление, останавливался бы под ней.
+    <section className="scroll-mt-16 border-border border-t py-12 first:border-t-0" id={id}>
       <div className="mx-auto w-full max-w-5xl px-6">
         <h2 className="text-[length:var(--fs-h2)] font-semibold tracking-tight">{title}</h2>
         {lead ? <p className="mt-3 max-w-3xl text-[length:var(--fs-body)] text-muted-foreground">{lead}</p> : null}
