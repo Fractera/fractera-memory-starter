@@ -185,20 +185,31 @@ say(objs[1]?.ok === true && Boolean(objs[1]?.messageId), `вложение READM
 say(!(jr.params ?? []).some((p) => p.name === "media" && p.state === "bad_form"), "media больше не отвергается формой без kind")
 
 // ── уборка по метке ─────────────────────────────────────────────────────────
+// 🔒 ДОКУМЕНТ ГРАФА УДАЛЯЕТСЯ ТОЛЬКО ПОСЛЕ РАЗБОРА (находка 194-4), И ЖДАТЬ НАДО КАЖДЫЙ, А НЕ ОДИН.
+// ✗ Оплачено первым прогоном 194-16: прибор дождался разбора картинки, а документы, положенные позже (по адресу и
+// вложением remember), удалял ещё не разобранными — движок молча их оставил, и в графе остались три сироты.
 const mine = (await sql("SELECT object_id, vector_id, rag_source FROM messages_that_came_into_memory WHERE who = ?", [WHO])).rows ?? []
-const docIds = (await graphDocs()).filter((d) => mine.some((x) => x.rag_source && String(d.file_path ?? "").startsWith(x.rag_source))).map((d) => String(d.id))
-if (docIds.length) {
-  const del = await fetch(`${DATA}/service/rag/documents/delete_document`, { body: JSON.stringify({ delete_file: false, doc_ids: docIds }), headers: H, method: "DELETE" })
-  console.log(`удаление документов графа: ${del.status}`)
+const ofMine = (list) => list.filter((d) => mine.some((x) => x.rag_source && String(d.file_path ?? "").startsWith(x.rag_source)))
+for (let i = 0; i < 48; i++) {
+  const pending = ofMine(await graphDocs()).filter((d) => !["processed", "failed"].includes(d.status))
+  if (!pending.length) break
+  await sleep(5000)
+}
+const docIds = ofMine(await graphDocs()).map((d) => String(d.id))
+for (let attempt = 0; attempt < 3 && docIds.length; attempt++) {
+  const left = (await graphDocs()).filter((d) => docIds.includes(String(d.id))).map((d) => String(d.id))
+  if (!left.length) break
+  const del = await fetch(`${DATA}/service/rag/documents/delete_document`, { body: JSON.stringify({ delete_file: false, doc_ids: left }), headers: H, method: "DELETE" })
+  console.log(`удаление документов графа (${left.length}), попытка ${attempt + 1}: ${del.status}`)
+  await sleep(15000)
 }
 for (const x of mine) {
   if (x.object_id) await fetch(`${DATA}/media/${x.object_id}`, { headers: { "X-Data-Secret": KEY }, method: "DELETE" })
   if (x.vector_id) await fetch(`${DATA}/vectors/${x.vector_id}`, { headers: { "X-Data-Secret": KEY }, method: "DELETE" })
 }
 await sql("DELETE FROM messages_that_came_into_memory WHERE who = ?", [WHO])
-await sleep(20000)
 const left = (await graphDocs()).filter((d) => docIds.includes(String(d.id))).length
-say(left === 0 && (await rowsOfProbe()).length === 0, `уборка: строк убрано ${mine.length}, документов графа осталось ${left}`)
+say(left === 0 && (await rowsOfProbe()).length === 0, `уборка: строк убрано ${mine.length}, документов графа было ${docIds.length}, осталось ${left}`)
 
 console.log(failed === 0 ? "✓ OK" : `✗ FAILED ${failed}`)
 console.log("===PROBE_V1_OBJECTS_END===")
