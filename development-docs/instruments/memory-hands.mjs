@@ -23,7 +23,19 @@ if (args[0] === "--log") {
   args.splice(0, 2)
 }
 const [name, raw = "{}"] = args
-const ALLOWED = new Set(["find_objects", "open_object", "keep_object", "ask_graph", "search_vectors"])
+// 🪦 ФАЙЛ ЗВАЛСЯ `192-5-memtool.mjs` И ПЕРЕИМЕНОВАН 193-3: инструмент перестал
+// принадлежать одному шагу. Вторую копию рядом заводить было нельзя — копии
+// расходятся, и отстаёт та, которой пользуются реже.
+//
+// 🛑 РУКИ ЗАПИСИ ПИШУТ В ЖИВУЮ ПАМЯТЬ ВЛАДЕЛЬЦА, И ЭТО НЕ ОГОВОРКА, А ПРЕДЕЛ
+// ИНСТРУМЕНТА. Корень `person_who_owns_this_project` один на всех; заведённая
+// колонка остаётся в нём навсегда, пока её не снимут `DROP COLUMN`. Тот, кто
+// зовёт руки записи для прогона, обязан снять состав базы ДО и вернуть его
+// ПОСЛЕ — как это делает `scripts/probe/tables-three-methods.mjs`.
+const ALLOWED = new Set([
+  "find_objects", "open_object", "keep_object", "ask_graph", "search_vectors",
+  "what_i_already_know", "write_value", "make_new_kind", "promote_to_list",
+])
 if (!ALLOWED.has(name)) {
   console.log(`Неизвестный инструмент: ${name}. Есть: ${[...ALLOWED].join(", ")}`)
   process.exit(2)
