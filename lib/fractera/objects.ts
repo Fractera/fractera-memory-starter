@@ -106,7 +106,9 @@ type MediaRow = {
  */
 export type { PreviewItem };
 
-const previewOf = (m: MediaRow): PreviewItem => ({
+// 🛑 ИМЯ `previewItemOf`, А НЕ `previewOf`: ниже уже живёт `previewOf(card)` — первая строка карточки.
+// ✗ Оплачено 194-8: два объявления одного имени уронили сборку на сервере и стёрли `.next/BUILD_ID`.
+const previewItemOf = (m: MediaRow): PreviewItem => ({
   duration: m.duration ?? null,
   extension: String(m.extension ?? String(m.name ?? "").split(".").pop() ?? "").toLowerCase(),
   height: m.height ?? null,
@@ -468,7 +470,7 @@ export async function messageView(
     const row = (await getMessage(messageId)) as Record<string, unknown> | null;
     if (!row) return { error: "not-found", ok: false };
     const media = row.object_id ? (await mediaRows()).get(String(row.object_id)) : undefined;
-    return { media: media ? previewOf(media) : null, object: media ? cardOf(media) : null, ok: true, row };
+    return { media: media ? previewItemOf(media) : null, object: media ? cardOf(media) : null, ok: true, row };
   } catch {
     return { error: "store-unreachable", ok: false };
   }
