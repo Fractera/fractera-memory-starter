@@ -66,6 +66,9 @@ const SELF_GUARDED = new Set([
   // 🔒 ДВЕРЬ «ПОЛУЧИТЬ ОПИСАНИЕ» (194-2) — тот же `benchGuard`, имя стоит до первой сборки.
   // Набор сверяется ТОЧНЫМ именем: соседнее `/object-test` вложенный путь не открывает.
   "/api/fractera/object-test/describe",
+  // 🔒 ДВЕРЬ ФАЙЛА ОБЪЕКТА (194-5) — `benchGuard`; перехваченная привратником, отдала бы HTML входа
+  // вместо картинки, и превью молча показало бы битое изображение.
+  "/api/fractera/object-file",
   "/api/fractera/object-search",
   "/api/fractera/object-open",
   "/api/fractera/memory-test",

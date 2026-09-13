@@ -30,6 +30,12 @@ const fill = (s: string, v: Record<string, string | number>) =>
 
 const TEXT_EXT = /\.(csv|html?|json|markdown|md|tsv|txt|xml|ya?ml)$/i;
 
+/** Что легло в память: строка таблицы как есть и карточка объекта с полным описанием (194-5). */
+type Saved = { object: Card | null; row: Record<string, unknown> | null };
+
+/** Файл объекта — через свою дверь: ключ склада в браузер не уезжает. */
+const fileUrl = (id: string) => `/api/fractera/object-file?id=${encodeURIComponent(id)}`;
+
 /** Что модель сказала о файле, кроме двух полей, которые правит человек (194-3). */
 type Described = {
   anchors: string[];
@@ -68,6 +74,8 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
   const [described, setDescribed] = useState<Described | null>(null);
   const [describing, setDescribing] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [saved, setSaved] = useState<Saved | null>(null);
+  const [savedMissing, setSavedMissing] = useState(false);
 
   useEffect(() => {
     if (!describing) return;
@@ -144,6 +152,7 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
         cardChars?: number;
         error?: string;
         ms?: number;
+        messageId?: number;
         object?: Card;
         ok?: boolean;
       };
@@ -160,6 +169,20 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
       setFull("");
       setDescribed(null);
       void load();
+      // 🔒 ПОКАЗЫВАЕТСЯ ПРОЧИТАННОЕ ИЗ ХРАНИЛИЩ, А НЕ ТО, ЧТО БЫЛО В ФОРМЕ: иначе экран подтверждал бы
+      // собственные поля, а не то, что легло.
+      setSaved(null);
+      setSavedMissing(false);
+      if (j.messageId) {
+        try {
+          const v = await fetch(`/api/fractera/object-test?message=${j.messageId}`, { cache: "no-store" });
+          const s = (await v.json()) as Saved & { ok?: boolean };
+          if (v.ok && s.ok && s.row) setSaved({ object: s.object ?? null, row: s.row });
+          else setSavedMissing(true);
+        } catch {
+          setSavedMissing(true);
+        }
+      }
     } catch {
       setError(words.errors.offline);
     } finally {
@@ -289,6 +312,84 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
       )}
       {done && (
         <p className="rounded-md border border-border bg-muted/40 p-4 text-[length:var(--fs-body)]">{done}</p>
+      )}
+
+      {savedMissing && (
+        <p className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-[length:var(--fs-small)]">
+          {words.savedMissing}
+        </p>
+      )}
+
+      {saved?.row && (
+        <section className="space-y-4 rounded-md border border-border p-4">
+          <h3 className="font-medium text-[length:var(--fs-body)]">{words.savedTitle}</h3>
+
+          {saved.object && (
+            <div className="space-y-2">
+              <p className="font-medium text-[length:var(--fs-small)]">{words.savedFile}</p>
+              {saved.row.kind === "image" ? (
+                // eslint-disable-next-line @next/next/no-img-element -- приватный файл: оптимизатор пошёл бы без куки (закон чата 96)
+                <img alt={saved.object.name} className="max-h-80 max-w-full rounded-md border border-border" src={fileUrl(saved.object.id)} />
+              ) : saved.row.kind === "audio" ? (
+                <audio className="w-full" controls src={fileUrl(saved.object.id)} />
+              ) : saved.row.kind === "video" ? (
+                <video className="max-h-80 max-w-full rounded-md" controls src={fileUrl(saved.object.id)} />
+              ) : null}
+              <a
+                className="inline-block text-[length:var(--fs-small)] text-primary underline"
+                href={fileUrl(saved.object.id)}
+                rel="noreferrer"
+                target="_blank"
+              >
+                {words.openFile}: {saved.object.name}
+              </a>
+            </div>
+          )}
+
+          {saved.object?.about && (
+            <div className="space-y-2">
+              <p className="font-medium text-[length:var(--fs-small)]">{words.savedFull}</p>
+              <p className="max-h-80 overflow-y-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-[length:var(--fs-body)]">
+                {saved.object.about}
+              </p>
+            </div>
+          )}
+
+          {typeof saved.row.summary === "string" && saved.row.summary && (
+            <div className="space-y-2">
+              <p className="font-medium text-[length:var(--fs-small)]">{words.savedSummary}</p>
+              <p className="rounded-md bg-muted/40 p-3 text-[length:var(--fs-body)]">{saved.row.summary}</p>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <p className="font-medium text-[length:var(--fs-small)]">{words.savedRow}</p>
+            {/* 🔒 ОДНА СТРОКА, ВСЕ КОЛОНКИ, ГОРИЗОНТАЛЬНАЯ ПРОКРУТКА В СВОЁМ КОНТЕЙНЕРЕ (слово владельца 2026-09-13).
+                Порядок колонок — тот, что отдала база: экран не решает, какие поля важнее. */}
+            <div className="overflow-x-auto rounded-md border border-border">
+              <table className="min-w-max border-collapse font-mono text-[length:var(--fs-small)]">
+                <thead>
+                  <tr>
+                    {Object.keys(saved.row).map((k) => (
+                      <th className="whitespace-nowrap border-b border-border bg-muted/40 px-3 py-2 text-left font-medium" key={k}>
+                        {k}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    {Object.entries(saved.row).map(([k, v]) => (
+                      <td className="max-w-[28rem] truncate whitespace-nowrap px-3 py-2 align-top" key={k} title={v == null ? "" : String(v)}>
+                        {v == null ? <span className="text-muted-foreground">null</span> : String(v)}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
       )}
 
       <p className="text-[length:var(--fs-small)] text-muted-foreground">{words.costNote}</p>

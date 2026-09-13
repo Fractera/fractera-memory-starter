@@ -1,6 +1,6 @@
 import { dataFetch, dataJson, dataService } from "./data-service";
 import { forgetDocuments, learn } from "./knowledge";
-import { insertMessage } from "@/lib/messages.mjs";
+import { getMessage, insertMessage } from "@/lib/messages.mjs";
 import { kindOf, messageKindOf } from "@/lib/describe.mjs";
 
 // ОБЪЕКТНОЕ ХРАНИЛИЩЕ — ВЕЩЬ ЦЕЛИКОМ, С ИДЕНТИФИКАТОРОМ (192-1).
@@ -405,5 +405,46 @@ export async function forget(ids?: string[]): Promise<{ ok: boolean; removed: nu
     return { ok: true, refused, removed };
   } catch {
     return { ok: false, refused: [], removed: 0 };
+  }
+}
+
+/**
+ * Байты объекта памяти для браузера (194-5).
+ *
+ * 🔒 ТОЛЬКО СВОЁ — та же проверка принадлежности, что у `forget`: карточка в коллекции памяти.
+ */
+export async function fileOf(
+  id: string,
+): Promise<{ ok: true; body: ArrayBuffer; mime: string; name: string } | { ok: false; error: string }> {
+  const key = String(id ?? "").trim();
+  if (!key) return { error: "no-id", ok: false };
+  try {
+    if (!(await ownIds()).has(key)) return { error: "not-ours", ok: false };
+    const row = (await mediaRows()).get(key);
+    if (!row) return { error: "not-found", ok: false };
+    const res = await dataFetch(`/media/${key}/file`);
+    if (!res.ok) return { error: res.status === 404 ? "file-missing" : "store-refused", ok: false };
+    return { body: await res.arrayBuffer(), mime: String(row.mime_type ?? ""), name: String(row.name ?? key), ok: true };
+  } catch {
+    return { error: "store-unreachable", ok: false };
+  }
+}
+
+/**
+ * Что легло в память по номеру сообщения: строка таблицы как есть и карточка объекта (194-5).
+ *
+ * 🔒 ПОЛНОЕ ОПИСАНИЕ ЧИТАЕТСЯ ИЗ МЕДИАТЕКИ, А НЕ ИЗ ФОРМЫ: экран подтверждает легшее, а не присланное.
+ */
+export async function messageView(
+  messageId: number,
+): Promise<{ ok: true; object: ObjectCard | null; row: Record<string, unknown> } | { ok: false; error: string }> {
+  if (!Number.isInteger(messageId) || messageId <= 0) return { error: "no-id", ok: false };
+  try {
+    const row = (await getMessage(messageId)) as Record<string, unknown> | null;
+    if (!row) return { error: "not-found", ok: false };
+    const media = row.object_id ? (await mediaRows()).get(String(row.object_id)) : undefined;
+    return { object: media ? cardOf(media) : null, ok: true, row };
+  } catch {
+    return { error: "store-unreachable", ok: false };
   }
 }

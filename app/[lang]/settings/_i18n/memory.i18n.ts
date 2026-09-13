@@ -165,6 +165,14 @@ export type MemoryUi = {
     fullHint: string;
     fullLabel: string;
     fullPlaceholder: string;
+    /** 194-5: что легло в память после сохранения. */
+    openFile: string;
+    savedFile: string;
+    savedFull: string;
+    savedMissing: string;
+    savedRow: string;
+    savedSummary: string;
+    savedTitle: string;
     forget: string;
     forgot: string;
     hits: string;
@@ -619,6 +627,13 @@ const EN: MemoryUi = {
       "So detailed that an AI could reconstruct the object from this text alone. Kept next to the file in the object store.",
     fullLabel: "Full description",
     fullPlaceholder: "Composition, every element and its position, colours, all visible text…",
+    openFile: "Open the file",
+    savedFile: "File — in the object store",
+    savedFull: "Full description — kept next to the file",
+    savedMissing: "The object was stored, but its record could not be read back.",
+    savedRow: "Row in messages_that_came_into_memory",
+    savedSummary: "Summary — in the table row and the search card",
+    savedTitle: "What went into memory",
     forget: "Forget every object memory holds",
     forgot: "Forgotten: {n}.",
     hits: "Objects closer than {threshold}: {n}.",
@@ -1063,6 +1078,13 @@ const RU: MemoryUi = {
       "Настолько подробно, чтобы ИИ мог восстановить объект по одному этому тексту. Хранится рядом с файлом в объектном хранилище.",
     fullLabel: "Полное описание",
     fullPlaceholder: "Композиция, каждый элемент и его место, цвета, весь видимый текст…",
+    openFile: "Открыть файл",
+    savedFile: "Файл — в объектном хранилище",
+    savedFull: "Полное описание — рядом с файлом",
+    savedMissing: "Объект сохранён, но прочитать его запись не удалось.",
+    savedRow: "Строка messages_that_came_into_memory",
+    savedSummary: "Саммари — в строке таблицы и в карточке поиска",
+    savedTitle: "Что легло в память",
     forget: "Забыть все объекты памяти",
     forgot: "Забыто: {n}.",
     hits: "Объектов ближе {threshold}: {n}.",
