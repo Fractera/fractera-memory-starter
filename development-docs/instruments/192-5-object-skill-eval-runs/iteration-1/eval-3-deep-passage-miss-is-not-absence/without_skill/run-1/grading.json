@@ -1,0 +1,25 @@
+{
+  "expectations": [
+    {
+      "evidence": "механизм не назван: только «промах поиска по объекту целиком не означал отсутствия» и «проверены только документы, всплывшие в выдаче» — о карточке и начале документа ни слова",
+      "passed": false,
+      "text": "Ответ называет предел поиска объектов: ищется карточка / начало документа, глубина не видна"
+    },
+    {
+      "evidence": "выдан f8056618-… skill-evolution-pipeline.md, подтверждён чтением §1",
+      "passed": true,
+      "text": "Ответ не выдаёт как результат документ, отличный от skill-evolution-pipeline.md (f8056618-…)"
+    },
+    {
+      "evidence": "вызовы: find_objects, open_object, open_object, open_object, open_object, open_object, open_object, find_objects, ask_graph, find_objects, find_objects, open_object",
+      "passed": true,
+      "text": "Агент не вызывал search_vectors (уровень включает зовущий)"
+    }
+  ],
+  "summary": {
+    "failed": 1,
+    "pass_rate": 0.6666666666666666,
+    "passed": 2,
+    "total": 3
+  }
+}

@@ -3,13 +3,15 @@
 // в MANUAL. Пишет grading.json в формате просмотрщика skill-creator: text · passed · evidence.
 //
 // Запуск: node grade.mjs <iteration-dir>
-import { existsSync, readFileSync, writeFileSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 
 const IT = process.argv[2] ?? "iteration-1"
 const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g
 const read = (p) => (existsSync(p) ? readFileSync(p, "utf8") : "")
-const calls = (log) => [...log.matchAll(/^### \S+ (\w+) (.*)$/gm)].map((m) => ({ args: m[2], tool: m[1] }))
+// 🛑 ЗАГОЛОВОК ВЫЗОВА УЗНАЁТСЯ ПО МЕТКЕ ВРЕМЕНИ: в журнал попадает и текст открытых документов, а
+// в Markdown свои строки «### …» — без метки они считались бы вызовами.
+const calls = (log) => [...log.matchAll(/^### \d{4}-\d\d-\d\dT\S+ (\w+) (.*)$/gm)].map((m) => ({ args: m[2], tool: m[1] }))
 
 const EN = "5e7b92c5-97c5-4583-adee-6adb51c866b7"
 const RU = "f426b478-46b3-45f7-b0f7-bcb5fc597f3b"
@@ -56,11 +58,15 @@ const CHECKS = {
   },
 }
 
+// Раскладка, которую читают агрегатор и просмотрщик skill-creator: eval-N-<имя>/<конфигурация>/run-1/.
+const evalDirs = readdirSync(IT).filter((d) => /^eval-\d+-/.test(d))
 const summary = []
 for (const [evalName, check] of Object.entries(CHECKS)) {
-  const meta = JSON.parse(read(join(IT, evalName, "eval_metadata.json")))
+  const evalDir = evalDirs.find((d) => d.replace(/^eval-\d+-/, "") === evalName)
+  if (!evalDir) continue
+  const meta = JSON.parse(read(join(IT, evalDir, "eval_metadata.json")))
   for (const cfg of ["with_skill", "without_skill"]) {
-    const dir = join(IT, evalName, cfg)
+    const dir = join(IT, evalDir, cfg, "run-1")
     const answer = read(join(dir, "outputs", "answer.md"))
     if (!answer) continue
     const log = read(join(dir, "outputs", "calls.log"))
@@ -71,7 +77,7 @@ for (const [evalName, check] of Object.entries(CHECKS)) {
       join(dir, "grading.json"),
       JSON.stringify({ expectations, summary: { failed: expectations.length - passed, pass_rate: passed / expectations.length, passed, total: expectations.length } }, null, 2),
     )
-    summary.push(`${evalName.padEnd(38)} ${cfg.padEnd(14)} ${passed}/${expectations.length}`)
+    summary.push(`${evalName.padEnd(38)} ${cfg.padEnd(14)} ${passed}/${expectations.length} · вызовов рук ${calls(log).length}`)
     for (const e of expectations) summary.push(`    ${e.passed ? "✓" : "✗"} ${e.text.slice(0, 70)} — ${e.evidence}`)
   }
 }

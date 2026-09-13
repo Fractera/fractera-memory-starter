@@ -1,0 +1,25 @@
+{
+  "expectations": [
+    {
+      "evidence": "«Нужного документа в этой выдаче не было: пример лежит глубже начала документа, а поиск видит только карточку (имя, описание, начало ~1500 знаков)»; и в оговорке: «промах поиска по объектам означает „ни одна карточка не совпала“, а не „такого текста нет“»",
+      "passed": true,
+      "text": "Ответ называет предел поиска объектов: ищется карточка / начало документа, глубина не видна"
+    },
+    {
+      "evidence": "выдан f8056618-… skill-evolution-pipeline.md, подтверждён чтением §1",
+      "passed": true,
+      "text": "Ответ не выдаёт как результат документ, отличный от skill-evolution-pipeline.md (f8056618-…)"
+    },
+    {
+      "evidence": "вызовы: find_objects, open_object, open_object, open_object, open_object, open_object, open_object, find_objects, open_object",
+      "passed": true,
+      "text": "Агент не вызывал search_vectors (уровень включает зовущий)"
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "pass_rate": 1,
+    "passed": 3,
+    "total": 3
+  }
+}

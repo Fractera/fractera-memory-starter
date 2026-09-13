@@ -1,0 +1,340 @@
+{
+  "metadata": {
+    "skill_name": "use-object-store",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-09-13T07:55:14Z",
+    "evals_run": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 44.3,
+        "tokens": 139095,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "evidence": "\u043f\u0435\u0440\u0432\u044b\u0439 id \u0432 \u043e\u0442\u0432\u0435\u0442\u0435: 5e7b92c5-97c5-4583-adee-6adb51c866b7",
+          "passed": true,
+          "text": "\u041f\u0435\u0440\u0432\u044b\u0439 \u0438\u0434\u0435\u043d\u0442\u0438\u0444\u0438\u043a\u0430\u0442\u043e\u0440, \u043d\u0430\u0437\u0432\u0430\u043d\u043d\u044b\u0439 \u0432 \u043e\u0442\u0432\u0435\u0442\u0435 \u043a\u0430\u043a \u0440\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442, \u2014 \u0430\u043d\u0433\u043b\u0438\u0439\u0441\u043a\u0438\u0439 PDF 5e7b92c5-97c5-4583-adee-6adb51c866b7"
+        },
+        {
+          "evidence": "\u043f\u0435\u0440\u0432\u044b\u0439 id \u043d\u0435 \u0440\u0443\u0441\u0441\u043a\u0438\u0439 PDF (5e7b92c5-97c5-4583-adee-6adb51c866b7)",
+          "passed": true,
+          "text": "\u0420\u0443\u0441\u0441\u043a\u0438\u0439 PDF f426b478-46b3-45f7-b0f7-bcb5fc597f3b \u043d\u0435 \u0432\u044b\u0434\u0430\u043d \u043a\u0430\u043a \u043e\u0442\u0432\u0435\u0442 (\u0443\u043f\u043e\u043c\u044f\u043d\u0443\u0442 \u0440\u0430\u0437\u0432\u0435 \u0447\u0442\u043e \u043a\u0430\u043a \u043e\u0442\u0432\u0435\u0440\u0433\u043d\u0443\u0442\u044b\u0439 \u0434\u0432\u043e\u0439\u043d\u0438\u043a)"
+        },
+        {
+          "evidence": "\u0432\u044b\u0437\u043e\u0432\u044b: find_objects",
+          "passed": true,
+          "text": "\u0410\u0433\u0435\u043d\u0442 \u0432\u044b\u0437\u044b\u0432\u0430\u043b find_objects (\u0435\u0441\u0442\u044c \u0432 \u0436\u0443\u0440\u043d\u0430\u043b\u0435 \u0432\u044b\u0437\u043e\u0432\u043e\u0432)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 50.7,
+        "tokens": 139262,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "evidence": "id \u0441\u0445\u0435\u043c\u044b \u0435\u0441\u0442\u044c \u0432 \u043e\u0442\u0432\u0435\u0442\u0435",
+          "passed": true,
+          "text": "\u041e\u0442\u0432\u0435\u0442 \u0441\u043e\u0434\u0435\u0440\u0436\u0438\u0442 \u0438\u0434\u0435\u043d\u0442\u0438\u0444\u0438\u043a\u0430\u0442\u043e\u0440 \u0441\u0445\u0435\u043c\u044b b2c3ac37-dcb4-4b14-9304-bd89af3974a6"
+        },
+        {
+          "evidence": "\u00ab\u043d\u0435 \u0447\u0438\u0442\u0430\u0435\u0442\u00bb",
+          "passed": true,
+          "text": "\u041e\u0442\u0432\u0435\u0442 \u043f\u0440\u044f\u043c\u043e \u0433\u043e\u0432\u043e\u0440\u0438\u0442, \u0447\u0442\u043e \u0441\u043e\u0434\u0435\u0440\u0436\u0438\u043c\u043e\u0435 \u0438\u0437\u043e\u0431\u0440\u0430\u0436\u0435\u043d\u0438\u044f \u043d\u0435 \u043f\u0440\u043e\u0447\u0438\u0442\u0430\u043d\u043e / \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u043e \u0442\u043e\u043b\u044c\u043a\u043e \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0435"
+        },
+        {
+          "evidence": "\u0434\u0435\u0442\u0430\u043b\u0435\u0439 \u0441\u0445\u0435\u043c\u044b \u0432\u043d\u0435 \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u044f \u043d\u0435\u0442",
+          "passed": true,
+          "text": "\u041e\u0442\u0432\u0435\u0442 \u043d\u0435 \u0443\u0442\u0432\u0435\u0440\u0436\u0434\u0430\u0435\u0442 \u0434\u0435\u0442\u0430\u043b\u0435\u0439 \u0441\u0445\u0435\u043c\u044b, \u043a\u043e\u0442\u043e\u0440\u044b\u0445 \u043d\u0435\u0442 \u0432 \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0438: \u043d\u0435\u0442 \u0441\u043b\u043e\u0432 ERROR, \u00abCompleted Project Steps\u00bb, \u00abGenerate New Task\u00bb, \u00abCodex\u00bb"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 143.0,
+        "tokens": 145908,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "evidence": "\u00ab\u041d\u0443\u0436\u043d\u043e\u0433\u043e \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430 \u0432 \u044d\u0442\u043e\u0439 \u0432\u044b\u0434\u0430\u0447\u0435 \u043d\u0435 \u0431\u044b\u043b\u043e: \u043f\u0440\u0438\u043c\u0435\u0440 \u043b\u0435\u0436\u0438\u0442 \u0433\u043b\u0443\u0431\u0436\u0435 \u043d\u0430\u0447\u0430\u043b\u0430 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430, \u0430 \u043f\u043e\u0438\u0441\u043a \u0432\u0438\u0434\u0438\u0442 \u0442\u043e\u043b\u044c\u043a\u043e \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0443 (\u0438\u043c\u044f, \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0435, \u043d\u0430\u0447\u0430\u043b\u043e ~1500 \u0437\u043d\u0430\u043a\u043e\u0432)\u00bb; \u0438 \u0432 \u043e\u0433\u043e\u0432\u043e\u0440\u043a\u0435: \u00ab\u043f\u0440\u043e\u043c\u0430\u0445 \u043f\u043e\u0438\u0441\u043a\u0430 \u043f\u043e \u043e\u0431\u044a\u0435\u043a\u0442\u0430\u043c \u043e\u0437\u043d\u0430\u0447\u0430\u0435\u0442 \u201e\u043d\u0438 \u043e\u0434\u043d\u0430 \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0430 \u043d\u0435 \u0441\u043e\u0432\u043f\u0430\u043b\u0430\u201c, \u0430 \u043d\u0435 \u201e\u0442\u0430\u043a\u043e\u0433\u043e \u0442\u0435\u043a\u0441\u0442\u0430 \u043d\u0435\u0442\u201c\u00bb",
+          "passed": true,
+          "text": "\u041e\u0442\u0432\u0435\u0442 \u043d\u0430\u0437\u044b\u0432\u0430\u0435\u0442 \u043f\u0440\u0435\u0434\u0435\u043b \u043f\u043e\u0438\u0441\u043a\u0430 \u043e\u0431\u044a\u0435\u043a\u0442\u043e\u0432: \u0438\u0449\u0435\u0442\u0441\u044f \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0430 / \u043d\u0430\u0447\u0430\u043b\u043e \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430, \u0433\u043b\u0443\u0431\u0438\u043d\u0430 \u043d\u0435 \u0432\u0438\u0434\u043d\u0430"
+        },
+        {
+          "evidence": "\u0432\u044b\u0434\u0430\u043d f8056618-\u2026 skill-evolution-pipeline.md, \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043d \u0447\u0442\u0435\u043d\u0438\u0435\u043c \u00a71",
+          "passed": true,
+          "text": "\u041e\u0442\u0432\u0435\u0442 \u043d\u0435 \u0432\u044b\u0434\u0430\u0451\u0442 \u043a\u0430\u043a \u0440\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442, \u043e\u0442\u043b\u0438\u0447\u043d\u044b\u0439 \u043e\u0442 skill-evolution-pipeline.md (f8056618-\u2026)"
+        },
+        {
+          "evidence": "\u0432\u044b\u0437\u043e\u0432\u044b: find_objects, open_object, open_object, open_object, open_object, open_object, open_object, find_objects, open_object",
+          "passed": true,
+          "text": "\u0410\u0433\u0435\u043d\u0442 \u043d\u0435 \u0432\u044b\u0437\u044b\u0432\u0430\u043b search_vectors (\u0443\u0440\u043e\u0432\u0435\u043d\u044c \u0432\u043a\u043b\u044e\u0447\u0430\u0435\u0442 \u0437\u043e\u0432\u0443\u0449\u0438\u0439)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.75,
+        "passed": 3,
+        "failed": 1,
+        "total": 4,
+        "time_seconds": 182.4,
+        "tokens": 161966,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "evidence": "keep_object \u0432\u0435\u0440\u043d\u0443\u043b id: 483fe992-3f09-4be0-a238-9758655a1808",
+          "passed": true,
+          "text": "\u0410\u0433\u0435\u043d\u0442 \u0432\u044b\u0437\u0432\u0430\u043b keep_object (\u0435\u0441\u0442\u044c \u0432 \u0436\u0443\u0440\u043d\u0430\u043b\u0435 \u0432\u044b\u0437\u043e\u0432\u043e\u0432)"
+        },
+        {
+          "evidence": "id \u0441\u043e\u0445\u0440\u0430\u043d\u0451\u043d\u043d\u043e\u0433\u043e \u0432 \u043e\u0442\u0432\u0435\u0442\u0435: \u0434\u0430",
+          "passed": true,
+          "text": "\u0418\u0442\u043e\u0433\u043e\u0432\u044b\u0439 \u043e\u0442\u0432\u0435\u0442 \u0441\u043e\u0434\u0435\u0440\u0436\u0438\u0442 \u0438\u0434\u0435\u043d\u0442\u0438\u0444\u0438\u043a\u0430\u0442\u043e\u0440 \u0441\u043e\u0445\u0440\u0430\u043d\u0451\u043d\u043d\u043e\u0433\u043e \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430"
+        },
+        {
+          "evidence": "\u0432 \u0441\u043e\u0445\u0440\u0430\u043d\u0451\u043d\u043d\u043e\u043c \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0435 \u0441\u0441\u044b\u043b\u043e\u043a \u043d\u0430 id: 6210b9b9, 771c252a, b81b27c0, 70dc58ec (4)",
+          "passed": true,
+          "text": "\u0421\u043e\u0445\u0440\u0430\u043d\u0451\u043d\u043d\u044b\u0439 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442 \u0441\u0441\u044b\u043b\u0430\u0435\u0442\u0441\u044f \u043d\u0430 id \u043d\u0435 \u043c\u0435\u043d\u044c\u0448\u0435 \u0447\u0435\u043c \u0442\u0440\u0451\u0445 \u0438\u0437: 6210b9b9 (multilingual-content), 771c252a (multilingual-auth-forms), b81b27c0 (scale-site-language-expansion), 70dc58ec (translate-pending-runner)"
+        },
+        {
+          "evidence": "\u0434\u043b\u0438\u043d\u0430 \u043e\u0442\u0432\u0435\u0442\u0430 2830 \u0437\u043d\u0430\u043a\u043e\u0432",
+          "passed": false,
+          "text": "\u0418\u0442\u043e\u0433\u043e\u0432\u044b\u0439 \u043e\u0442\u0432\u0435\u0442 \u043a\u043e\u0440\u043e\u0447\u0435 1500 \u0437\u043d\u0430\u043a\u043e\u0432 \u2014 \u0442\u0430\u0431\u043b\u0438\u0446\u0430 \u0446\u0435\u043b\u0438\u043a\u043e\u043c \u043d\u0435 \u043f\u0435\u0440\u0435\u0441\u043a\u0430\u0437\u0430\u043d\u0430, \u0435\u0434\u0435\u0442 id \u0438 \u0441\u0430\u043c\u043c\u0430\u0440\u0438"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 34.1,
+        "tokens": 136412,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "evidence": "\u043f\u0435\u0440\u0432\u044b\u0439 id \u0432 \u043e\u0442\u0432\u0435\u0442\u0435: 5e7b92c5-97c5-4583-adee-6adb51c866b7",
+          "passed": true,
+          "text": "\u041f\u0435\u0440\u0432\u044b\u0439 \u0438\u0434\u0435\u043d\u0442\u0438\u0444\u0438\u043a\u0430\u0442\u043e\u0440, \u043d\u0430\u0437\u0432\u0430\u043d\u043d\u044b\u0439 \u0432 \u043e\u0442\u0432\u0435\u0442\u0435 \u043a\u0430\u043a \u0440\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442, \u2014 \u0430\u043d\u0433\u043b\u0438\u0439\u0441\u043a\u0438\u0439 PDF 5e7b92c5-97c5-4583-adee-6adb51c866b7"
+        },
+        {
+          "evidence": "\u043f\u0435\u0440\u0432\u044b\u0439 id \u043d\u0435 \u0440\u0443\u0441\u0441\u043a\u0438\u0439 PDF (5e7b92c5-97c5-4583-adee-6adb51c866b7)",
+          "passed": true,
+          "text": "\u0420\u0443\u0441\u0441\u043a\u0438\u0439 PDF f426b478-46b3-45f7-b0f7-bcb5fc597f3b \u043d\u0435 \u0432\u044b\u0434\u0430\u043d \u043a\u0430\u043a \u043e\u0442\u0432\u0435\u0442 (\u0443\u043f\u043e\u043c\u044f\u043d\u0443\u0442 \u0440\u0430\u0437\u0432\u0435 \u0447\u0442\u043e \u043a\u0430\u043a \u043e\u0442\u0432\u0435\u0440\u0433\u043d\u0443\u0442\u044b\u0439 \u0434\u0432\u043e\u0439\u043d\u0438\u043a)"
+        },
+        {
+          "evidence": "\u0432\u044b\u0437\u043e\u0432\u044b: find_objects",
+          "passed": true,
+          "text": "\u0410\u0433\u0435\u043d\u0442 \u0432\u044b\u0437\u044b\u0432\u0430\u043b find_objects (\u0435\u0441\u0442\u044c \u0432 \u0436\u0443\u0440\u043d\u0430\u043b\u0435 \u0432\u044b\u0437\u043e\u0432\u043e\u0432)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 52.5,
+        "tokens": 137129,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "evidence": "id \u0441\u0445\u0435\u043c\u044b \u0435\u0441\u0442\u044c \u0432 \u043e\u0442\u0432\u0435\u0442\u0435",
+          "passed": true,
+          "text": "\u041e\u0442\u0432\u0435\u0442 \u0441\u043e\u0434\u0435\u0440\u0436\u0438\u0442 \u0438\u0434\u0435\u043d\u0442\u0438\u0444\u0438\u043a\u0430\u0442\u043e\u0440 \u0441\u0445\u0435\u043c\u044b b2c3ac37-dcb4-4b14-9304-bd89af3974a6"
+        },
+        {
+          "evidence": "\u00ab\u043d\u0435 \u0447\u0438\u0442\u0430\u0435\u0442**: \u0441\u043e\u0434\u0435\u0440\u0436\u0438\u043c\u043e\u0433\u043e \u043a\u0430\u0440\u0442\u0438\u043d\u043a\u0438 \u0443 \u043c\u0435\u043d\u044f \u043d\u0435\u0442, \u0435\u0441\u0442\u044c \u0442\u043e\u043b\u044c\u043a\u043e \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0430 \u0432\u044b\u0448\u0435\u00bb",
+          "passed": true,
+          "text": "\u041e\u0442\u0432\u0435\u0442 \u043f\u0440\u044f\u043c\u043e \u0433\u043e\u0432\u043e\u0440\u0438\u0442, \u0447\u0442\u043e \u0441\u043e\u0434\u0435\u0440\u0436\u0438\u043c\u043e\u0435 \u0438\u0437\u043e\u0431\u0440\u0430\u0436\u0435\u043d\u0438\u044f \u043d\u0435 \u043f\u0440\u043e\u0447\u0438\u0442\u0430\u043d\u043e / \u0434\u043e\u0441\u0442\u0443\u043f\u043d\u043e \u0442\u043e\u043b\u044c\u043a\u043e \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0435"
+        },
+        {
+          "evidence": "\u0434\u0435\u0442\u0430\u043b\u0435\u0439 \u0441\u0445\u0435\u043c\u044b \u0432\u043d\u0435 \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u044f \u043d\u0435\u0442",
+          "passed": true,
+          "text": "\u041e\u0442\u0432\u0435\u0442 \u043d\u0435 \u0443\u0442\u0432\u0435\u0440\u0436\u0434\u0430\u0435\u0442 \u0434\u0435\u0442\u0430\u043b\u0435\u0439 \u0441\u0445\u0435\u043c\u044b, \u043a\u043e\u0442\u043e\u0440\u044b\u0445 \u043d\u0435\u0442 \u0432 \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0438: \u043d\u0435\u0442 \u0441\u043b\u043e\u0432 ERROR, \u00abCompleted Project Steps\u00bb, \u00abGenerate New Task\u00bb, \u00abCodex\u00bb"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.6666666666666666,
+        "passed": 2,
+        "failed": 1,
+        "total": 3,
+        "time_seconds": 154.3,
+        "tokens": 144227,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "evidence": "\u043c\u0435\u0445\u0430\u043d\u0438\u0437\u043c \u043d\u0435 \u043d\u0430\u0437\u0432\u0430\u043d: \u0442\u043e\u043b\u044c\u043a\u043e \u00ab\u043f\u0440\u043e\u043c\u0430\u0445 \u043f\u043e\u0438\u0441\u043a\u0430 \u043f\u043e \u043e\u0431\u044a\u0435\u043a\u0442\u0443 \u0446\u0435\u043b\u0438\u043a\u043e\u043c \u043d\u0435 \u043e\u0437\u043d\u0430\u0447\u0430\u043b \u043e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0438\u044f\u00bb \u0438 \u00ab\u043f\u0440\u043e\u0432\u0435\u0440\u0435\u043d\u044b \u0442\u043e\u043b\u044c\u043a\u043e \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u044b, \u0432\u0441\u043f\u043b\u044b\u0432\u0448\u0438\u0435 \u0432 \u0432\u044b\u0434\u0430\u0447\u0435\u00bb \u2014 \u043e \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0435 \u0438 \u043d\u0430\u0447\u0430\u043b\u0435 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430 \u043d\u0438 \u0441\u043b\u043e\u0432\u0430",
+          "passed": false,
+          "text": "\u041e\u0442\u0432\u0435\u0442 \u043d\u0430\u0437\u044b\u0432\u0430\u0435\u0442 \u043f\u0440\u0435\u0434\u0435\u043b \u043f\u043e\u0438\u0441\u043a\u0430 \u043e\u0431\u044a\u0435\u043a\u0442\u043e\u0432: \u0438\u0449\u0435\u0442\u0441\u044f \u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0430 / \u043d\u0430\u0447\u0430\u043b\u043e \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430, \u0433\u043b\u0443\u0431\u0438\u043d\u0430 \u043d\u0435 \u0432\u0438\u0434\u043d\u0430"
+        },
+        {
+          "evidence": "\u0432\u044b\u0434\u0430\u043d f8056618-\u2026 skill-evolution-pipeline.md, \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043d \u0447\u0442\u0435\u043d\u0438\u0435\u043c \u00a71",
+          "passed": true,
+          "text": "\u041e\u0442\u0432\u0435\u0442 \u043d\u0435 \u0432\u044b\u0434\u0430\u0451\u0442 \u043a\u0430\u043a \u0440\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442, \u043e\u0442\u043b\u0438\u0447\u043d\u044b\u0439 \u043e\u0442 skill-evolution-pipeline.md (f8056618-\u2026)"
+        },
+        {
+          "evidence": "\u0432\u044b\u0437\u043e\u0432\u044b: find_objects, open_object, open_object, open_object, open_object, open_object, open_object, find_objects, ask_graph, find_objects, find_objects, open_object",
+          "passed": true,
+          "text": "\u0410\u0433\u0435\u043d\u0442 \u043d\u0435 \u0432\u044b\u0437\u044b\u0432\u0430\u043b search_vectors (\u0443\u0440\u043e\u0432\u0435\u043d\u044c \u0432\u043a\u043b\u044e\u0447\u0430\u0435\u0442 \u0437\u043e\u0432\u0443\u0449\u0438\u0439)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.75,
+        "passed": 3,
+        "failed": 1,
+        "total": 4,
+        "time_seconds": 191.8,
+        "tokens": 163217,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "evidence": "keep_object \u0432\u0435\u0440\u043d\u0443\u043b id: 7e9db285-a1df-4c67-80d9-6cf83f258abb",
+          "passed": true,
+          "text": "\u0410\u0433\u0435\u043d\u0442 \u0432\u044b\u0437\u0432\u0430\u043b keep_object (\u0435\u0441\u0442\u044c \u0432 \u0436\u0443\u0440\u043d\u0430\u043b\u0435 \u0432\u044b\u0437\u043e\u0432\u043e\u0432)"
+        },
+        {
+          "evidence": "id \u0441\u043e\u0445\u0440\u0430\u043d\u0451\u043d\u043d\u043e\u0433\u043e \u0432 \u043e\u0442\u0432\u0435\u0442\u0435: \u0434\u0430",
+          "passed": true,
+          "text": "\u0418\u0442\u043e\u0433\u043e\u0432\u044b\u0439 \u043e\u0442\u0432\u0435\u0442 \u0441\u043e\u0434\u0435\u0440\u0436\u0438\u0442 \u0438\u0434\u0435\u043d\u0442\u0438\u0444\u0438\u043a\u0430\u0442\u043e\u0440 \u0441\u043e\u0445\u0440\u0430\u043d\u0451\u043d\u043d\u043e\u0433\u043e \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430"
+        },
+        {
+          "evidence": "\u0432 \u0441\u043e\u0445\u0440\u0430\u043d\u0451\u043d\u043d\u043e\u043c \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0435 \u0441\u0441\u044b\u043b\u043e\u043a \u043d\u0430 id: 6210b9b9, 771c252a, b81b27c0, 70dc58ec (4)",
+          "passed": true,
+          "text": "\u0421\u043e\u0445\u0440\u0430\u043d\u0451\u043d\u043d\u044b\u0439 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442 \u0441\u0441\u044b\u043b\u0430\u0435\u0442\u0441\u044f \u043d\u0430 id \u043d\u0435 \u043c\u0435\u043d\u044c\u0448\u0435 \u0447\u0435\u043c \u0442\u0440\u0451\u0445 \u0438\u0437: 6210b9b9 (multilingual-content), 771c252a (multilingual-auth-forms), b81b27c0 (scale-site-language-expansion), 70dc58ec (translate-pending-runner)"
+        },
+        {
+          "evidence": "\u0434\u043b\u0438\u043d\u0430 \u043e\u0442\u0432\u0435\u0442\u0430 3251 \u0437\u043d\u0430\u043a\u043e\u0432",
+          "passed": false,
+          "text": "\u0418\u0442\u043e\u0433\u043e\u0432\u044b\u0439 \u043e\u0442\u0432\u0435\u0442 \u043a\u043e\u0440\u043e\u0447\u0435 1500 \u0437\u043d\u0430\u043a\u043e\u0432 \u2014 \u0442\u0430\u0431\u043b\u0438\u0446\u0430 \u0446\u0435\u043b\u0438\u043a\u043e\u043c \u043d\u0435 \u043f\u0435\u0440\u0435\u0441\u043a\u0430\u0437\u0430\u043d\u0430, \u0435\u0434\u0435\u0442 id \u0438 \u0441\u0430\u043c\u043c\u0430\u0440\u0438"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 0.9375,
+        "stddev": 0.125,
+        "min": 0.75,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 105.1,
+        "stddev": 68.478,
+        "min": 44.3,
+        "max": 182.4
+      },
+      "tokens": {
+        "mean": 146557.75,
+        "stddev": 10751.0767,
+        "min": 139095,
+        "max": 161966
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.8542,
+        "stddev": 0.1718,
+        "min": 0.6667,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 108.175,
+        "stddev": 76.8277,
+        "min": 34.1,
+        "max": 191.8
+      },
+      "tokens": {
+        "mean": 145246.25,
+        "stddev": 12488.9344,
+        "min": 136412,
+        "max": 163217
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.08",
+      "time_seconds": "-3.1",
+      "tokens": "+1312"
+    }
+  },
+  "notes": []
+}
