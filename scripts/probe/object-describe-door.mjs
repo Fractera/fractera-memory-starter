@@ -91,7 +91,11 @@ for (const c of CASES) {
   say(b.kind === c.kind, `${c.kind}: род распознан как ${b.kind}`)
   say(n >= 35 && n <= 70, `${c.kind}: саммари ${n} слов (ждём 35–70)`)
   say(b.full.length > b.summary.length * 3, `${c.kind}: полное описание подробнее саммари (${b.full.length} против ${b.summary.length} знаков)`)
-  if (c.kind === "audio") say(/whisper/.test(b.described_by), `audio: речь расшифровал OpenAI (${b.described_by})`)
+  if (c.kind === "audio") {
+    say(/whisper/.test(b.described_by), `audio: речь расшифровал OpenAI (${b.described_by})`)
+    const stamps = b.full.match(/\[\d{1,2}:\d{2}(:\d{2})?–\d{1,2}:\d{2}(:\d{2})?\]/g) ?? []
+    say(stamps.length > 0, `audio: метки времени дошли до полного описания (${stamps.length}, первая ${stamps[0] ?? "—"})`)
+  }
 }
 
 say(describeDirs().length === dirsBefore, `временные папки описания стёрты (было ${dirsBefore}, стало ${describeDirs().length})`)
