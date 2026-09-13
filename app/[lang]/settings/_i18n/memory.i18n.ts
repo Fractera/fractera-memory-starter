@@ -174,6 +174,16 @@ export type MemoryUi = {
     savedMissing: string;
     /** 194-9: у найденного объекта нет строки — он лёг до таблицы сообщений. */
     savedNoRow: string;
+    /**
+     * Вводный текст стенда объектов (слово владельца 2026-09-13: «Совершенно не отражает смысл… данная вкладка
+     * позволяет оценить работу связки… Данная служба поддерживает следующие типы объектов: изображение:
+     * извлекается… попадает в… хранится…»). По каждому роду — только то, что делает код сегодня.
+     */
+    intro: {
+      paragraphs: string[];
+      kindsTitle: string;
+      kinds: { title: string; body: string }[];
+    };
     savedRow: string;
     savedSummary: string;
     savedTitle: string;
@@ -541,7 +551,7 @@ const EN: MemoryUi = {
       title: "Vector store test",
     },
     "object-test": {
-      hint: "The same three steps against the object store: put a whole file, find the thing itself by meaning, judge what came back.",
+      hint: "This tab tests the object store together with every service that keeps data with it: each object that enters memory is written to the database, the vector store and the knowledge graph, and is kept as it is in the object store.",
       title: "Object store test",
     },
     passport: {
@@ -653,6 +663,25 @@ const EN: MemoryUi = {
     savedFull: "Full description — kept next to the file",
     savedMissing: "The object was stored, but its record could not be read back.",
     savedNoRow: "This object has no row in messages_that_came_into_memory: it was stored before the table existed. The file and its description are shown.",
+    intro: {
+      paragraphs: [
+        "Every object is written to four places at once, or to none: the file itself and its full description go to the object store; the summary goes to a row of messages_that_came_into_memory and to the search card in the vector store; and when the description names people, places or products, a document goes to the knowledge graph. If any step fails, what was already written is removed and the row is kept as failed, with the reason.",
+        "That is what lets memory find an object by every rule of its architecture: cheaply — by the meaning of the search card, with one embedding and no model turn; exactly — by the title and tags in the table row (the stand does not use this path yet); and deeply — through the graph, when the question is about how things are connected.",
+        "Memory sets no size limit of its own: the server accepts files up to 200 MB, and speech is transcribed up to 25 MB.",
+      ],
+      kindsTitle: "What the service accepts",
+      kinds: [
+        { title: "Image", body: "Read by Claude with vision: every element, its position, colours and all visible text become the full description; a summary of about 50 words. The picture is kept as it is; it is found by its summary." },
+        { title: "Video", body: "ffmpeg cuts out the sound track and six evenly spaced frames. OpenAI whisper-1 transcribes the track with timestamps, Claude reads the frames — one timeline where frames sit between the spoken lines. The video is kept as it is." },
+        { title: "Audio", body: "OpenAI whisper-1 transcribes the speech with a timestamp on every segment; Claude writes the description and the summary from the transcript. The recording is kept as it is." },
+        { title: "PDF", body: "Claude reads the document whole: structure, headings and content, tables row by row. The PDF is kept as it is and opens in the browser's own viewer." },
+        { title: "Markdown", body: "Claude reads the document; its opening also goes into the search card. Kept as the file and shown as the document it renders into." },
+        { title: "HTML", body: "Claude reads the page; its opening also goes into the search card. Shown as a page in a sandbox — its scripts cannot reach memory — and as its source." },
+        { title: "Source code", body: "TypeScript, JavaScript, Python, SQL, JSON, YAML and more. Claude analyses rather than copies: what the code does for a person, what it exports and imports, which technologies it uses — up to about 3000 characters. The file is kept as text, highlighted in the code viewer and never run." },
+        { title: "Plain text", body: "TXT and CSV: Claude reads the content, the opening goes into the search card." },
+        { title: "Anything else", body: "Kept as it is if you write the summary yourself: the model does not describe kinds it cannot read." },
+      ],
+    },
     savedRow: "Row in messages_that_came_into_memory",
     savedSummary: "Summary — in the table row and the search card",
     savedTitle: "What went into memory",
@@ -1012,7 +1041,7 @@ const RU: MemoryUi = {
       title: "Тест векторного хранилища",
     },
     "object-test": {
-      hint: "Те же три шага для объектного хранилища: положить файл целиком, найти саму вещь по смыслу, оценить найденное.",
+      hint: "Эта вкладка проверяет связку объектного хранилища со всеми службами, которые участвуют в хранении данных: каждый объект, попавший в память, прописывается в базе данных, векторном хранилище и графе знаний и сохраняется в исходном виде в объектном хранилище.",
       title: "Тест объектного хранилища",
     },
     passport: {
@@ -1126,6 +1155,25 @@ const RU: MemoryUi = {
     savedFull: "Полное описание — рядом с файлом",
     savedMissing: "Объект сохранён, но прочитать его запись не удалось.",
     savedNoRow: "У этого объекта нет строки в messages_that_came_into_memory: он сохранён раньше, чем появилась таблица. Показаны файл и его описание.",
+    intro: {
+      paragraphs: [
+        "Каждый объект ложится сразу в четыре места или ни в одно: сам файл и его полное описание — в объектное хранилище; саммари — в строку таблицы messages_that_came_into_memory и в карточку поиска векторного хранилища; а если в описании названы люди, места или продукты — документ в граф знаний. Сорвалась любая ступень — уже записанное снимается, а строка остаётся со статусом failed и причиной.",
+        "Благодаря этому объект находится по всем правилам архитектуры памяти: дёшево — по смыслу карточки поиска, одним встраиванием и без хода модели; точно — по названию и тегам в строке таблицы (стенд этот путь пока не использует); глубоко — через граф, когда вопрос о том, как вещи связаны.",
+        "Своего предела размера у памяти нет: сервер принимает файлы до 200 МБ, речь расшифровывается до 25 МБ.",
+      ],
+      kindsTitle: "Какие объекты поддерживает служба",
+      kinds: [
+        { title: "Изображение", body: "Читает Claude со зрением: каждый элемент, его место, цвета и весь видимый текст становятся полным описанием, плюс саммари примерно в 50 слов. Картинка хранится как есть и находится по саммари." },
+        { title: "Видео", body: "ffmpeg вырезает звуковую дорожку и шесть кадров равномерно. Дорожку расшифровывает OpenAI whisper-1 с метками времени, кадры читает Claude — одна шкала, где кадры стоят между репликами. Видео хранится как есть." },
+        { title: "Аудио", body: "Речь расшифровывает OpenAI whisper-1 с меткой времени у каждого фрагмента; описание и саммари Claude пишет по расшифровке. Запись хранится как есть." },
+        { title: "PDF", body: "Claude читает документ целиком: структура, заголовки и содержание, таблицы построчно. PDF хранится как есть и открывается собственным просмотрщиком браузера." },
+        { title: "Markdown", body: "Claude читает документ, его начало ложится ещё и в карточку поиска. Хранится файлом, показывается тем документом, которым становится." },
+        { title: "HTML", body: "Claude читает страницу, её начало ложится в карточку поиска. Показывается страницей в песочнице — её скрипты не дотягиваются до памяти — и своим исходником." },
+        { title: "Исходный код", body: "TypeScript, JavaScript, Python, SQL, JSON, YAML и другие. Claude анализирует, а не переписывает: что код делает для человека, что экспортирует и импортирует, на каких технологиях построен — до ~3000 знаков. Файл хранится текстом, подсвечивается просмотрщиком кода и никогда не запускается." },
+        { title: "Простой текст", body: "TXT и CSV: Claude читает содержимое, начало ложится в карточку поиска." },
+        { title: "Любой другой файл", body: "Хранится как есть, если саммари написать самому: роды, которые модель не умеет читать, она не описывает." },
+      ],
+    },
     savedRow: "Строка messages_that_came_into_memory",
     savedSummary: "Саммари — в строке таблицы и в карточке поиска",
     savedTitle: "Что легло в память",

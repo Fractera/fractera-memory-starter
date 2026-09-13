@@ -270,6 +270,27 @@ async function MemoryPageBody({
                 говорите так или не так, до логики».
                 🛑 ПУСТАЯ СТРАНИЦА ГОВОРИТ, ПОЧЕМУ ОНА ПУСТА. Молчащий экран
                 читается как поломка — в этом проекте оплачено не раз. */}
+            {/* 🔒 ВВОДНЫЙ ТЕКСТ СТЕНДА ОБЪЕКТОВ (слово владельца 2026-09-13: «Совершенно не отражает смысл»).
+                Стоит над вкладками: он о службе целиком, а не об одной вкладке. */}
+            {active === "object-test" && (
+              <section className="space-y-3 rounded-md border border-border bg-muted/20 p-4">
+                {ui.objectBench.intro.paragraphs.map((p) => (
+                  <p className="max-w-3xl text-[length:var(--fs-body)]" key={p.slice(0, 32)}>
+                    {p}
+                  </p>
+                ))}
+                <h3 className="pt-2 font-medium text-[length:var(--fs-body)]">{ui.objectBench.intro.kindsTitle}</h3>
+                <ul className="max-w-3xl space-y-2">
+                  {ui.objectBench.intro.kinds.map((k) => (
+                    <li className="text-[length:var(--fs-small)]" key={k.title}>
+                      <span className="font-medium text-[length:var(--fs-body)]">{k.title}</span>
+                      <span className="text-muted-foreground"> — {k.body}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
             {isTestSection(active) && (
               <section className="space-y-4">
                 <h2 className="font-medium text-[length:var(--fs-h3)]">
