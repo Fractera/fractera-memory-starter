@@ -27,6 +27,8 @@ import { useEffect, useState } from "react";
 import { Streamdown } from "streamdown";
 import { Code2, ExternalLink, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CodeView } from "@/_tools/code-view/client/code-view.client";
+import { isCodeName } from "@/_tools/code-view/types/code-langs.mjs";
 
 /** Поля строки медиатеки, которые нужны просмотру (форма `MediaItem` панели). */
 export type PreviewItem = {
@@ -43,7 +45,7 @@ export type PreviewItem = {
 export type PreviewLabels = {
   code: string; preview: string; open: string; close: string;
   reading: string; unreadable: string;
-  kindImage: string; kindVideo: string; kindAudio: string; kindPdf: string; kindMarkdown: string; kindHtml: string; kindFile: string;
+  kindImage: string; kindVideo: string; kindAudio: string; kindPdf: string; kindMarkdown: string; kindHtml: string; kindCode: string; kindFile: string;
 };
 
 export function ObjectPreview(
@@ -57,7 +59,9 @@ export function ObjectPreview(
   const isPdf = item.mime_type === "application/pdf" || item.extension === "pdf";
   const isMd = item.extension === "md" || item.extension === "markdown" || item.mime_type === "text/markdown";
   const isHtml = item.mime_type === "text/html" || item.extension === "html" || item.extension === "htm";
-  const isTextual = isMd || isHtml;
+  // 194-10: код — третье текстовое лицо; показывается инструментом `code-view`, без запуска.
+  const isCode = !isMd && !isHtml && isCodeName(item.name);
+  const isTextual = isMd || isHtml || isCode;
 
   const [text, setText] = useState<string | null>(null);
   const [textError, setTextError] = useState<string | null>(null);
@@ -80,6 +84,7 @@ export function ObjectPreview(
     : isPdf ? labels.kindPdf
     : isMd ? labels.kindMarkdown
     : isHtml ? labels.kindHtml
+    : isCode ? labels.kindCode
     : labels.kindFile;
 
   // Адаптация 1: код показывается блоком кода Markdown — `Streamdown` подсвечивает его сам.
@@ -91,7 +96,7 @@ export function ObjectPreview(
       <div className="flex items-center gap-2">
         <span className="truncate text-xs font-semibold text-foreground">{item.name}</span>
         <div className="ml-auto flex items-center gap-1.5">
-          {isTextual && (
+          {(isMd || isHtml) && (
             <Button variant="outline" size="xs" onClick={() => setShowCode((v) => !v)}>
               <Code2 size={11} />{showCode ? labels.preview : labels.code}
             </Button>
@@ -138,7 +143,17 @@ export function ObjectPreview(
         </div>
       )}
 
-      {isTextual && showCode && (
+      {isCode && (
+        <div className="w-full" style={{ maxHeight: "60vh" }}>
+          {textError ? (
+            <p className="text-[11px] text-destructive">{labels.unreadable}: {textError}</p>
+          ) : (
+            <CodeView className="max-h-[60vh]" code={text ?? ""} filename={item.name} labels={{ loading: labels.reading }} />
+          )}
+        </div>
+      )}
+
+      {(isMd || isHtml) && showCode && (
         <div className="w-full overflow-auto rounded-lg border border-border text-[11px]" style={{ maxHeight: "60vh" }}>
           {textError ? (
             <p className="p-3 text-destructive">{labels.unreadable}: {textError}</p>

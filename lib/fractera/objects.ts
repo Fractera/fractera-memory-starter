@@ -3,6 +3,10 @@ import { forgetDocuments, learn } from "./knowledge";
 import { getMessage, insertMessage } from "@/lib/messages.mjs";
 import type { PreviewItem } from "@/_tools/object-view/client/object-preview.client";
 import { kindOf, messageKindOf } from "@/lib/describe.mjs";
+import { isCodeName } from "@/_tools/code-view/types/code-langs.mjs";
+
+/** Тип, под которым код уходит в медиатеку и отдаётся браузеру (194-10). */
+const CODE_MIME = "text/plain; charset=utf-8";
 
 // ОБЪЕКТНОЕ ХРАНИЛИЩЕ — ВЕЩЬ ЦЕЛИКОМ, С ИДЕНТИФИКАТОРОМ (192-1).
 //
@@ -60,7 +64,8 @@ const TEXT_EXT = new Set(["csv", "htm", "html", "json", "markdown", "md", "tsv",
 
 export function isTextName(name: string): boolean {
   const ext = String(name).toLowerCase().split(".").pop() ?? "";
-  return TEXT_EXT.has(ext);
+  // 🔒 КОД — ТОЖЕ ТЕКСТ ДЛЯ КАРТОЧКИ (194-10): начало исходника ложится в неё, как начало документа.
+  return TEXT_EXT.has(ext) || isCodeName(name);
 }
 
 export type ObjectCard = {
@@ -209,7 +214,10 @@ export async function keep(input: {
   if (!name) return { error: "no-name", ok: false };
   if (!input.bytes?.length) return { error: "empty-file", ok: false };
 
-  const kind = messageKindOf(kindOf(name, input.mime) ?? "text");
+  const kind = messageKindOf(kindOf(name, input.mime) ?? "text", name);
+  // 🔒 КОД УХОДИТ `text/plain`, А НЕ ТЕМ, ЧТО ПРИСЛАЛ БРАУЗЕР (194-10): `.ts` приходит `video/mp2t`, и
+  // медиатека записала бы исходник видео — дверь файла отдала бы его плееру.
+  const mime = isCodeName(name) ? CODE_MIME : input.mime;
   /** Строка таблицы — общая для удачи и отказа; отказ пишет её со своей причиной. */
   const row = (extra: Record<string, unknown>) =>
     insertMessage({
@@ -219,7 +227,7 @@ export async function keep(input: {
       full_chars: full.length || null,
       kind,
       language: input.language || null,
-      mime: input.mime || null,
+      mime: mime || null,
       size_bytes: input.bytes.length,
       source: input.source || "stand",
       summary: about || null,
@@ -245,7 +253,7 @@ export async function keep(input: {
   // multipart уходит мимо `dataFetch`: тот ставит `Content-Type: application/json`,
   // а границу частей обязан назначить сам `fetch`.
   const form = new FormData();
-  form.append("file", new Blob([input.bytes as BlobPart], { type: input.mime || "application/octet-stream" }), name);
+  form.append("file", new Blob([input.bytes as BlobPart], { type: mime || "application/octet-stream" }), name);
   form.append("title", title || name);
   // Полное описание лежит рядом с файлом; без него — саммари, как было до 194-4.
   form.append("description", full || about);
@@ -448,7 +456,9 @@ export async function fileOf(
     if (!row) return { error: "not-found", ok: false };
     const res = await dataFetch(`/media/${key}/file`);
     if (!res.ok) return { error: res.status === 404 ? "file-missing" : "store-refused", ok: false };
-    return { body: await res.arrayBuffer(), mime: String(row.mime_type ?? ""), name: String(row.name ?? key), ok: true };
+    // Код, положенный до 194-10, мог лечь `video/mp2t` — отдаём его текстом по имени, а не по записи.
+    const mime = isCodeName(String(row.name ?? "")) ? CODE_MIME : String(row.mime_type ?? "");
+    return { body: await res.arrayBuffer(), mime, name: String(row.name ?? key), ok: true };
   } catch {
     return { error: "store-unreachable", ok: false };
   }

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { MemoryUi } from "../_i18n/memory.i18n";
 import { ObjectPreview, type PreviewItem } from "@/_tools/object-view/client/object-preview.client";
+import { isCodeName } from "@/_tools/code-view/types/code-langs.mjs";
 
 // ЭКРАНЫ ОБЪЕКТНОГО ХРАНИЛИЩА: ЗАГРУЗКА И ПОИСК (192-3).
 //
@@ -85,7 +86,8 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
     return () => clearInterval(t);
   }, [describing]);
 
-  const needsAbout = file !== null && !TEXT_EXT.test(file.name);
+  // 194-10: код — тоже текст для карточки, саммари к нему необязательно (список расширений — один, у `code-view`).
+  const needsAbout = file !== null && !TEXT_EXT.test(file.name) && !isCodeName(file.name);
 
   /** Выбран новый файл — прежнее описание к нему не относится. */
   function choose(next: File | null) {

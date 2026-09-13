@@ -180,6 +180,7 @@ export type MemoryUi = {
       close: string;
       code: string;
       kindAudio: string;
+      kindCode: string;
       kindFile: string;
       kindHtml: string;
       kindImage: string;
@@ -656,6 +657,7 @@ const EN: MemoryUi = {
       close: "Close",
       code: "Code",
       kindAudio: "Audio",
+      kindCode: "Code",
       kindFile: "File",
       kindHtml: "HTML",
       kindImage: "Image",
@@ -1127,6 +1129,7 @@ const RU: MemoryUi = {
       close: "Закрыть",
       code: "Код",
       kindAudio: "Аудио",
+      kindCode: "Код",
       kindFile: "Файл",
       kindHtml: "HTML",
       kindImage: "Изображение",
