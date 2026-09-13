@@ -22,7 +22,7 @@ Exactly two things: **record something** and **retrieve something**.
 | When | Skill |
 |---|---|
 | what you already know does not answer the question | `use-depth-ladder` |
-| a new kind of meaning arrived, or you are about to name anything stored | `grow-the-shape` |
+| there is something to write down, or you are about to name anything stored | `use-tables` |
 | the answer lies in how entities are connected | `use-knowledge-graph` |
 | the words of the question and of the record are entirely different | `use-vector-store` |
 | a document, file, picture or PDF is asked for, or your answer is a document | `use-object-store` |
