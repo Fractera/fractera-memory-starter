@@ -1,0 +1,25 @@
+{
+  "expectations": [
+    {
+      "evidence": "promote_to_list вызван: 1 раз · все вызовы: what_i_already_know, promote_to_list, what_i_already_know",
+      "passed": true,
+      "text": "Вызван promote_to_list (а не write_value, который затёр бы кота)"
+    },
+    {
+      "evidence": "род: pets_that_live_with_him",
+      "passed": true,
+      "text": "Род назван буква в букву существующим: pets_that_live_with_him"
+    },
+    {
+      "evidence": "в ответе есть «список» и след прежнего значения: true / true",
+      "passed": true,
+      "text": "В ответе агента сказано, что теперь это список и прежнее значение сохранено"
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "pass_rate": 1,
+    "passed": 3,
+    "total": 3
+  }
+}
