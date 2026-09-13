@@ -71,6 +71,9 @@ const SELF_GUARDED = new Set([
   "/api/fractera/object-file",
   "/api/fractera/object-search",
   "/api/fractera/object-open",
+  // 🔒 ДВЕРЬ ПРИЁМА ОБЪЕКТА (194-15) — `benchGuard`; в неё проводит договор `/v1/keep_object`. Имя стоит до
+  // первой сборки: перехваченная привратником, она ответила бы страницей входа, и договор отдал бы её наружу.
+  "/api/fractera/object-ingest",
   "/api/fractera/memory-test",
   "/api/me",
   "/api/fractera/pty-ticket",

@@ -43,7 +43,7 @@
 // службы, надо кому-то выдавать, где-то хранить и когда-то менять; третье звено
 // («учётные данные кем-то выдаются») тут же стало бы тупиком.
 
-import { createServer } from "node:http"
+import { createServer, request as httpRequest } from "node:http"
 import { existsSync, readFileSync } from "node:fs"
 import next from "next"
 // 🔒 МОСТ ТЕРМИНАЛА (180-1) — СКОПИРОВАН С СЕРВЕРА ЧАТА, А НЕ НАПИСАН ЗАНОВО.
@@ -152,6 +152,47 @@ function readBody(req) {
 // Второй список разошёлся бы с договором молча — в проекте это оплачено
 // четырежды за три дня.
 const RUN = { forget_journal, journal, people, recall, remember }
+
+/**
+ * Провести тело договора во внутреннюю дверь (194-15).
+ *
+ * 🔒 ПОЧЕМУ НЕ `RUN`: исполнители `RUN` получают разобранный JSON до 1 МБ (`readBody`), а объект —
+ * файл до 200 МБ телом multipart. И логика объектов живёт в `.ts` под Next, которого этот файл не
+ * импортирует. Поэтому тело течёт ПОТОКОМ по петле в дверь `/api/fractera/<door>` с секретом машины —
+ * тем же путём, каким ходят руки агента: у стенда, агента и договора один путь записи.
+ * 🔒 `node:http`, А НЕ `fetch`: у `fetch` предел ожидания заголовков 300 с, а описание видео моделью
+ * само может занять столько же. Внутри своего процесса ограничивать нечем и незачем.
+ */
+function passToDoor(req, res, door) {
+  if (!SECRET) {
+    return send(res, 503, { error: "no-machine-secret", ok: false, what_happened: say("inside-memory") })
+  }
+  const type = String(req.headers["content-type"] ?? "")
+  if (!type.toLowerCase().startsWith("multipart/form-data")) {
+    return send(res, 400, {
+      error: "not-multipart",
+      ok: false,
+      why: "keep_object принимает multipart/form-data: файл в части file, остальные параметры — полями формы",
+    })
+  }
+  const headers = { "content-type": type, "x-data-secret": SECRET }
+  if (req.headers["content-length"]) headers["content-length"] = req.headers["content-length"]
+  const up = httpRequest(
+    { headers, host: "127.0.0.1", method: "POST", path: `/api/fractera/${door}`, port: PORT },
+    (answer) => {
+      res.writeHead(answer.statusCode ?? 502, {
+        "cache-control": "no-store",
+        "content-type": answer.headers["content-type"] ?? "application/json; charset=utf-8",
+      })
+      answer.pipe(res)
+    },
+  )
+  up.on("error", (e) => {
+    if (res.headersSent) return res.destroy()
+    send(res, 502, { error: "inside-memory", ok: false, what_happened: say("inside-memory"), why: String(e.message).slice(0, 200) })
+  })
+  req.pipe(up)
+}
 
 // 🪦 `sendHtml()` УДАЛЁН ВМЕСТЕ СО СТРАНИЦЕЙ ЖУРНАЛА (178-6): страницы теперь
 // отдаёт Next, и второй способ печатать HTML здесь стал бы приглашением
@@ -323,6 +364,10 @@ const server = createServer(async (req, res) => {
   }
 
   // Методы договора: имя в пути, тело — параметры.
+  // 🔒 ОБЪЕКТ — ДО ОБЩЕЙ ВЕТКИ (194-15): общая ветка читает тело как JSON, а тело объекта ещё не прочитано и
+  // должно остаться непрочитанным, чтобы уйти потоком.
+  if (req.method === "POST" && path === "/v1/keep_object") return passToDoor(req, res, "object-ingest")
+
   if (req.method === "POST" && path.startsWith("/v1/")) {
     const name = path.slice(4)
     const declared = METHODS.find((m) => m.name === name)

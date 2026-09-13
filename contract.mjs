@@ -30,7 +30,10 @@
  * служба, которую нельзя менять, не ломая потребителя: он не сможет ни узнать
  * о смене, ни объяснить свой отказ.
  */
-export const CONTRACT_VERSION = "2.2.0"
+export const CONTRACT_VERSION = "2.3.0"
+
+// 🔒 2.3.0 — MINOR (194-15): метод `keep_object` — вещь целиком, телом multipart/form-data. У метода
+// появилось поле `body`; прежним методам оно не нужно — их тело JSON, как и было.
 
 // 🔒 2.2.0 — MINOR (185-3): охват принимает КООРДИНАТЫ (lat, lon, radius_m), а
 // запись — ВЛОЖЕНИЯ (media). Прежние вызовы не изменились ни в чём.
@@ -184,6 +187,38 @@ export const METHODS = [
     returns: "cleared — сколько записей стёрто. Число, а не «готово»: оно доказывает, что стёрли именно то, что было.",
     onMiss: "Журнал и так был пуст — ok:true и cleared:0.",
   },
+  {
+    // 🔒 ФАЙЛ В ДОГОВОРЕ — `string` С `format: "binary"`, А НЕ ТИП `file` (194-15): договор допускает только
+    // типы JSON Schema (`scripts/check-contract.mjs`), иначе привратник исключит метод МОЛЧА.
+    // 🔒 ИМЯ ТО ЖЕ, ЧТО У РУКИ АГЕНТА: одно имя на одно дело.
+    name: "keep_object",
+    body: "multipart",
+    about:
+      "Положить в память вещь целиком — снимок, голосовое, видео, PDF, Markdown, HTML, исходный код, текст. " +
+      "Тело — multipart/form-data, файл в части file. Описание пишет сама память: полное — рядом с файлом, " +
+      "саммари — в строку таблицы и в карточку поиска, полное с происхождением — в граф. " +
+      "Своё саммари можно прислать — тогда модель не зовётся.",
+    params: [
+      { name: "file", type: "string", format: "binary", required: true, about: "Сам файл — часть file в multipart/form-data. Род память определяет по имени и типу: изображение · видео · аудио · PDF · Markdown · HTML · исходный код · текст" },
+      { name: "name", type: "string", required: false, about: "Имя файла с расширением. Не названо — берётся имя части file" },
+      { name: "source", type: "string", required: false, about: "Откуда пришёл объект: api · telegram · …. Не названо — api. Ложится в строку таблицы и в шапку документа графа" },
+      { name: "author", type: "string", required: false, about: "Кто прислал — словами, например имя человека в Telegram. Не назван — берётся who" },
+      { name: "who", type: "string", required: false, about: "Ключ человека, к которому относится объект" },
+      { name: "title", type: "string", required: false, about: "Своё название. Не названо — его пишет модель" },
+      { name: "summary", type: "string", required: false, about: "Своё саммари, около 50 слов. Прислано — модель не зовётся, полное описание берётся из full" },
+      { name: "full", type: "string", required: false, about: "Своё полное описание — настолько подробное, чтобы по нему можно было восстановить объект" },
+      { name: "tags", type: "string", required: false, about: "Теги — JSON-массив строк в поле формы" },
+      { name: "anchors", type: "string", required: false, about: "Якоря графа — JSON-массив имён людей, мест, продуктов. Не названы — их называет модель, иначе берётся название" },
+    ],
+    returns:
+      "messageId — номер строки messages_that_came_into_memory со ссылками на объект, карточку поиска и документ графа; " +
+      "object — карточка объекта (id, имя, размер); title и summary — по ним объект будут находить; kind — род; " +
+      "described — звалась ли модель; ms — сколько заняло.",
+    onMiss:
+      "Род, который память не читает, — 400 describe-kind-unsupported, ничего не записано. " +
+      "Сорвалась ступень хранилищ — 502 с причиной: уже положенное снято, строка осталась со статусом failed, её messageId в ответе. " +
+      "Модель не ответила или кончилась подписка — 502 с причиной.",
+  },
 ]
 
 /**
@@ -217,6 +252,7 @@ export function contract() {
     version: CONTRACT_VERSION,
     methods: METHODS.map((m) => ({
       about: m.about,
+      ...(m.body ? { body: m.body } : {}),
       name: m.name,
       onMiss: m.onMiss,
       params: m.params,

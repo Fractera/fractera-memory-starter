@@ -2,7 +2,7 @@ import { dataFetch, dataJson, dataService } from "./data-service";
 import { forgetDocuments, learn } from "./knowledge";
 import { getMessage, getMessageByObject, insertMessage } from "@/lib/messages.mjs";
 import type { PreviewItem } from "@/_tools/object-view/client/object-preview.client";
-import { kindOf, messageKindOf } from "@/lib/describe.mjs";
+import { describe, kindOf, messageKindOf } from "@/lib/describe.mjs";
 import { isCodeName } from "@/_tools/code-view/types/code-langs.mjs";
 
 /** Тип, под которым код уходит в медиатеку и отдаётся браузеру (194-10). */
@@ -521,4 +521,103 @@ export async function messageView(
   } catch {
     return { error: "store-unreachable", ok: false };
   }
+}
+
+/** Что возвращает `describe()` — повторено типом: модуль на JS, и союз из JSDoc TypeScript не сужает. */
+type Described =
+  | {
+      ok: true;
+      anchors: string[];
+      described_by: string;
+      full: string;
+      kind: string;
+      language: string;
+      ms: number;
+      summary: string;
+      tags: string[];
+      title: string;
+    }
+  | { ok: false; refusal: string; why?: string };
+
+/**
+ * Принять объект целиком (194-15): описать моделью, если зовущий не прислал своего саммари, и положить в
+ * четыре хранилища тем же `keep()`.
+ *
+ * 🎯 СЛОВО ВЛАДЕЛЬЦА 2026-09-13: «Делай полный вариант: методы объектов в API»; про `media` у remember —
+ * «Через ingest».
+ * 🔒 ОДНА ФУНКЦИЯ НА ВСЕХ, КТО НЕ ДЕЛАЕТ ВТОРОГО ХОДА: договор `/v1/keep_object`, вложения `remember`,
+ * будущий Telegram. У человека на стенде ходов два (описать → поправить → сохранить), и там `describe` и
+ * `keep` зовутся раздельно — но хранилища, откат и строка таблицы у всех одни.
+ * 🔒 ПРИСЛАННОЕ ЗОВУЩИМ ПОБЕЖДАЕТ ОПИСАННОЕ МОДЕЛЬЮ ПОЛЕ ЗА ПОЛЕМ. Прислано саммари — модель не зовётся
+ * вовсе: ход Claude по подписке стоит десятки секунд, и платить его за уже написанное незачем.
+ */
+export async function ingest(input: {
+  anchors?: string[];
+  author?: string;
+  bytes: Uint8Array;
+  full?: string;
+  mime: string;
+  name: string;
+  source?: string;
+  summary?: string;
+  tags?: string[];
+  title?: string;
+  who?: string;
+}): Promise<
+  | {
+      ok: true;
+      card: ObjectCard;
+      described: boolean;
+      kind: string;
+      messageId: number;
+      ms: number;
+      summary: string;
+      title: string;
+    }
+  | { ok: false; error: string; messageId?: number; why?: string }
+> {
+  const started = Date.now();
+  const name = String(input.name ?? "").trim();
+  if (!name) return { error: "no-name", ok: false };
+  if (!input.bytes?.length) return { error: "empty-file", ok: false };
+
+  let summary = String(input.summary ?? "").trim();
+  let d: Extract<Described, { ok: true }> | null = null;
+  if (!summary) {
+    const r = (await describe({ bytes: input.bytes, mime: input.mime, name })) as unknown as Described;
+    if (!r.ok) return { error: r.refusal, ok: false, ...(r.why ? { why: r.why } : {}) };
+    d = r;
+    summary = r.summary;
+  }
+
+  const source = input.source || "api";
+  const title = input.title ?? d?.title ?? name;
+  const kept = await keep({
+    about: summary,
+    anchors: input.anchors ?? d?.anchors,
+    author: input.author,
+    bytes: input.bytes,
+    described_by: d?.described_by,
+    describe_ms: d?.ms,
+    full: input.full ?? d?.full,
+    language: d?.language,
+    mime: input.mime,
+    name,
+    source,
+    tags: input.tags ?? d?.tags,
+    title,
+    // 🔒 ПУСТОЙ `who` НЕ СТАНОВИТСЯ «stand»: так `keep()` помечает стенд, а объект пришёл не оттуда.
+    who: input.who || source,
+  });
+  if (!kept.ok) return kept;
+  return {
+    card: kept.card,
+    described: d !== null,
+    kind: messageKindOf(kindOf(name, input.mime) ?? "text", name),
+    messageId: kept.messageId,
+    ms: Date.now() - started,
+    ok: true,
+    summary,
+    title,
+  };
 }
