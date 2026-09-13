@@ -56,7 +56,8 @@
 | инструкция агента памяти — предмет работы | `MEMORY-AGENT.md` |
 | **процедура работы шагом** — открывается нулевым пунктом | навык `use-development-steps` |
 | **как доказывается сделанное** | навык `use-testing` |
-| навыки агента памяти — предмет работы | `.claude/skills/use-knowledge-graph`, `use-vector-store` |
+| навыки агента памяти — предмет работы | `.claude/skills/use-knowledge-graph`, `use-vector-store`, `use-object-store` |
+| прибор объектного хранилища и прогон его навыка на живых руках | `scripts/probe/object-two-tests.mjs` · `development-docs/instruments/192-5-object-skill-eval.md` |
 
 🔒 **ЭТО УЧЁТ ПАМЯТИ, А НЕ ЧУЖОЙ.** Шаги здесь — о ней: что в ней построено, чем доказано, что
 осталось долгом. Не ищи здесь работу соседних служб и не продолжай её.
