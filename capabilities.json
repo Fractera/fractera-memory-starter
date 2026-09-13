@@ -23,11 +23,16 @@
   },
   "multimodal_input": {
     "text": true,
-    "audio": "speech-to-text transcription; a voice message becomes text and enters the same cycle as a typed phrase",
-    "image": "vision captioning plus OCR; the description is stored, the original is kept in the object store",
-    "video": "audio track transcribed, key frames captioned",
-    "pdf": "text extraction with OCR fallback, structured summary, original artefact kept",
-    "html": true,
+    "audio": "speech-to-text by OpenAI whisper-1 with a timestamp on every segment; Claude writes the description from the transcript; the recording is kept as is",
+    "image": "read by Claude with vision: every element, its position, colours and all visible text become the full description, plus a ~50-word summary; the image is kept as is",
+    "video": "ffmpeg extracts the sound track and six evenly spaced frames; the track is transcribed by whisper-1, the frames are read by Claude on one timeline; the video is kept as is",
+    "pdf": "read whole by Claude: structure, headings, content, tables row by row; the PDF is kept as is",
+    "markdown": "read by Claude; kept as the document it renders into",
+    "html": "read by Claude; kept as a page in a sandbox and as its source",
+    "code": "TypeScript, JavaScript, Python, SQL, JSON, YAML and more: analysed, not rewritten; stored as text and never executed",
+    "four_stores_per_object": "the file with its full description goes to the object store, the summary to a table row and a vector search card, the full description with its origin (source, author, date) to the knowledge graph — all four or none",
+    "object_api": "POST /v1/keep_object (multipart file or JSON url, memory downloads it and refuses addresses inside the machine), POST /v1/find_objects, POST /v1/open_object, GET /v1/objects/{id}/file",
+    "attachments": "remember accepts media as a list of {url}; each file goes the same way as keep_object and its fate returns in objects",
     "object_store": "built in, on your machine; artefacts referenced from answers by id"
   },
   "geospatial": {

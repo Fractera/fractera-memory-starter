@@ -26,18 +26,22 @@ not add-ons:
 
 ### 1. Multimodality is native, not a preprocessor you bolt on
 
-Send `media` alongside the phrase and memory handles the pipeline itself:
+Hand memory a whole thing — as a form upload to `keep_object`, by URL, or as `media` next to a phrase — and it
+describes the thing itself and keeps it in four places at once, or in none:
 
 | Kind | What happens inside |
 |---|---|
-| `audio` | speech-to-text transcription — a voice message becomes text and enters the same cycle as anything typed |
-| `image` | vision captioning plus OCR; the description becomes knowledge, the original stays in the object store |
-| `video` | the audio track is transcribed, key frames are captioned |
-| `pdf` | text extraction with OCR fallback, a structured summary, the artefact kept and referenced by id |
-| `html`, `text` | parsed directly |
+| `audio` | speech-to-text by OpenAI whisper-1 with a timestamp on every segment; the description is written from the transcript |
+| `image` | read by Claude with vision: every element, its position, colours and all visible text become the full description |
+| `video` | ffmpeg extracts the sound track and six frames; the track is transcribed, the frames are read on one timeline |
+| `pdf` | read whole by Claude: structure, headings, content, tables row by row |
+| `markdown`, `html`, `text` | read by Claude; HTML is shown as a sandboxed page and as its source |
+| source code | analysed, not rewritten — what it does, what it exports and imports; stored as text, never executed |
 
-You do not wire up a transcription service, an OCR service and a storage bucket. They are inside, and
-the binaries live in the engine's **own object store** on your machine.
+The file with its full description goes to the **object store**; the summary goes to a table row and a **vector**
+search card; the full description with its origin — source, author, date — goes to the **knowledge graph**. Find it
+by meaning with `find_objects`, open it with `open_object`, fetch the bytes with `GET /v1/objects/{id}/file`.
+Web pages are not files: a URL that answers `text/html` is refused, and pages are the job of a browser.
 
 ### 2. Geolocation is a first-class dimension, not a text tag
 
@@ -171,13 +175,14 @@ understands and names; a non-200 status means the call never reached the verb.
 | `text` | string | yes | The phrase as it was said, without paraphrasing. |
 | `lang` | string | no | Language of the words meant for a person. |
 | `scope` | array | no | Spatial-temporal scope: `{at, place, lat, lon, radius_m}` entries. |
-| `media` | array | no | Attachments: `{kind, url⎮id}`, kind ∈ `image · video · audio · pdf · html · text`. |
+| `media` | array | no | Attachments: `{url}` file addresses. Each goes the same way as `keep_object`; memory decides the kind. |
 | `thread` | string | no | Continue an earlier line of reasoning. |
 | `deny` | string | no | Overturn an earlier conclusion. |
 | `need_table` | boolean | no | Make what is recorded its own table at once. |
 
 Returns `what_happened` (words you can say straight to a person), `noted` (what was written down,
-with `from_table` and `claim`), `params` (the fate of every optional parameter) and `thread`.
+with `from_table` and `claim`), `params` (the fate of every optional parameter), `objects` (the fate of every
+attachment) and `thread`.
 On a contradiction: *«was X, now Y»* — the latest wins, out loud, with the previous value kept.
 
 ## `POST /v1/recall`
@@ -197,6 +202,29 @@ On a contradiction: *«was X, now Y»* — the latest wins, out loud, with the p
 Returns `known` (each value with `from_table`, `claim`, `basis`), `not_yet_known`, `used_model`,
 `depth_asked` / `depth_used`, `used_input`, `chain` and `params`.
 
+## `POST /v1/keep_object`
+
+A multipart form with the file in the `file` part — or JSON with `url`, and memory downloads the file itself.
+
+| parameter | type | required | meaning |
+|---|---|---|---|
+| `file` | binary | file or url | The file itself, in multipart/form-data. |
+| `url` | string | file or url | An http(s) file address, JSON body, up to 200 MB. Addresses inside the machine or a private network → `url-forbidden`; `text/html` → `is-a-page`. |
+| `source` | string | no | Where it came from: `api` · `telegram` · …; default `api`. |
+| `author` | string | no | Who sent it, in words; default `who`. |
+| `who` | string | no | The person the object belongs to. |
+| `title`, `summary`, `full` | string | no | Your own description; with `summary` no model is called. |
+| `tags`, `anchors` | JSON array | no | Tags; graph anchors (people, places, products). |
+
+Returns `messageId` (the row linking all four stores), `object` (id, name, size), `title`, `summary`, `kind`,
+`described` and `ms`.
+
+## `POST /v1/find_objects` and `POST /v1/open_object`
+
+`find_objects { question }` searches by meaning with one embedding and no model turn; every result carries `id`,
+`title`, `summary`, `kind`, `messageId` and `score`. `open_object { id, from? }` returns the card, the text in
+parts for textual kinds, and `file` — the address to fetch the bytes from.
+
 ## Other endpoints
 
 ```
@@ -205,6 +233,7 @@ POST /v1/journal          memory's own account of its work, in plain text
 POST /v1/forget_journal   erase that account; knowledge about people is untouched
 GET  /v1/tables           names of everything memory keeps about a person
 GET  /v1/tables/{name}    the description of one table
+GET  /v1/objects/{id}/file  an object's file: the stored bytes with their type and name
 GET  /v1/health           open, no key: liveness, contract version, name-quality figure
 GET  /v1/contract         the machine-readable contract
 ```
@@ -216,13 +245,13 @@ GET  /v1/contract         the machine-readable contract
 curl -s $MEM/remember -H "Content-Type: application/json" -H "x-memory-key: $MEMORY_KEY" \
   -d '{ "who": "roman",
         "text": "voice note from the trip",
-        "media": [{ "kind": "audio", "url": "https://…/note.oga" }],
+        "media": [{ "url": "https://…/note.oga" }],
         "scope": [{ "at": "2026-09-11", "lat": 40.4168, "lon": -3.7038, "radius_m": 300 }] }'
 
-# a contract as PDF: extracted, summarised, artefact kept
+# a contract as PDF next to a phrase: read whole, described, kept in four stores
 curl -s $MEM/remember -H "Content-Type: application/json" -H "x-memory-key: $MEMORY_KEY" \
   -d '{ "who": "roman", "text": "this is the lease for the flat",
-        "media": [{ "kind": "pdf", "url": "https://…/lease.pdf" }] }'
+        "media": [{ "url": "https://…/lease.pdf" }] }'
 
 # what do I know near this point
 curl -s $MEM/recall -H "Content-Type: application/json" -H "x-memory-key: $MEMORY_KEY" \
@@ -390,7 +419,7 @@ built on a different philosophy.
 | System classification | An autonomous memory engine behind an API, for any front-end | An end-to-end Telegram assistant tied to an Obsidian vault |
 | Architecture | A decoupled microservice; the Telegram bot is an optional client | A monolith: Telegram, userbot and vault manager in one codebase |
 | Cost optimisation | A five-tier deterministic router; instant zero-token reads | Every operation leans on model passes, BM25 and vector lookups |
-| Multimodality | Built-in object storage, transcription, OCR, PDF and video pipelines | Audio transcription and plain text handling |
+| Multimodality | Built-in object storage; audio transcribed with timestamps; images, PDF, pages, code and video frames read by a vision model | Audio transcription and plain text handling |
 | Geolocation | Native lat/lon plus radius_m proximity search | None; dates and places are unstructured text |
 | Data processing | Dynamic SQL tables, structured artifacts with IDs, knowledge graph | Markdown cards written to a folder for Obsidian to sync |
 | System evolution | Shadow A/B testing with external verdicts | None; execution logic is fixed in prompt files |
@@ -424,10 +453,10 @@ indexed. You can ask what you know within 500 metres of a point, and knowledge r
 never merges with knowledge recorded in London.
 
 **What can I send besides text?**
-Voice notes, images, video, PDF and HTML. The pipeline lives inside the engine: audio is transcribed,
-images are captioned and read by OCR, video has its track transcribed and its key frames captioned,
-PDFs are parsed with an OCR fallback. The original binary stays in the built-in object store and is
-referenced from answers by id.
+Voice notes, images, video, PDF, Markdown, HTML and source code — as a form upload, by URL, or as `media` next to a
+phrase. Audio is transcribed by whisper-1 with timestamps; images, PDFs, pages and code are read by Claude; video
+gives its sound track and six frames on one timeline. The original stays in the built-in object store, is found by
+meaning with `find_objects` and fetched with `GET /v1/objects/{id}/file`.
 
 **What schema do I have to design first?**
 None. You send a sentence. The engine adds columns as new kinds of fact appear and generates typed

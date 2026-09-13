@@ -23,6 +23,8 @@ import { apiDocWords } from "../_i18n/api.i18n";
 
 type Method = {
   about: string;
+  /** Род тела (194-15): у прежних методов нет — их тело JSON. */
+  body?: string;
   name: string;
   onMiss: string;
   params: Array<{ about: string; name: string; required: boolean; type: string }>;
@@ -130,6 +132,11 @@ Authorization: Bearer fmk_…`}</Code>
               <span className="font-mono text-[length:var(--fs-small)] font-semibold">
                 POST /v1/{m.name}
               </span>
+              {m.body && (
+                <span className="ml-2 font-mono text-[length:var(--fs-small)] text-muted-foreground">
+                  {w.methods.body}: {m.body}
+                </span>
+              )}
               <P>{mw ? mw.about : `${m.about} ${w.methods.untranslated}`}</P>
 
               <div className="overflow-x-auto">
@@ -290,6 +297,27 @@ Authorization: Bearer fmk_…`}</Code>
       { "place": "London" }
     ]
   }'`}</Code>
+        {/* 🔒 ПРИМЕРЫ ОБЪЕКТОВ (194-18): те же четыре пути, что проходит прибор `scripts/probe/v1-objects.mjs`. */}
+        <P>{w.examples.keepFile}</P>
+        <Code>{`curl -s ${base}/v1/keep_object \\
+  -H "x-memory-key: $MEMORY_KEY" \\
+  -F "file=@lease.pdf" \\
+  -F "source=api" \\
+  -F "author=Roman"`}</Code>
+        <P>{w.examples.keepUrl}</P>
+        <Code>{`curl -s ${base}/v1/keep_object \\
+  -H "Content-Type: application/json" \\
+  -H "x-memory-key: $MEMORY_KEY" \\
+  -d '{ "url": "https://example.com/note.oga", "source": "telegram", "author": "Roman", "who": "roman" }'`}</Code>
+        <P>{w.examples.find}</P>
+        <Code>{`curl -s ${base}/v1/find_objects \\
+  -H "Content-Type: application/json" \\
+  -H "x-memory-key: $MEMORY_KEY" \\
+  -d '{ "question": "the lease agreement for the flat" }'`}</Code>
+        <P>{w.examples.file}</P>
+        <Code>{`curl -s ${base}/v1/objects/OBJECT_ID/file \\
+  -H "x-memory-key: $MEMORY_KEY" \\
+  -o object.bin`}</Code>
       </section>
 
       <section className="space-y-3">

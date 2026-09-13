@@ -43,12 +43,12 @@ export type ApiDocWords = {
   overview: { lead: string; audience: string; twoVerbs: string };
   baseUrl: { lead: string; readBody: string };
   auth: { lead: string; headers: string; denied: string };
-  methods: { lead: string; parameter: string; type: string; required: string; meaning: string; yes: string; no: string; returns: string; onMiss: string; untranslated: string };
+  methods: { lead: string; body: string; parameter: string; type: string; required: string; meaning: string; yes: string; no: string; returns: string; onMiss: string; untranslated: string };
   catalogue: { lead: string; law: string; health: string; contract: string };
   threads: { lead: string; measured: string; deny: string; unknown: string };
   paramsReport: { lead: string; accepted: string; notSupported: string; badForm: string; never: string };
   refusals: { lead: string; moneyVsKey: string };
-  examples: { tell: string; ask: string; deny: string; scope: string };
+  examples: { tell: string; ask: string; deny: string; scope: string; keepFile: string; keepUrl: string; find: string; file: string };
   limits: { lead: string; items: string[] };
   postman: { lead: string; steps: string[]; quota: string };
   /** Переводы описаний методов договора: about · returns · onMiss. */
@@ -86,10 +86,15 @@ const EN: ApiDocWords = {
   catalogueItem: {
     "GET /v1/tables": "names of everything memory keeps about a person; usually this is enough",
     "GET /v1/tables/{имя}": "the description of one table — if its name did not explain itself",
+    "GET /v1/objects/{id}/file": "the object's file itself — bytes with the type and name it was stored with; id comes from find_objects or keep_object",
   },
   examples: {
     ask: "Ask what it knows. No question means everything, and that path calls no model at all:",
     deny: "Continue the same reasoning and overturn what it concluded:",
+    file: "Download the file of an object — the same bytes that were stored:",
+    find: "Find objects by meaning — other words than inside the object are fine; no model is called:",
+    keepFile: "Keep a whole thing — a photo, a voice note, a PDF, source code. The body is a form with the file; memory describes it itself:",
+    keepUrl: "Or name the file by its address — memory downloads it itself. Addresses inside the machine and web pages are refused:",
     scope: "Give the fact a scope — several dates and places are normal, so scope is a list:",
     tell: "Tell memory something a person said, in their own words:",
   },
@@ -118,6 +123,29 @@ const EN: ApiDocWords = {
     lead: "Stated plainly, because a boundary nobody named is one every caller works around in their own way:",
   },
   method: {
+    find_objects: {
+      about:
+        "Find memory's objects by the meaning of a question — photos, documents, recordings, code kept by keep_object or by remember attachments. Searches the search cards with one embedding and no model turn.",
+      onMiss:
+        "Nothing closer than the threshold — ok:true, found:false and an empty results. That is not «it does not exist»: ask again in other words. The store is unreachable — ok:false with the reason.",
+      returns:
+        "found; results — what came closer than the threshold, best first: id, title, summary, kind, messageId (the row in messages_that_came_into_memory), name, mime, size, score, preview; threshold — the closeness threshold; lost — search cards whose file was erased behind memory's back.",
+    },
+    keep_object: {
+      about:
+        "Keep a whole thing in memory — a photo, voice note, video, PDF, Markdown, HTML, source code, text. Send a multipart form with the file in the file part, or JSON with url — then memory downloads the file itself. Memory writes the description: the full one next to the file, the summary into the table row and the search card, the full one with its origin into the graph. Send your own summary and no model is called.",
+      onMiss:
+        "A kind memory cannot read — 400 describe-kind-unsupported, nothing written. An address inside the machine or a private network — 400 url-forbidden; a web page — 400 is-a-page; the address does not answer — 502 url-unreachable. A storage step failed — 502 with the reason: what was already written is removed, the row stays with status failed and its messageId comes back. The model did not answer or the subscription window ran out — 502 with the reason.",
+      returns:
+        "messageId — the row in messages_that_came_into_memory linking the object, its search card and its graph document; object — the object card (id, name, size); title and summary — how the object will be found; kind; described — whether the model was called; ms — how long it took; url — the final address, when the file was named by one.",
+    },
+    open_object: {
+      about:
+        "Open an object you found: its card, its text in parts for textual kinds, and the address of the file itself. Call it when the summary from find_objects was not enough to answer.",
+      onMiss: "An unknown id or one that is not memory's — ok:false with error not-found or not-ours. The store is unreachable — ok:false with the reason.",
+      returns:
+        "card — the object card; text — a piece of the text (null for images, video, audio), with from, shown, total and limit saying where this piece is and how much there is; file — the file address: GET it from the memory address with the same key.",
+    },
     forget_journal: {
       about:
         "Erase memory's account of its own work. Knowledge about people is untouched — only the journal is cleared. Irreversible: what is erased comes back from nowhere.",
@@ -151,10 +179,11 @@ const EN: ApiDocWords = {
       onMiss:
         "There are no facts about the person in the phrase — ok:true and an empty noted; that is not an error. If it cannot be parsed at all, a refusal arrives with its reason: out of credit, key rejected, or the model unreachable.",
       returns:
-        "what_happened — words you can say to a person; noted — what exactly was written down, each entry with from_table and claim. On a contradiction it says «was X, now Y»: the latest wins, but out loud. params — the fate of every optional parameter. thread — the name of the reasoning thread: send it back to continue this same chain.",
+        "what_happened — words you can say to a person; noted — what exactly was written down, each entry with from_table and claim. On a contradiction it says «was X, now Y»: the latest wins, but out loud. params — the fate of every optional parameter. objects — the fate of every media attachment: the object id and messageId, or a refusal with its reason. thread — the name of the reasoning thread: send it back to continue this same chain.",
     },
   },
   methods: {
+    body: "body",
     lead:
       "Generated from the live contract — the same object the service returns from GET /v1/contract. If a parameter appears here, the server accepts it today.",
     meaning: "meaning",
@@ -176,8 +205,21 @@ const EN: ApiDocWords = {
       "Two verbs, and that is the whole idea. remember changes what memory knows; recall never changes anything. Everything else — the catalogue, the journal — exists to explain what memory did, not to let you reach inside it.",
   },
   param: {
+    anchors: "Graph anchors — a JSON array of names of people, places, products. Not given — the model names them, or the title is used.",
     at: "Date of the entry, YYYY-MM-DD.",
-    media: "Attachments read alongside the phrase: {kind, url|id}, where kind is image · video · audio · pdf · html · text. Voice, photos and documents go through the same cycle as a typed sentence and land in object storage.",
+    author: "Who sent it, in words — for example the person's name in Telegram. Not given — who is used.",
+    file: "Either file or url. The file itself — the file part of multipart/form-data. Memory decides the kind from the name and type: image · video · audio · PDF · Markdown · HTML · source code · text.",
+    from: "Which character to continue the text from. Not given — from the beginning.",
+    full: "Your own full description — detailed enough to reconstruct the object from it.",
+    id: "The object id from find_objects or keep_object.",
+    media: "Attachments: a list of {url} — file addresses. Memory downloads each file and keeps it the same way as keep_object: description, object store, search card, graph, table row. Memory decides the kind itself. A web page (text/html) is refused: pages are kept by the links method. The fate of each attachment comes back in objects.",
+    name: "The file name with its extension. Not given — the name of the file part or of the address is used.",
+    question: "What you are looking for, in an ordinary sentence — other words than inside the object are fine.",
+    source: "Where the object came from: api · telegram · …. Not given — api. It goes into the table row and the header of the graph document.",
+    summary: "Your own summary, about 50 words. Given — no model is called, and the full description comes from full.",
+    tags: "Tags — a JSON array of strings in a form field.",
+    title: "Your own title. Not given — the model writes it.",
+    url: "Either url or file. An http or https file address — JSON body; memory downloads the file itself, up to 200 MB. Addresses inside the machine or a private network, and web pages (text/html), are refused.",
     deny: "Overturning an earlier conclusion: what is wrong with it. The conclusion is cancelled, the fact is not — the grounds remain. Meaningful only together with thread: without returning to the earlier chain there is nothing to overturn.",
     depth: "Depth limit in words: standard · deep · extreme. Level numbers stay inside memory; what travels out is words and cost.",
     history: "The previous conversation: a calling model may hand it over together with the question.",
@@ -259,10 +301,15 @@ const RU: ApiDocWords = {
   catalogueItem: {
     "GET /v1/tables": "имена всего, что память о человеке ведёт; часто этого довольно",
     "GET /v1/tables/{имя}": "описание одной таблицы — если имя не объяснило само себя",
+    "GET /v1/objects/{id}/file": "сам файл объекта — байты с тем типом и именем, с которыми он сохранён; id из find_objects или keep_object",
   },
   examples: {
     ask: "Спросить, что ей известно. Без вопроса придёт всё, и этот путь не зовёт модель вовсе:",
     deny: "Продолжить то же размышление и опровергнуть сделанный вывод:",
+    file: "Скачать файл объекта — те же байты, что были сохранены:",
+    find: "Найти объекты по смыслу — другими словами, чем в самом объекте, тоже можно; модель не зовётся:",
+    keepFile: "Положить вещь целиком — снимок, голосовое, PDF, исходный код. Тело — форма с файлом; описание память пишет сама:",
+    keepUrl: "Или назвать файл адресом — память скачает его сама. Адреса внутри машины и веб-страницы отвергаются:",
     scope: "Дать факту охват — дат и мест бывает несколько, поэтому охват это список:",
     tell: "Сказать памяти то, что сказал человек, — его же словами:",
   },
@@ -291,6 +338,29 @@ const RU: ApiDocWords = {
     lead: "Названо прямо, потому что границу, которую никто не назвал, каждый зовущий обходит по-своему:",
   },
   method: {
+    find_objects: {
+      about:
+        "Найти объекты памяти по смыслу вопроса — снимки, документы, записи, код, положенные keep_object или вложениями remember. Ищет по карточкам поиска одним встраиванием, без хода модели.",
+      onMiss:
+        "Ничего ближе порога — ok:true, found:false и пустой results. Это не «такого нет»: переспросите другими словами. Хранилище недоступно — ok:false и причина.",
+      returns:
+        "found; results — найденное ближе порога, лучшее первым: id, title, summary, kind, messageId (строка messages_that_came_into_memory), name, mime, size, score, preview; threshold — порог близости; lost — карточки, чей файл стёрт мимо памяти.",
+    },
+    keep_object: {
+      about:
+        "Положить в память вещь целиком — снимок, голосовое, видео, PDF, Markdown, HTML, исходный код, текст. Шлите форму multipart с файлом в части file или JSON с url — тогда файл скачивает сама память. Описание пишет память: полное — рядом с файлом, саммари — в строку таблицы и карточку поиска, полное с происхождением — в граф. Пришлите своё саммари — и модель не зовётся.",
+      onMiss:
+        "Род, который память не читает, — 400 describe-kind-unsupported, ничего не записано. Адрес внутри машины или частной сети — 400 url-forbidden; веб-страница — 400 is-a-page; адрес не отвечает — 502 url-unreachable. Сорвалась ступень хранилищ — 502 с причиной: уже положенное снято, строка осталась со статусом failed, её messageId в ответе. Модель не ответила или кончилось окно подписки — 502 с причиной.",
+      returns:
+        "messageId — строка messages_that_came_into_memory со ссылками на объект, карточку поиска и документ графа; object — карточка объекта (id, имя, размер); title и summary — по ним объект будут находить; kind — род; described — звалась ли модель; ms — сколько заняло; url — итоговый адрес, если файл назван адресом.",
+    },
+    open_object: {
+      about:
+        "Открыть найденный объект: карточка, текст частями для текстовых родов и адрес самого файла. Звать, когда саммари из find_objects не хватило для ответа.",
+      onMiss: "Чужой или несуществующий id — ok:false и error not-found или not-ours. Хранилище недоступно — ok:false и причина.",
+      returns:
+        "card — карточка объекта; text — кусок текста (null у изображения, видео, аудио), from, shown, total и limit — где этот кусок и сколько всего; file — адрес файла: GET этот путь от адреса памяти с тем же ключом.",
+    },
     forget_journal: {
       about:
         "Стереть рассказ памяти о своей работе. Знание о людях этим не затрагивается — стирается только журнал. Необратимо: стёртое не восстанавливается ничем.",
@@ -324,10 +394,11 @@ const RU: ApiDocWords = {
       onMiss:
         "Фактов о человеке во фразе нет — ok:true и пустой noted, это не ошибка. Если разобрать нельзя, приходит отказ с причиной: кончились деньги, ключ отвергнут или модель недоступна.",
       returns:
-        "what_happened — словами, которые можно произнести человеку; noted — что именно записано, с from_table и claim у каждой записи. При противоречии сказано «было X, стало Y»: последнее побеждает, но вслух. params — судьба каждого необязательного параметра. thread — имя нити разбора: пришлите его обратно, чтобы продолжить эту же цепочку.",
+        "what_happened — словами, которые можно произнести человеку; noted — что именно записано, с from_table и claim у каждой записи. При противоречии сказано «было X, стало Y»: последнее побеждает, но вслух. params — судьба каждого необязательного параметра. objects — судьба каждого вложения media: id объекта и messageId либо отказ с причиной. thread — имя нити разбора: пришлите его обратно, чтобы продолжить эту же цепочку.",
     },
   },
   methods: {
+    body: "тело",
     lead:
       "Порождено из живого договора — того же объекта, что служба отдаёт по GET /v1/contract. Если параметр здесь есть, сервер принимает его сегодня.",
     meaning: "что значит",
@@ -349,8 +420,21 @@ const RU: ApiDocWords = {
       "Два глагола — и в этом вся мысль. remember меняет то, что память знает; recall не меняет ничего. Всё остальное — каталог, журнал — существует, чтобы объяснить, что память делала, а не чтобы дать дотянуться внутрь.",
   },
   param: {
+    anchors: "Якоря графа — JSON-массив имён людей, мест, продуктов. Не названы — их называет модель, иначе берётся название.",
     at: "Дата записи охвата, гггг-мм-дд.",
-    media: "Вложения, которые память читает вместе с фразой: {kind, url|id}, где kind — image · video · audio · pdf · html · text. Голос, снимок и документ проходят тот же цикл, что и набранная фраза, и ложатся в объектное хранилище.",
+    author: "Кто прислал — словами, например имя человека в Telegram. Не назван — берётся who.",
+    file: "Либо file, либо url. Сам файл — часть file в multipart/form-data. Род память определяет по имени и типу: изображение · видео · аудио · PDF · Markdown · HTML · исходный код · текст.",
+    from: "С какого знака продолжить текст. Не назван — с начала.",
+    full: "Своё полное описание — настолько подробное, чтобы по нему можно было восстановить объект.",
+    id: "id объекта из find_objects или keep_object.",
+    media: "Вложения: список {url} — адреса файлов. Каждый файл память скачивает и кладёт тем же путём, что keep_object: описание, объектное хранилище, карточка поиска, граф, строка таблицы. Род определяет сама память. Веб-страница (text/html) отвергается: страницы кладутся методом ссылок. Судьба каждого вложения — в objects.",
+    name: "Имя файла с расширением. Не названо — берётся имя части file или из адреса.",
+    question: "Что ищем — обычной фразой; другими словами, чем в самом объекте, тоже можно.",
+    source: "Откуда пришёл объект: api · telegram · …. Не названо — api. Ложится в строку таблицы и в шапку документа графа.",
+    summary: "Своё саммари, около 50 слов. Прислано — модель не зовётся, полное описание берётся из full.",
+    tags: "Теги — JSON-массив строк в поле формы.",
+    title: "Своё название. Не названо — его пишет модель.",
+    url: "Либо url, либо file. Адрес файла http или https — тело JSON; память скачивает файл сама, до 200 МБ. Адреса внутри машины или частной сети и веб-страницы (text/html) отвергаются.",
     deny: "Отрицание прежнего вывода: чем он неверен. Отменяется вывод, а не факт — основание остаётся. Имеет смысл только вместе с thread: без возврата к прежней цепочке опровергать нечего.",
     depth: "Предел глубины словами: standard · deep · extreme. Номера уровней остаются внутри памяти — наружу идут слова и цена.",
     history: "Предыдущий разговор: зовущая модель вправе отдать его вместе с вопросом.",

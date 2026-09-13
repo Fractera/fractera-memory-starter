@@ -93,7 +93,7 @@ const CURL_REMEMBER_EN = `curl -X POST https://memory.your-domain.com/v1/remembe
   -d '{
     "who": "roman",
     "text": "Office lease note",
-    "media": [{ "kind": "audio", "url": "https://.../note.oga" }],
+    "media": [{ "url": "https://.../note.oga" }],
     "scope": [{ "at": "2026-09-11", "lat": 40.4168, "lon": -3.7038, "radius_m": 500 }]
   }'`;
 
@@ -119,7 +119,7 @@ const CURL_REMEMBER_RU = `curl -X POST https://memory.your-domain.com/v1/remembe
   -d '{
     "who": "roman",
     "text": "Заметка по аренде офиса",
-    "media": [{ "kind": "audio", "url": "https://.../note.oga" }],
+    "media": [{ "url": "https://.../note.oga" }],
     "scope": [{ "at": "2026-09-11", "lat": 40.4168, "lon": -3.7038, "radius_m": 500 }]
   }'`;
 
