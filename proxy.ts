@@ -63,6 +63,9 @@ const SELF_GUARDED = new Set([
   // 🔒 ТРИ ДВЕРИ ОБЪЕКТНОГО ХРАНИЛИЩА (192-1) — того же класса: сами зовут
   // `benchGuard`, и их имена стоят здесь до первой сборки, а не после отладки.
   "/api/fractera/object-test",
+  // 🔒 ДВЕРЬ «ПОЛУЧИТЬ ОПИСАНИЕ» (194-2) — тот же `benchGuard`, имя стоит до первой сборки.
+  // Набор сверяется ТОЧНЫМ именем: соседнее `/object-test` вложенный путь не открывает.
+  "/api/fractera/object-test/describe",
   "/api/fractera/object-search",
   "/api/fractera/object-open",
   "/api/fractera/memory-test",
