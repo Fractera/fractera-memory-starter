@@ -25,6 +25,7 @@ Exactly two things: **record something** and **retrieve something**.
 | a new kind of meaning arrived, or you are about to name anything stored | `grow-the-shape` |
 | the answer lies in how entities are connected | `use-knowledge-graph` |
 | the words of the question and of the record are entirely different | `use-vector-store` |
+| a document, file, picture or PDF is asked for, or your answer is a document | `use-object-store` |
 
 🔒 **A SKILL IS OPENED, NOT RECALLED.** Reaching for one costs you a turn and is worth it; acting
 from a half-memory of what it said is how a rule quietly becomes a habit that no longer matches it.
