@@ -60,6 +60,11 @@ const SELF_GUARDED = new Set([
   "/api/fractera/graph-test",
   "/api/fractera/vector-search",
   "/api/fractera/vector-test",
+  // 🔒 ТРИ ДВЕРИ ОБЪЕКТНОГО ХРАНИЛИЩА (192-1) — того же класса: сами зовут
+  // `benchGuard`, и их имена стоят здесь до первой сборки, а не после отладки.
+  "/api/fractera/object-test",
+  "/api/fractera/object-search",
+  "/api/fractera/object-open",
   "/api/fractera/memory-test",
   "/api/me",
   "/api/fractera/pty-ticket",
