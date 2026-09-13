@@ -50,12 +50,44 @@ export async function POST(request: Request) {
   const about = String(form.get("about") ?? "").trim()
   const bytes = new Uint8Array(await file.arrayBuffer())
 
-  const r = await keep({ about, bytes, mime: file.type, name })
-  if (!r.ok) {
-    const code = r.error === "store-unreachable" ? 502 : r.error === "card-failed" || r.error === "store-refused" ? 502 : 400
-    return deny(r.error, code)
+  // 194-4: всё, что сказала модель и поправил человек, едет вместе с файлом.
+  const text = (k: string) => {
+    const v = form.get(k)
+    return typeof v === "string" && v.trim() ? v.trim() : undefined
   }
-  return NextResponse.json({ cardChars: r.cardChars, ms: r.ms, object: r.card, ok: true })
+  /** Массив из JSON-строки формы. Не массив — `undefined`, а не пустой список: «не передано» ≠ «пусто». */
+  const list = (k: string): string[] | undefined => {
+    const v = form.get(k)
+    if (typeof v !== "string") return undefined
+    try {
+      const parsed: unknown = JSON.parse(v)
+      return Array.isArray(parsed) ? parsed.map(String) : undefined
+    } catch {
+      return undefined
+    }
+  }
+  const ms = Number(text("describe_ms"))
+
+  const r = await keep({
+    about,
+    anchors: list("anchors"),
+    bytes,
+    described_by: text("described_by"),
+    describe_ms: Number.isFinite(ms) ? ms : undefined,
+    full: text("full"),
+    language: text("language"),
+    mime: file.type,
+    name,
+    tags: list("tags"),
+    title: text("title"),
+    who: text("who"),
+  })
+  if (!r.ok) {
+    // 🔒 ОТКАЗ ГРАФА ИЗ-ЗА ЯКОРЕЙ — ВИНА ПРИСЛАННОГО (400); ОТКАЗ ХРАНИЛИЩ — ИХ СОСТОЯНИЕ (502).
+    const ours = r.error === "no-name" || r.error === "empty-file" || r.error === "no-about" || r.error.includes("no-anchor")
+    return NextResponse.json({ error: r.error, messageId: r.messageId ?? null, ok: false }, { status: ours ? 400 : 502 })
+  }
+  return NextResponse.json({ cardChars: r.cardChars, messageId: r.messageId, ms: r.ms, object: r.card, ok: true })
 }
 
 /**

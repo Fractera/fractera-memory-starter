@@ -1,4 +1,7 @@
 import { dataFetch, dataJson, dataService } from "./data-service";
+import { forgetDocuments, learn } from "./knowledge";
+import { insertMessage } from "@/lib/messages.mjs";
+import { kindOf, messageKindOf } from "@/lib/describe.mjs";
 
 // ОБЪЕКТНОЕ ХРАНИЛИЩЕ — ВЕЩЬ ЦЕЛИКОМ, С ИДЕНТИФИКАТОРОМ (192-1).
 //
@@ -148,17 +151,63 @@ function previewOf(card: string): string {
  * 🔒 ДВЕ ЗАПИСИ ИДУТ ПАРОЙ ИЛИ НЕ ИДУТ ВОВСЕ. Файл без карточки не найдёт никто,
  * а карточка без файла приведёт к пустоте. Карточка не легла — файл удаляется
  * тем же вызовом, и наружу уходит отказ, а не половина успеха.
+ *
+ * 🔒 С 194-4 ЗАПИСЕЙ ЧЕТЫРЕ, И ЗАКОН ТОТ ЖЕ (слово владельца 2026-09-13: «полное описание мы оставляем
+ * в объектном хранилище вместе с файлом, саммари уходит в таблицу»). Порядок: файл с полным описанием →
+ * карточка из саммари → документ графа с якорями → строка `messages_that_came_into_memory` со ссылками
+ * на все три. Сорвалась ступень — уже положенное снимается, и строка ложится `failed` с причиной:
+ * «пришло и не легло» тоже событие памяти, и молча его терять нельзя.
+ * 🛑 ГРАФ — ТОЛЬКО КОГДА ЯКОРЯ ПЕРЕДАНЫ. Без якорей документ графа ненаходим (закон 189-2), поэтому
+ * сохранение без описания моделью идёт прежним путём: файл, карточка, строка.
  */
 export async function keep(input: {
   about: string;
+  anchors?: string[];
   bytes: Uint8Array;
+  described_by?: string;
+  describe_ms?: number;
+  full?: string;
+  language?: string;
   mime: string;
   name: string;
-}): Promise<{ ok: true; card: ObjectCard; cardChars: number; ms: number } | { ok: false; error: string }> {
+  source?: string;
+  tags?: string[];
+  title?: string;
+  who?: string;
+}): Promise<
+  | { ok: true; card: ObjectCard; cardChars: number; messageId: number; ms: number }
+  | { ok: false; error: string; messageId?: number }
+> {
   const name = String(input.name ?? "").trim();
   const about = String(input.about ?? "").trim();
+  const full = String(input.full ?? "").trim();
+  const title = String(input.title ?? "").trim();
   if (!name) return { error: "no-name", ok: false };
   if (!input.bytes?.length) return { error: "empty-file", ok: false };
+
+  const kind = messageKindOf(kindOf(name, input.mime) ?? "text");
+  /** Строка таблицы — общая для удачи и отказа; отказ пишет её со своей причиной. */
+  const row = (extra: Record<string, unknown>) =>
+    insertMessage({
+      described_by: input.described_by || null,
+      describe_ms: Number.isFinite(input.describe_ms) ? input.describe_ms : null,
+      direction: "remember",
+      full_chars: full.length || null,
+      kind,
+      language: input.language || null,
+      mime: input.mime || null,
+      size_bytes: input.bytes.length,
+      source: input.source || "stand",
+      summary: about || null,
+      tags: Array.isArray(input.tags) ? input.tags : null,
+      title: title || name,
+      who: input.who || "stand",
+      ...extra,
+    });
+  const fail = async (error: string) => {
+    const r = await row({ error, status: "failed" });
+    return { error, messageId: r.ok ? r.id : undefined, ok: false as const };
+  };
 
   const text = isTextName(name);
   // 🛑 ОБЪЕКТ, КОТОРЫЙ СКЛАД НЕ ЧИТАЕТ, БЕЗ ОПИСАНИЯ НЕ ПРИНИМАЕТСЯ. Его карточка
@@ -173,8 +222,9 @@ export async function keep(input: {
   // а границу частей обязан назначить сам `fetch`.
   const form = new FormData();
   form.append("file", new Blob([input.bytes as BlobPart], { type: input.mime || "application/octet-stream" }), name);
-  form.append("title", name);
-  form.append("description", about);
+  form.append("title", title || name);
+  // Полное описание лежит рядом с файлом; без него — саммари, как было до 194-4.
+  form.append("description", full || about);
 
   let item: MediaRow | undefined;
   try {
@@ -186,14 +236,16 @@ export async function keep(input: {
     });
     const j = (await res.json().catch(() => ({}))) as { item?: MediaRow; ok?: boolean };
     // 🔒 ОТВЕТ ЧИТАЕТСЯ ЦЕЛИКОМ, А НЕ ПО КОДУ HTTP (закон 161).
-    if (!res.ok || j.ok === false || !j.item?.id) return { error: "store-refused", ok: false };
+    if (!res.ok || j.ok === false || !j.item?.id) return fail("store-refused");
     item = j.item;
   } catch {
-    return { error: "store-unreachable", ok: false };
+    return fail("store-unreachable");
   }
 
   const content = text ? new TextDecoder("utf-8").decode(input.bytes) : null;
-  const card = buildCard(name, about, content);
+  const card = buildCard(title ? `${name} — ${title}` : name, about, content);
+  const dropMedia = () => dataFetch(`/media/${item!.id}`, { method: "DELETE" }).catch(() => undefined);
+  const dropVector = () => dataFetch(`/vectors/${vectorId(item!.id)}`, { method: "DELETE" }).catch(() => undefined);
 
   try {
     const v = await dataJson<{ ok?: boolean }>("/vectors", {
@@ -208,11 +260,44 @@ export async function keep(input: {
     });
     if (v.ok === false) throw new Error("card refused");
   } catch {
-    await dataFetch(`/media/${item.id}`, { method: "DELETE" }).catch(() => undefined);
-    return { error: "card-failed", ok: false };
+    await dropMedia();
+    return fail("card-failed");
   }
 
-  return { card: cardOf(item), cardChars: card.length, ms: Date.now() - started, ok: true };
+  // Документ графа — имя по объекту, чтобы забывание находило своё по своей метке.
+  let ragSource: string | null = null;
+  if (Array.isArray(input.anchors)) {
+    ragSource = `object/${item.id}`;
+    const tags = Array.isArray(input.tags) && input.tags.length ? `\nТеги: ${input.tags.join(", ")}.` : "";
+    const g = await learn({
+      anchors: input.anchors,
+      origin: `объект памяти «${name}»`,
+      source: ragSource,
+      text: `${title || name}\n\n${about}${tags}`,
+    });
+    if (!g.accepted) {
+      await dropVector();
+      await dropMedia();
+      return fail(`graph-refused: ${g.refused ?? "unknown"}`);
+    }
+  }
+
+  const saved = await row({
+    object_id: item.id,
+    rag_source: ragSource,
+    status: "saved",
+    vector_id: vectorId(item.id),
+  });
+  if (!saved.ok) {
+    // 🛑 СТРОКА НЕ ЛЕГЛА — СНИМАЕТСЯ ВСЁ: файл, карточка и документ графа без строки — вещи, о которых
+    // таблица памяти не знает, то есть ровно та половина успеха, которую закон этой функции запрещает.
+    if (ragSource) await forgetDocuments(ragSource).catch(() => undefined);
+    await dropVector();
+    await dropMedia();
+    return { error: `row-failed: ${saved.error}`, ok: false };
+  }
+
+  return { card: cardOf(item), cardChars: card.length, messageId: saved.id, ms: Date.now() - started, ok: true };
 }
 
 /**
