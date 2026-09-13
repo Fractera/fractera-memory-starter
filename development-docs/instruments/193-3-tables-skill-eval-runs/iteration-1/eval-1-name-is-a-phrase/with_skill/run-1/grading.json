@@ -1,0 +1,30 @@
+{
+  "expectations": [
+    {
+      "evidence": "рода: people_who_work_on_his_team, people_who_work_on_his_team, people_who_work_on_his_team",
+      "passed": true,
+      "text": "Имя заведённого рода — фраза не меньше чем из четырёх слов (в журнале вызовов аргумент kind)"
+    },
+    {
+      "evidence": "ярлыков среди имён: нет",
+      "passed": true,
+      "text": "Имя не является ярлыком: не team, не team_members, не teammates, не colleagues"
+    },
+    {
+      "evidence": "отказы хранилища: нет",
+      "passed": true,
+      "text": "Ни один вызов не отвергнут хранилищем (в ответе руки нет слова «не годится» или «ярлык»)"
+    },
+    {
+      "evidence": "первый вызов: what_i_already_know",
+      "passed": true,
+      "text": "Перед записью агент звал what_i_already_know"
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "pass_rate": 1,
+    "passed": 4,
+    "total": 4
+  }
+}

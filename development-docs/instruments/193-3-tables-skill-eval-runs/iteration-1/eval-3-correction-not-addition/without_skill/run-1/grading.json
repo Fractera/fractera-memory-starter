@@ -1,0 +1,25 @@
+{
+  "expectations": [
+    {
+      "evidence": "write_value по родам: city_where_he_lives_now",
+      "passed": true,
+      "text": "Вызван write_value по роду city_where_he_lives_now"
+    },
+    {
+      "evidence": "promote_to_list вызван: 0 раз",
+      "passed": true,
+      "text": "promote_to_list НЕ вызван — иначе два города встали бы рядом как две правды"
+    },
+    {
+      "evidence": "в ответе сказано про историю: true",
+      "passed": true,
+      "text": "В ответе сказано, что прежнее значение ушло в историю (а не потеряно)"
+    }
+  ],
+  "summary": {
+    "failed": 0,
+    "pass_rate": 1,
+    "passed": 3,
+    "total": 3
+  }
+}
