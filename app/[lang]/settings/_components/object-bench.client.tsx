@@ -109,15 +109,28 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
       )}
 
       <div className="space-y-2">
-        <label className="block font-medium text-[length:var(--fs-small)]" htmlFor="obj-file">
-          {words.fileLabel}
-        </label>
+        <p className="block font-medium text-[length:var(--fs-small)]">{words.fileLabel}</p>
+        {/* 🔒 СИСТЕМНОЕ ПОЛЕ ФАЙЛА СКРЫТО, НО ЖИВО: владелец полчаса не видел в нём кнопки.
+            Кнопкой служит подпись с тем же размером шрифта, что у «Сохранить объект»;
+            фокус с клавиатуры остаётся на поле и подсвечивает подпись через peer. */}
         <input
-          className="block w-full text-[length:var(--fs-small)]"
+          className="peer sr-only"
           id="obj-file"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          onClick={(e) => {
+            e.currentTarget.value = "";
+          }}
           type="file"
         />
+        <label
+          className="inline-flex cursor-pointer items-center rounded-md border border-primary px-4 py-2 font-medium text-[length:var(--fs-body)] text-primary hover:bg-primary/10 peer-focus-visible:ring-2 peer-focus-visible:ring-primary"
+          htmlFor="obj-file"
+        >
+          {words.chooseFile}
+        </label>
+        <p className="text-[length:var(--fs-small)] text-muted-foreground">
+          {file ? file.name : words.noFile}
+        </p>
       </div>
 
       <div className="space-y-2">

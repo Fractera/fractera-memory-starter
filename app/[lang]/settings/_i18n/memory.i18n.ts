@@ -155,6 +155,8 @@ export type MemoryUi = {
       "too-large": string;
     };
     fileLabel: string;
+    chooseFile: string;
+    noFile: string;
     forget: string;
     forgot: string;
     hits: string;
@@ -584,6 +586,8 @@ const EN: MemoryUi = {
       "too-large": "The file is larger than 20 MB.",
     },
     fileLabel: "File",
+    chooseFile: "Choose file",
+    noFile: "No file chosen",
     forget: "Forget every object memory holds",
     forgot: "Forgotten: {n}.",
     hits: "Objects closer than {threshold}: {n}.",
@@ -1003,6 +1007,8 @@ const RU: MemoryUi = {
       "too-large": "Файл больше 20 МБ.",
     },
     fileLabel: "Файл",
+    chooseFile: "Выбрать файл",
+    noFile: "Файл не выбран",
     forget: "Забыть все объекты памяти",
     forgot: "Забыто: {n}.",
     hits: "Объектов ближе {threshold}: {n}.",
