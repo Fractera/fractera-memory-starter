@@ -168,11 +168,14 @@ function passToDoor(req, res, door) {
     return send(res, 503, { error: "no-machine-secret", ok: false, what_happened: say("inside-memory") })
   }
   const type = String(req.headers["content-type"] ?? "")
-  if (!type.toLowerCase().startsWith("multipart/form-data")) {
+  // 🔒 С 194-16 ТЕЛ ДВА: форма с файлом или JSON с `url` — тогда файл скачивает сама память. Остальное дверь не
+  // понимает, и отказ звучит до того, как тело пойдёт по петле.
+  const lower = type.toLowerCase()
+  if (!lower.startsWith("multipart/form-data") && !lower.startsWith("application/json")) {
     return send(res, 400, {
-      error: "not-multipart",
+      error: "unsupported-body",
       ok: false,
-      why: "keep_object принимает multipart/form-data: файл в части file, остальные параметры — полями формы",
+      why: "keep_object принимает multipart/form-data с файлом в части file или application/json с url",
     })
   }
   const headers = { "content-type": type, "x-data-secret": SECRET }

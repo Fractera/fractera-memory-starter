@@ -65,7 +65,7 @@ await sql("DELETE FROM messages_that_came_into_memory WHERE who = ? AND object_i
 // ── договор объявляет метод ─────────────────────────────────────────────────
 const c = await (await fetch(`${BASE}/v1/contract`, { headers: { "x-memory-key": MEMORY_KEY } })).json().catch(() => ({}))
 const m = (c.methods ?? []).find((x) => x.name === "keep_object")
-say(m?.body === "multipart" && (m?.params ?? []).some((p) => p.name === "file" && p.required), `договор ${c.version}: keep_object body=${m?.body}, file обязателен`)
+say(m?.body === "multipart | json" && ["file", "url"].every((n) => (m?.params ?? []).some((p) => p.name === n)), `договор ${c.version}: keep_object body=${m?.body}, есть file и url`)
 
 // ── негатив 1: без ключа ────────────────────────────────────────────────────
 const noKey = new FormData()
@@ -80,7 +80,7 @@ const r2 = await fetch(`${BASE}/v1/keep_object`, {
   method: "POST",
 })
 const j2 = await r2.json().catch(() => ({}))
-say(r2.status === 400 && j2.error === "not-multipart", `JSON вместо формы → ${r2.status} ${j2.error}`)
+say(r2.status === 400 && j2.error === "no-url", `JSON без url → ${r2.status} ${j2.error}`)
 
 // ── негатив 3: род, которого память не читает ───────────────────────────────
 const exe = new FormData()
@@ -139,6 +139,50 @@ if (row) {
   }
   say(doc?.status === "processed", `3 граф: документ ${doc?.id} по ${row.rag_source} → ${doc?.status ?? "не найден"} за ${Math.round((Date.now() - tg) / 1000)} с`)
 }
+
+// ── 194-16: по адресу ───────────────────────────────────────────────────────
+const byUrl = (body) =>
+  fetch(`${BASE}/v1/keep_object`, {
+    body: JSON.stringify({ who: WHO, author: AUTHOR, source: "api", ...body }),
+    headers: { "Content-Type": "application/json", "x-memory-key": MEMORY_KEY },
+    method: "POST",
+  })
+const before = (await rowsOfProbe()).length
+for (const [url, want] of [
+  ["http://127.0.0.1:3300/health", "url-forbidden"],
+  ["http://localhost:3700/v1/health", "url-forbidden"],
+  ["http://169.254.169.254/latest/meta-data/", "url-forbidden"],
+  ["ftp://example.com/file.txt", "bad-url"],
+  ["https://www.fractera.ai/", "is-a-page"],
+]) {
+  const r = await byUrl({ url })
+  const j = await r.json().catch(() => ({}))
+  say(r.status === 400 && j.error === want, `адрес ${url} → ${r.status} ${j.error}`)
+}
+say((await rowsOfProbe()).length === before, "после отказов по адресу новых строк нет")
+
+const ru = await byUrl({ summary: "Проба 194-16: страница ошибки 404 с космонавтом, скачанная памятью по адресу.", title: "Проба 194-16 по адресу", url: IMAGE_URL })
+const ju = await ru.json().catch(() => ({}))
+say(ru.status === 200 && ju.ok === true && ju.described === false && ju.url === IMAGE_URL, `по адресу: ${ru.status} messageId ${ju.messageId} described ${ju.described} url ${ju.url}${ju.ok ? "" : " " + JSON.stringify(ju).slice(0, 200)}`)
+if (ju.messageId) {
+  const rowU = (await sql("SELECT object_id, size_bytes, source, kind FROM messages_that_came_into_memory WHERE id = ?", [ju.messageId])).rows?.[0]
+  say(rowU?.size_bytes === bytes.length && rowU?.kind === "image" && rowU?.source === "api", `по адресу: размер ${rowU?.size_bytes} = ${bytes.length}, род ${rowU?.kind}`)
+}
+
+// ── 194-16: remember с вложениями ───────────────────────────────────────────
+const MEDIA_URL = process.env.MEDIA_URL ?? "https://raw.githubusercontent.com/Fractera/fractera-memory-starter/main/README.md"
+const rr = await fetch(`${BASE}/v1/remember`, {
+  body: JSON.stringify({ media: [{ url: "http://127.0.0.1:3300/health" }, { url: MEDIA_URL }], text: "проба вложений прибором 194-16", who: WHO }),
+  headers: { "Content-Type": "application/json", "x-memory-key": MEMORY_KEY },
+  method: "POST",
+})
+const jr = await rr.json().catch(() => ({}))
+const objs = jr.objects ?? []
+console.log(`remember: ${rr.status} objects=${JSON.stringify(objs).slice(0, 400)} params=${JSON.stringify(jr.params ?? []).slice(0, 200)}`)
+say(objs.length === 2, `remember вернул objects по каждому вложению: ${objs.length}`)
+say(objs[0]?.ok === false && objs[0]?.error === "url-forbidden", `вложение в петлю → ${objs[0]?.error}`)
+say(objs[1]?.ok === true && Boolean(objs[1]?.messageId), `вложение README → ok, messageId ${objs[1]?.messageId}, род ${objs[1]?.kind}`)
+say(!(jr.params ?? []).some((p) => p.name === "media" && p.state === "bad_form"), "media больше не отвергается формой без kind")
 
 // ── уборка по метке ─────────────────────────────────────────────────────────
 const mine = (await sql("SELECT object_id, vector_id, rag_source FROM messages_that_came_into_memory WHERE who = ?", [WHO])).rows ?? []
