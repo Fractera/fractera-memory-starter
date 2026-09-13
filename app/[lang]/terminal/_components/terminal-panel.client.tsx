@@ -71,11 +71,14 @@ const RESTORE_MODES = [
   .map((mode) => `${ESC}[${mode}`)
   .join("");
 
-type Mode = "claude-check" | "claude-login" | "system";
+type Mode = "build" | "claude-check" | "claude-login" | "system";
 
 type Status = "closed" | "connected" | "connecting" | "idle";
 
-export function TerminalPanel({ lang }: { lang: string }) {
+// 🔒 ПАНЕЛЬ ОДНА НА ОБА ТЕРМИНАЛА, РАЗЛИЧАЕТ ИХ НАЧАЛЬНЫЙ РЕЖИМ (189-8).
+// Вторая копия панели под строителя разошлась бы с первой на первой же правке —
+// у неё внутри фильтр мыши, восстановление экрана и разбор ссылки входа.
+export function TerminalPanel({ lang, start = "claude-check" }: { lang: string; start?: Mode }) {
   const [status, setStatus] = useState<Status>("idle");
   const [note, setNote] = useState("");
   const [authUrl, setAuthUrl] = useState<string | null>(null);
@@ -216,14 +219,14 @@ export function TerminalPanel({ lang }: { lang: string }) {
   // спрашивать, вошли ли уже (измерено 114-8: начинает обмен безусловно), и
   // вкладка, просящая вход у давно вошедшего, читается как «вход не сохранился».
   useEffect(() => {
-    connect("claude-check");
+    connect(start);
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
       wsRef.current?.close();
     };
-  }, [connect]);
+  }, [connect, start]);
 
   const handleData = useCallback(
     (data: string) => {

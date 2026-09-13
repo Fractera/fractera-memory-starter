@@ -194,6 +194,12 @@ async function MemoryPageBody({
           // OpenAI»). Claude — отдельная страница входа в соседней вкладке, OpenAI —
           // раздел этой страницы; поэтому первое вставляется ссылкой перед вторым, а в
           // `MEMORY_SECTIONS` живёт только второе.
+          // 🔒 «ПОСТРОЙТЕ ЭТОТ ПРОДУКТ» СТОИТ ПОСЛЕДНИМ, И ЭТО НЕ ВКУС (189-8,
+          // слово владельца: «внизу нужна вкладка»). Порядок меню — порядок
+          // осторожности: сверху то, что читают и настраивают, внизу то, что
+          // меняет сам продукт. Пункт уводит на отдельную страницу и потому не
+          // значится в MEMORY_SECTIONS: тот массив — единственный источник
+          // разделов, и запись в нём означала бы раздел, которого нет.
           menu={MEMORY_SECTIONS.flatMap((id) => {
             const item = {
               active: id === active,
@@ -203,7 +209,10 @@ async function MemoryPageBody({
             return id === "openai"
               ? [{ href: `/${lang}/terminal`, label: ui.terminalLabel, newTab: true }, item]
               : [item];
-          })}
+          })// 🔒 `active: false` — ЧЕСТНО: страница строителя живёт за пределами этого
+          // меню, и подсветить её как открытый раздел значило бы соврать о том,
+          // где человек находится.
+          .concat([{ active: false, href: `/${lang}/build`, label: ui.buildLabel }])}
           menuTitle={ui.menuTitle}
           menuWord={ui.menuWord}
           tabs={active === "passport" ? passportTabs : testTabs}

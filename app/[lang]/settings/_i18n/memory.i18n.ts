@@ -26,6 +26,8 @@ export type MemoryUi = {
   menuWord: string;
   /** Пункт меню, уводящий на страницу входа в подписку Claude (180-2). */
   terminalLabel: string;
+  /** Пункт меню внизу: терминал строителя продукта (189-8). */
+  buildLabel: string;
   /** Что сказать, когда документа паспорта нет на диске (182-1). */
   passportMissing: string;
   /** Слова карточки ключа OpenAI — форму задаёт сама карточка (181-1). */
@@ -377,6 +379,7 @@ const EN: MemoryUi = {
   menuWord: "Menu",
   passportMissing:
     "The passport document is not on disk yet: development-docs/PASSPORT.md. It is written first — before any code.",
+  buildLabel: "Build this product",
   terminalLabel: "Claude subscription",
   openai: {
     badFormat: "That does not look like an OpenAI key — they start with sk-",
@@ -739,6 +742,7 @@ const RU: MemoryUi = {
   menuWord: "Меню",
   passportMissing:
     "Документа паспорта пока нет на диске: development-docs/PASSPORT.md. Он пишется первым — раньше кода.",
+  buildLabel: "Постройте этот продукт",
   terminalLabel: "Подписка Claude",
   openai: {
     badFormat: "Это не похоже на ключ OpenAI — они начинаются с sk-",
