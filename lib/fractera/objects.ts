@@ -1,6 +1,7 @@
 import { dataFetch, dataJson, dataService } from "./data-service";
 import { forgetDocuments, learn } from "./knowledge";
 import { getMessage, insertMessage } from "@/lib/messages.mjs";
+import type { PreviewItem } from "@/_tools/object-view/client/object-preview.client";
 import { kindOf, messageKindOf } from "@/lib/describe.mjs";
 
 // ОБЪЕКТНОЕ ХРАНИЛИЩЕ — ВЕЩЬ ЦЕЛИКОМ, С ИДЕНТИФИКАТОРОМ (192-1).
@@ -89,11 +90,32 @@ export type ObjectHit = ObjectCard & {
 type MediaRow = {
   created_at?: string;
   description?: string;
+  duration?: number | null;
+  extension?: string;
+  height?: number | null;
   id: string;
   mime_type?: string;
   name?: string;
   size?: number;
+  width?: number | null;
 };
+
+/**
+ * Поля строки медиатеки, которые нужны просмотру объекта (194-8).
+ * 🔒 ТИП ОБЪЯВЛЕН У ИНСТРУМЕНТА, ЗДЕСЬ ТОЛЬКО ИМПОРТ: две копии одной формы разошлись бы молча.
+ */
+export type { PreviewItem };
+
+const previewOf = (m: MediaRow): PreviewItem => ({
+  duration: m.duration ?? null,
+  extension: String(m.extension ?? String(m.name ?? "").split(".").pop() ?? "").toLowerCase(),
+  height: m.height ?? null,
+  id: String(m.id),
+  mime_type: String(m.mime_type ?? ""),
+  name: String(m.name ?? ""),
+  size: Number(m.size ?? 0),
+  width: m.width ?? null,
+});
 
 const cardOf = (m: MediaRow): ObjectCard => ({
   about: String(m.description ?? ""),
@@ -437,13 +459,16 @@ export async function fileOf(
  */
 export async function messageView(
   messageId: number,
-): Promise<{ ok: true; object: ObjectCard | null; row: Record<string, unknown> } | { ok: false; error: string }> {
+): Promise<
+  | { ok: true; media: PreviewItem | null; object: ObjectCard | null; row: Record<string, unknown> }
+  | { ok: false; error: string }
+> {
   if (!Number.isInteger(messageId) || messageId <= 0) return { error: "no-id", ok: false };
   try {
     const row = (await getMessage(messageId)) as Record<string, unknown> | null;
     if (!row) return { error: "not-found", ok: false };
     const media = row.object_id ? (await mediaRows()).get(String(row.object_id)) : undefined;
-    return { object: media ? cardOf(media) : null, ok: true, row };
+    return { media: media ? previewOf(media) : null, object: media ? cardOf(media) : null, ok: true, row };
   } catch {
     return { error: "store-unreachable", ok: false };
   }

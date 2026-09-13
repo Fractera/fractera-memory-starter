@@ -175,6 +175,22 @@ export type MemoryUi = {
     savedRow: string;
     savedSummary: string;
     savedTitle: string;
+    /** 194-8: подписи просмотра объекта — слова медиатеки панели дословно, плюс аудио. */
+    preview: {
+      close: string;
+      code: string;
+      kindAudio: string;
+      kindFile: string;
+      kindHtml: string;
+      kindImage: string;
+      kindMarkdown: string;
+      kindPdf: string;
+      kindVideo: string;
+      open: string;
+      preview: string;
+      reading: string;
+      unreadable: string;
+    };
     forget: string;
     forgot: string;
     hits: string;
@@ -636,6 +652,21 @@ const EN: MemoryUi = {
     savedRow: "Row in messages_that_came_into_memory",
     savedSummary: "Summary — in the table row and the search card",
     savedTitle: "What went into memory",
+    preview: {
+      close: "Close",
+      code: "Code",
+      kindAudio: "Audio",
+      kindFile: "File",
+      kindHtml: "HTML",
+      kindImage: "Image",
+      kindMarkdown: "Markdown",
+      kindPdf: "PDF",
+      kindVideo: "Video",
+      open: "Open",
+      preview: "Preview",
+      reading: "Reading…",
+      unreadable: "Could not read the file",
+    },
     forget: "Forget every object memory holds",
     forgot: "Forgotten: {n}.",
     hits: "Objects closer than {threshold}: {n}.",
@@ -1092,6 +1123,21 @@ const RU: MemoryUi = {
     savedRow: "Строка messages_that_came_into_memory",
     savedSummary: "Саммари — в строке таблицы и в карточке поиска",
     savedTitle: "Что легло в память",
+    preview: {
+      close: "Закрыть",
+      code: "Код",
+      kindAudio: "Аудио",
+      kindFile: "Файл",
+      kindHtml: "HTML",
+      kindImage: "Изображение",
+      kindMarkdown: "Markdown",
+      kindPdf: "PDF",
+      kindVideo: "Видео",
+      open: "Открыть",
+      preview: "Просмотр",
+      reading: "Читаю…",
+      unreadable: "Файл прочитать не удалось",
+    },
     forget: "Забыть все объекты памяти",
     forgot: "Забыто: {n}.",
     hits: "Объектов ближе {threshold}: {n}.",

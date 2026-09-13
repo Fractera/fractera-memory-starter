@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { MemoryUi } from "../_i18n/memory.i18n";
+import { ObjectPreview, type PreviewItem } from "@/_tools/object-view/client/object-preview.client";
 
 // ЭКРАНЫ ОБЪЕКТНОГО ХРАНИЛИЩА: ЗАГРУЗКА И ПОИСК (192-3).
 //
@@ -31,7 +32,7 @@ const fill = (s: string, v: Record<string, string | number>) =>
 const TEXT_EXT = /\.(csv|html?|json|markdown|md|tsv|txt|xml|ya?ml)$/i;
 
 /** Что легло в память: строка таблицы как есть и карточка объекта с полным описанием (194-5). */
-type Saved = { object: Card | null; row: Record<string, unknown> | null };
+type Saved = { media: PreviewItem | null; object: Card | null; row: Record<string, unknown> | null };
 
 /** Файл объекта — через свою дверь: ключ склада в браузер не уезжает. */
 const fileUrl = (id: string) => `/api/fractera/object-file?id=${encodeURIComponent(id)}`;
@@ -177,7 +178,7 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
         try {
           const v = await fetch(`/api/fractera/object-test?message=${j.messageId}`, { cache: "no-store" });
           const s = (await v.json()) as Saved & { ok?: boolean };
-          if (v.ok && s.ok && s.row) setSaved({ object: s.object ?? null, row: s.row });
+          if (v.ok && s.ok && s.row) setSaved({ media: s.media ?? null, object: s.object ?? null, row: s.row });
           else setSavedMissing(true);
         } catch {
           setSavedMissing(true);
@@ -324,25 +325,12 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
         <section className="space-y-4 rounded-md border border-border p-4">
           <h3 className="font-medium text-[length:var(--fs-body)]">{words.savedTitle}</h3>
 
-          {saved.object && (
+          {saved.media && (
             <div className="space-y-2">
               <p className="font-medium text-[length:var(--fs-small)]">{words.savedFile}</p>
-              {saved.row.kind === "image" ? (
-                // eslint-disable-next-line @next/next/no-img-element -- приватный файл: оптимизатор пошёл бы без куки (закон чата 96)
-                <img alt={saved.object.name} className="max-h-80 max-w-full rounded-md border border-border" src={fileUrl(saved.object.id)} />
-              ) : saved.row.kind === "audio" ? (
-                <audio className="w-full" controls src={fileUrl(saved.object.id)} />
-              ) : saved.row.kind === "video" ? (
-                <video className="max-h-80 max-w-full rounded-md" controls src={fileUrl(saved.object.id)} />
-              ) : null}
-              <a
-                className="inline-block text-[length:var(--fs-small)] text-primary underline"
-                href={fileUrl(saved.object.id)}
-                rel="noreferrer"
-                target="_blank"
-              >
-                {words.openFile}: {saved.object.name}
-              </a>
+              {/* 🔒 ОБЪЕКТ ПОКАЗЫВАЕТ ПЕРЕНЕСЁННЫЙ ИНСТРУМЕНТ, А НЕ СВОЯ ВЁРСТКА (194-8, слово владельца:
+                  «скопировать и вставить жёстко перенести и адаптировать»). Своё превью 194-5 удалено. */}
+              <ObjectPreview fileUrl={fileUrl(saved.media.id)} inline item={saved.media} labels={words.preview} />
             </div>
           )}
 
