@@ -65,12 +65,15 @@ const LISTS: ReadonlyArray<readonly [string, string]> = [
 /**
  * Снимок извлечённого — Markdown-файл, который ложится в объектное хранилище как объект (195-2).
  *
- * 🔒 ОБЪЁМ ПО УМОЛЧАНИЮ — ТЕКСТ, СТРУКТУРА И МЕДИА ПО АТРИБУТАМ; ИТОГОВЫЙ HTML — ТОЛЬКО ПО ПРОСЬБЕ. Решение владельца (паспорт
- * §20.6 ③): «по умолчанию первый вариант в случае если пользователь настаивает на детальном сохранении… нужно сохранить вторую версию».
- * 🔒 MARKDOWN, А НЕ JSON: модель читает его как документ, карточка поиска берёт его начало (заголовок, адрес, текст), просмотрщик
- * объекта показывает его без своей вёрстки.
+ * 🔒 ПО УМОЛЧАНИЮ — ОПИСАНИЕ И СТРУКТУРА, БЕЗ ВСЕГО ТЕКСТА СТРАНИЦЫ (195-13). Решение владельца 2026-09-14, дословно: «из требования по работе
+ * с ссылками убираем необходимость извлекать и сохранять и темы полностью… только описание и структуру».
+ * ✗ ОПЛАЧЕНО ЕГО ЖЕ ЭКРАНОМ (запись 35): в снимок уходил весь текст, и полное описание ролика вышло пересказом спонсоров и ссылок. **Что
+ * положено в снимок, то и станет описанием** — объём снимка есть решение о том, что память будет знать.
+ * 🔒 СТРАНИЦА ЦЕЛИКОМ — ТОЛЬКО ПО ЯВНОЙ ОТМЕТКЕ ЧЕЛОВЕКА (`whole`): тогда едут и весь видимый текст, и итоговый HTML — прежний «детальный»
+ * объём паспорта §20.6 ③, нужный для близкой копии сайта.
+ * 🔒 MARKDOWN, А НЕ JSON: модель читает его как документ, карточка поиска берёт его начало, просмотрщик показывает без своей вёрстки.
  */
-export function snapshotOf(page: Record<string, unknown>, opts: { html?: boolean } = {}): string {
+export function snapshotOf(page: Record<string, unknown>, opts: { whole?: boolean } = {}): string {
   const s = (v: unknown) => (v == null || v === "" ? "—" : String(v))
   const lines: string[] = [
     `# ${s(page.title)}`,
@@ -82,13 +85,18 @@ export function snapshotOf(page: Record<string, unknown>, opts: { html?: boolean
     `- Канонический адрес: ${s(page.canonical)}`,
     `- Страница дождалась load: ${page.load_reached === false ? "нет — снято то, что успело отрисоваться" : "да"}`,
     `- Снимок снят: ${new Date().toISOString()}`,
-    `- Объём снимка: ${opts.html ? "полный — с итоговым HTML" : "стандартный — текст, структура, медиа по атрибутам"}`,
+    `- Объём снимка: ${opts.whole ? "полный — весь текст и итоговый HTML" : "описание и структура; весь текст страницы не сохраняется"}`,
+    `- Длина текста на странице: ${s(page.text_length)} знаков (в снимок не входит)`,
   ]
+  const thumb = pageThumbnail(page)
+  if (thumb) lines.push(`- Сниппет страницы: ${thumb}`)
   if (page.meta && typeof page.meta === "object") {
     lines.push("", "## Мета", "", "```json", JSON.stringify(page.meta, null, 2), "```")
   }
-  lines.push("", "## Весь видимый текст", "", s(page.text))
-  if (page.text_truncated) lines.push("", `(текст обрезан службой браузера: всего ${s(page.text_length)} знаков)`)
+  if (opts.whole) {
+    lines.push("", "## Весь видимый текст", "", s(page.text))
+    if (page.text_truncated) lines.push("", `(текст обрезан службой браузера: всего ${s(page.text_length)} знаков)`)
+  }
   for (const [key, label] of LISTS) {
     const l = page[key] as Listed | undefined
     if (!l) continue
@@ -96,7 +104,7 @@ export function snapshotOf(page: Record<string, unknown>, opts: { html?: boolean
     if (l.items?.length) lines.push("", "```json", JSON.stringify(l.items, null, 2), "```")
     if ((l.total ?? 0) > (l.items?.length ?? 0)) lines.push("", `(в снимке ${l.items?.length ?? 0} из ${l.total})`)
   }
-  if (opts.html && typeof page.html === "string") {
+  if (opts.whole && typeof page.html === "string") {
     lines.push("", `## Итоговый HTML — ${s(page.html_length)} знаков`, "", "````html", page.html, "````")
     if (page.html_truncated) lines.push("", "(HTML обрезан службой браузера)")
   }
@@ -122,6 +130,23 @@ export function pageRefusal(status: unknown, title: unknown): { error: "page-ref
 export function statusOfSnapshot(snapshot: string): number | null {
   const m = /^- Код ответа: (\d{3})$/m.exec(snapshot)
   return m ? Number(m[1]) : null
+}
+
+/**
+ * Сниппет страницы — её собственная картинка предпросмотра (195-13).
+ *
+ * 🎯 СЛОВО ВЛАДЕЛЬЦА: «сниппет любого сайта или YouTube видео если он существует нужно показать» картинкой. У ролика её называет API, у обычной
+ * страницы — её же мета: `og:image`, затем `twitter:image`.
+ * 🔒 БЕРЁТСЯ ИЗ МЕТА СТРАНИЦЫ, А НЕ УГАДЫВАЕТСЯ ПО ШАБЛОНУ. Существование адреса проверяет тот, кто будет его скачивать (закон 195-4: адрес,
+ * названный чужой стороной, проверяется фактом) — здесь мы только называем его.
+ */
+export function pageThumbnail(page: Record<string, unknown>): string | null {
+  const meta = (page.meta ?? {}) as Record<string, unknown>
+  for (const name of ["og:image", "og:image:secure_url", "twitter:image", "twitter:image:src"]) {
+    const v = meta[name]
+    if (typeof v === "string" && /^https?:\/\//i.test(v.trim())) return v.trim()
+  }
+  return null
 }
 
 /** Имя файла снимка: `web-<хост-и-путь>.md` — латиница, цифры и дефисы, до 80 знаков. */

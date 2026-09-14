@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { benchGuard } from "@/lib/bench-guard"
 import { describe } from "@/lib/describe.mjs"
 import { getSavedByUrl } from "@/lib/messages.mjs"
-import { pageRefusal, readLinks, snapshotName, snapshotOf } from "@/lib/fractera/web"
+import { pageRefusal, pageThumbnail, readLinks, snapshotName, snapshotOf } from "@/lib/fractera/web"
 import { readVideo, YOUTUBE_REFUSALS } from "@/lib/fractera/youtube"
 import { youtubeId } from "@/lib/youtube-chapters.mjs"
 
@@ -35,9 +35,9 @@ export async function POST(request: Request) {
   const gate = await benchGuard(request)
   if (gate.denied) return gate.denied
 
-  let body: { html?: unknown; url?: unknown }
+  let body: { url?: unknown; whole?: unknown }
   try {
-    body = (await request.json()) as { html?: unknown; url?: unknown }
+    body = (await request.json()) as { url?: unknown; whole?: unknown }
   } catch {
     return deny("bad-json", 400)
   }
@@ -79,9 +79,20 @@ export async function POST(request: Request) {
   const refused = pageRefusal(page.status, page.title)
   if (refused) return deny(refused.error, 422, refused.why)
 
-  const snapshot = snapshotOf(page, { html: body.html === true })
+  const snapshot = snapshotOf(page, { whole: body.whole === true })
   const name = snapshotName(url)
   const r = await describe({ bytes: new TextEncoder().encode(snapshot), kind: "web", mime: "text/markdown", name, url })
   if (!r.ok) return deny(r.refusal, 502, r.why)
-  return NextResponse.json({ ...r, name, snapshot, snapshotChars: snapshot.length, source: "ai-browser", url })
+  // 🔒 СНИППЕТ СТРАНИЦЫ ЕДЕТ ТЕМ ЖЕ ПОЛЕМ, ЧТО ОБЛОЖКА РОЛИКА (195-13): у экрана и у двери сохранения одна дорога для обоих случаев.
+  // Существование адреса проверит тот, кто его скачивает (`fetchUrl` в `link-ingest`) — закон 195-4 «адрес проверяется фактом».
+  const snippet = pageThumbnail(page)
+  return NextResponse.json({
+    ...r,
+    name,
+    snapshot,
+    snapshotChars: snapshot.length,
+    source: "ai-browser",
+    ...(snippet ? { thumbnail: { height: 0, name: "og:image", url: snippet, width: 0 } } : { thumbnail: null }),
+    url,
+  })
 }

@@ -62,6 +62,10 @@ export type LinkBenchWords = {
     chapterOfAsked: string;
     noChapters: string;
     keepThumbnail: string;
+    /** 195-13: сниппет — картинкой; объём снимка — описание и структура. */
+    keepSnippet: string;
+    snippetTitle: string;
+    snippetFailed: string;
   };
   /** 195-8: подписи вкладки «Поиск» — поверх слов поиска объектов, вёрстка у них одна (`ObjectSearch`). */
   search: {
@@ -148,9 +152,12 @@ function Pre({ value }: { value: string }) {
  * 🔒 УЖЕ СОХРАНЁННАЯ ССЫЛКА — ТОТ ЖЕ БЛОК И СТРОКА СЛОВАМИ, А НЕ ТИХИЙ УСПЕХ: «ничего не сделано» должно быть видно.
  */
 function LinkSave({ savedWords, url, words }: { savedWords: SavedViewWords; url: string; words: LinkBenchWords }) {
-  const [html, setHtml] = useState(false);
+  // 195-13: по умолчанию в память едут ОПИСАНИЕ И СТРУКТУРА; «страница целиком» (весь текст и HTML) — только по этой отметке.
+  const [whole, setWhole] = useState(false);
   // 195-4: обложку ролика память кладёт отдельным связанным объектом; по умолчанию да — она и есть «связанная картинка».
   const [keepThumb, setKeepThumb] = useState(true);
+  // 195-13: сохранённый сниппет показывается КАРТИНКОЙ из склада памяти (решение владельца «Картинкой в блоке»).
+  const [savedThumbId, setSavedThumbId] = useState<string | null>(null);
   const [describing, setDescribing] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -172,6 +179,17 @@ function LinkSave({ savedWords, url, words }: { savedWords: SavedViewWords; url:
   const refusal = (j: { error?: string; why?: string }) =>
     `${words.error}: ${j.error ?? "request-failed"}${j.why ? ` — ${j.why}` : ""}`;
 
+  /** Показать сохранённый сниппет картинкой: читаем связанную запись и берём её объект из склада памяти (195-13). */
+  async function showThumb(messageId: number) {
+    try {
+      const v = await fetch(`/api/fractera/object-test?message=${messageId}`, { cache: "no-store" });
+      const s = (await v.json()) as Saved & { ok?: boolean };
+      if (v.ok && s.ok && s.media?.id) setSavedThumbId(String(s.media.id));
+    } catch {
+      // Картинки не будет — вместо неё останется адрес в блоке «что легло».
+    }
+  }
+
   async function show(messageId: number) {
     try {
       const v = await fetch(`/api/fractera/object-test?message=${messageId}`, { cache: "no-store" });
@@ -191,7 +209,7 @@ function LinkSave({ savedWords, url, words }: { savedWords: SavedViewWords; url:
     setExisting(false);
     try {
       const r = await fetch("/api/fractera/link-test/describe", {
-        body: JSON.stringify({ html, url }),
+        body: JSON.stringify({ url, whole }),
         cache: "no-store",
         headers: { "content-type": "application/json" },
         method: "POST",
@@ -259,7 +277,15 @@ function LinkSave({ savedWords, url, words }: { savedWords: SavedViewWords; url:
       // 195-4: адрес обложки едет только с согласия человека — иначе память положит лишний объект, о котором он не просил.
       if (keepThumb && draft.thumbnail?.url) form.append("thumbnail", draft.thumbnail.url);
       const r = await fetch("/api/fractera/link-ingest", { body: form, method: "POST" });
-      const j = (await r.json()) as { error?: string; existing?: number; messageId?: number; ms?: number; ok?: boolean; why?: string };
+      const j = (await r.json()) as {
+        error?: string;
+        existing?: number;
+        messageId?: number;
+        ms?: number;
+        ok?: boolean;
+        thumbnail?: { error?: string; messageId?: number; why?: string } | null;
+        why?: string;
+      };
       if (j.ok && j.existing) {
         setExisting(true);
         setDraft(null);
@@ -274,7 +300,11 @@ function LinkSave({ savedWords, url, words }: { savedWords: SavedViewWords; url:
       setDraft(null);
       setFull("");
       setAbout("");
+      setSavedThumbId(null);
       await show(j.messageId);
+      // 🔒 СНИППЕТ ПОКАЗЫВАЕТСЯ ИЗ СКЛАДА ПАМЯТИ, А НЕ С ЧУЖОГО САЙТА (195-13): так видно то, что ЛЕГЛО, а не то, что сайт отдаёт сейчас.
+      if (j.thumbnail?.messageId) await showThumb(j.thumbnail.messageId);
+      else if (j.thumbnail?.error) setError(fill(words.save.snippetFailed, { error: j.thumbnail.error }));
     } catch (e) {
       setError(refusal({ error: "request-failed", why: String((e as Error).message) }));
     } finally {
@@ -286,7 +316,7 @@ function LinkSave({ savedWords, url, words }: { savedWords: SavedViewWords; url:
     <div className="space-y-4 border-border border-t pt-4" data-link-save="">
       <div className="flex flex-wrap items-center gap-3">
         <label className="flex items-center gap-2 text-[length:var(--fs-small)]">
-          <input checked={html} disabled={describing || busy} onChange={(e) => setHtml(e.target.checked)} type="checkbox" />
+          <input checked={whole} disabled={describing || busy} onChange={(e) => setWhole(e.target.checked)} type="checkbox" />
           {words.save.htmlWhole}
         </label>
         <Button disabled={describing || busy} onClick={() => void describeLink()} size="sm" type="button" variant="outline">
@@ -321,12 +351,24 @@ function LinkSave({ savedWords, url, words }: { savedWords: SavedViewWords; url:
           ) : (
             <p className="text-[length:var(--fs-small)] text-muted-foreground">{words.save.noChapters}</p>
           )}
-          {draft.thumbnail && (
-            <label className="flex items-center gap-2 text-[length:var(--fs-small)]">
-              <input checked={keepThumb} disabled={busy} onChange={(e) => setKeepThumb(e.target.checked)} type="checkbox" />
-              {fill(words.save.keepThumbnail, { height: draft.thumbnail.height, width: draft.thumbnail.width })}
-            </label>
-          )}
+        </div>
+      )}
+
+      {/* 🔒 СНИППЕТ ВИДЕН И ДО СОХРАНЕНИЯ (195-13): человек решает, класть ли картинку, глядя на неё, а не на её адрес. Здесь она приходит
+          прямо с чужого сайта — в память ещё ничего не легло, и подменять это видом из склада было бы ложью о состоянии. */}
+      {draft?.thumbnail?.url && (
+        <div className="space-y-2" data-draft-snippet="">
+          <img
+            alt={words.save.snippetTitle}
+            className="max-h-64 w-auto rounded-md border border-border"
+            src={draft.thumbnail.url}
+          />
+          <label className="flex items-center gap-2 text-[length:var(--fs-small)]">
+            <input checked={keepThumb} disabled={busy} onChange={(e) => setKeepThumb(e.target.checked)} type="checkbox" />
+            {draft.thumbnail.width
+              ? fill(words.save.keepThumbnail, { height: draft.thumbnail.height, width: draft.thumbnail.width })
+              : words.save.keepSnippet}
+          </label>
         </div>
       )}
 
@@ -371,6 +413,19 @@ function LinkSave({ savedWords, url, words }: { savedWords: SavedViewWords; url:
       {existing && (
         <p className="rounded-md border border-border border-dashed p-3 text-[length:var(--fs-small)]">{words.save.existing}</p>
       )}
+      {/* 🔒 СНИППЕТ — КАРТИНКОЙ, РЕШЕНИЕ ВЛАДЕЛЬЦА 2026-09-14 «Картинкой в блоке» (195-13). Отдаёт своя дверь склада: ключ склада в браузер не
+          уезжает, и видно именно сохранённое изображение. */}
+      {savedThumbId && (
+        <div className="space-y-2" data-saved-snippet={savedThumbId}>
+          <p className="font-medium text-[length:var(--fs-small)]">{words.save.snippetTitle}</p>
+          <img
+            alt={words.save.snippetTitle}
+            className="max-h-80 w-auto rounded-md border border-border"
+            src={`/api/fractera/object-file?id=${encodeURIComponent(savedThumbId)}`}
+          />
+        </div>
+      )}
+
       {saved?.row && <SavedView fullClassName={WINDOW} saved={saved} words={savedWords} />}
     </div>
   );
