@@ -55,9 +55,13 @@ const before = await rowsCount()
 
 // ── A1: дверь описания на 403 ──────────────────────────────────────────────
 const t = Date.now()
-const d = await fetch(`${BASE}/api/fractera/link-test/describe`, { body: JSON.stringify({ url: "https://httpbin.org/status/403" }), headers: H, method: "POST" })
+// 🪦 ЭТАЛОН `https://httpbin.org/status/403` СНЯТ ПЕРВЫМ ЖЕ ПРОГОНОМ: он отдаёт 403 БЕЗ ТЕЛА, Firefox отвечает `NS_ERROR_NET_EMPTY_RESPONSE`,
+// и браузер возвращает `page-failed` до ворот кода — правило не проверялось вовсе. Заглушка Vercel — страница С ТЕЛОМ; эталон такой же:
+// несуществующая страница MDN (404 с полноценным HTML). Меняется эталон, а не утверждение прибора.
+const REFUSED_URL = process.env.PAGE_REFUSED_URL ?? "https://developer.mozilla.org/en-US/docs/this-page-does-not-exist-195-9"
+const d = await fetch(`${BASE}/api/fractera/link-test/describe`, { body: JSON.stringify({ url: REFUSED_URL }), headers: H, method: "POST" })
 const dj = await d.json().catch(() => ({}))
-say(d.status === 422 && dj.error === "page-refused" && String(dj.why ?? "").startsWith("403"), `A1: описание 403 → ${d.status} ${dj.error ?? ""} (${dj.why ?? "—"}) за ${Date.now() - t} мс`)
+say(d.status === 422 && dj.error === "page-refused" && /^4\d\d/.test(String(dj.why ?? "")), `A1: описание страницы с кодом 4xx → ${d.status} ${dj.error ?? ""} (${dj.why ?? "—"}) за ${Date.now() - t} мс`)
 say(Date.now() - t < 60000, "A1: модель не звалась — ответ быстрее хода модели")
 
 // ── A2: дверь сохранения со снимком кода 403 ──────────────────────────────
