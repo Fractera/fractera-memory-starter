@@ -339,7 +339,20 @@ async function MemoryPageBody({
                 ) : active === "graph-test" && openTab === "search" ? (
                   <GraphSearch words={ui.graphSearch} />
                 ) : active === "link-test" && openTab === "upload" ? (
-                  <LinkBench words={ui.linkBench} />
+                  <LinkBench
+                    // 🔒 БЛОК «ЧТО ЛЕГЛО В ПАМЯТЬ» — ОБЩИЙ СО СТЕНДОМ ОБЪЕКТОВ (195-2), И СЛОВА ЕМУ УЕЗЖАЮТ ПОИМЁННО.
+                    savedWords={{
+                      close: ui.objectBench.close,
+                      preview: ui.objectBench.preview,
+                      savedFile: ui.objectBench.savedFile,
+                      savedFull: ui.objectBench.savedFull,
+                      savedNoRow: ui.objectBench.savedNoRow,
+                      savedRow: ui.objectBench.savedRow,
+                      savedSummary: ui.objectBench.savedSummary,
+                      savedTitle: ui.objectBench.savedTitle,
+                    }}
+                    words={ui.linkBench}
+                  />
                 ) : active === "link-test" ? (
                   // 🔒 СТЕНД ССЫЛОК (195-1): поиск, оценка и навык ссылок строятся в 195-5 — вкладки стоят и говорят это
                   // словами. Общий корпус случаев сюда не выводится: случаев ссылок ещё нет, и чужие числа читались бы как свои.

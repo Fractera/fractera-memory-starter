@@ -77,6 +77,10 @@ const SELF_GUARDED = new Set([
   // 🔒 ДВЕРЬ СТЕНДА ССЫЛОК (195-1) — `benchGuard`; имя стоит до первой сборки: перехваченная привратником, она отдала бы
   // страницу входа, и экран решил бы, что не ответил ИИ-браузер, хотя истекла сессия.
   "/api/fractera/link-test",
+  // 🔒 ДВЕ ДВЕРИ СОХРАНЕНИЯ ССЫЛКИ (195-2) — `benchGuard`, имена до первой сборки. Набор сверяется точным именем: вложенный
+  // `/link-test/describe` соседнее `/link-test` не открывает.
+  "/api/fractera/link-test/describe",
+  "/api/fractera/link-ingest",
   "/api/fractera/memory-test",
   "/api/me",
   "/api/fractera/pty-ticket",

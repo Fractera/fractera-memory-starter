@@ -198,12 +198,19 @@ export async function keep(input: {
   described_by?: string;
   describe_ms?: number;
   full?: string;
+  /**
+   * Род строки таблицы, когда его не вывести из имени файла (195-2): снимок ссылки — файл `.md`, а род у него `web`.
+   * 🔒 Раскладка по хранилищам от рода НЕ ЗАВИСИТ — слово владельца: «абсолютно одинаковое решение что для объекта что для ссылки».
+   */
+  kind?: string;
   language?: string;
   mime: string;
   name: string;
   source?: string;
   tags?: string[];
   title?: string;
+  /** Адрес ссылки (195-2): ложится в колонку `url` и в происхождение документа графа. */
+  url?: string;
   who?: string;
 }): Promise<
   | { ok: true; card: ObjectCard; cardChars: number; messageId: number; ms: number }
@@ -216,7 +223,7 @@ export async function keep(input: {
   if (!name) return { error: "no-name", ok: false };
   if (!input.bytes?.length) return { error: "empty-file", ok: false };
 
-  const kind = messageKindOf(kindOf(name, input.mime) ?? "text", name);
+  const kind = input.kind || messageKindOf(kindOf(name, input.mime) ?? "text", name);
   // 🔒 КОД УХОДИТ `text/plain`, А НЕ ТЕМ, ЧТО ПРИСЛАЛ БРАУЗЕР (194-10): `.ts` приходит `video/mp2t`, и
   // медиатека записала бы исходник видео — дверь файла отдала бы его плееру.
   const mime = isCodeName(name) ? CODE_MIME : input.mime;
@@ -236,6 +243,7 @@ export async function keep(input: {
       summary: about || null,
       tags: Array.isArray(input.tags) ? input.tags : null,
       title: title || name,
+      url: input.url || null,
       who: input.who || "stand",
       ...extra,
     });
@@ -310,7 +318,9 @@ export async function keep(input: {
   const SOURCE_WORDS: Record<string, string> = { api: "API памяти", stand: "тестовый стенд памяти", telegram: "Telegram" };
   const sourceWord = SOURCE_WORDS[input.source || "stand"] ?? String(input.source);
   const when = new Date().toISOString().replace(/\.\d{3}Z$/, " UTC").replace("T", " ");
-  const origin = `${sourceWord}${input.author ? `, прислал ${input.author}` : ""}, ${when}, файл «${name}»`;
+  // 195-2: у ссылки происхождение называет страницу — адрес находим в графе так же, как дату и автора.
+  const what = input.url ? `страница «${input.url}»` : `файл «${name}»`;
+  const origin = `${sourceWord}${input.author ? `, прислал ${input.author}` : ""}, ${when}, ${what}`;
   const anchors = Array.isArray(input.anchors) ? input.anchors : [title || name];
   const tagLine = Array.isArray(input.tags) && input.tags.length ? `\n\nТеги: ${input.tags.join(", ")}.` : "";
   const g = await learn({

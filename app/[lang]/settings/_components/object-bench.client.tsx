@@ -32,7 +32,13 @@ const fill = (s: string, v: Record<string, string | number>) =>
 const TEXT_EXT = /\.(csv|html?|json|markdown|md|tsv|txt|xml|ya?ml)$/i;
 
 /** Что легло в память: строка таблицы как есть и карточка объекта с полным описанием (194-5). */
-type Saved = { media: PreviewItem | null; object: Card | null; row: Record<string, unknown> | null };
+export type Saved = { media: PreviewItem | null; object: Card | null; row: Record<string, unknown> | null };
+
+/** Слова блока «что легло в память» — поимённо: стенд ссылок (195-2) получает только их, а не весь словарь объектов. */
+export type SavedViewWords = Pick<
+  MemoryUi["objectBench"],
+  "close" | "preview" | "savedFile" | "savedFull" | "savedNoRow" | "savedRow" | "savedSummary" | "savedTitle"
+>;
 
 /** Файл объекта — через свою дверь: ключ склада в браузер не уезжает. */
 const fileUrl = (id: string) => `/api/fractera/object-file?id=${encodeURIComponent(id)}`;
@@ -57,14 +63,17 @@ type Described = {
  * 🔒 СТРОКИ МОЖЕТ НЕ БЫТЬ: объект, положенный до таблицы сообщений, показывается файлом и описанием, а про
  * отсутствие строки сказано словами — пустое место читалось бы как поломка.
  */
-function SavedView({
+export function SavedView({
+  fullClassName = "max-h-80",
   onClose,
   saved,
   words,
 }: {
+  /** Высота окна полного описания: у ссылок — до 1000 px (слово владельца 2026-09-14, 195-2). */
+  fullClassName?: string;
   onClose?: () => void;
   saved: Saved;
-  words: MemoryUi["objectBench"];
+  words: SavedViewWords;
 }) {
   const row = saved.row;
   return (
@@ -94,7 +103,7 @@ function SavedView({
       {saved.object?.about && (
         <div className="space-y-2">
           <p className="font-medium text-[length:var(--fs-small)]">{words.savedFull}</p>
-          <p className="max-h-80 overflow-y-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-[length:var(--fs-body)]">
+          <p className={`${fullClassName} overflow-y-auto whitespace-pre-wrap rounded-md bg-muted/40 p-3 text-[length:var(--fs-body)]`}>
             {saved.object.about}
           </p>
         </div>
