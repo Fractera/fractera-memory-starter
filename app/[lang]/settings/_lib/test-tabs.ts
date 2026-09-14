@@ -31,7 +31,8 @@ export type StandTab = TestTab | "skill" | "bench";
 
 /** Разделы, у которых есть эти три страницы. */
 // 🔒 ТРИ СТЕНДА С 192-3: объектное хранилище встало той же формой, а не своей.
-export const TEST_SECTIONS = ["graph-test", "vector-test", "object-test"] as const;
+// 🔒 ЧЕТЫРЕ С 195-1: стенд ссылок той же формой — слово владельца «такая же стандартная вкладка как и для агент раг».
+export const TEST_SECTIONS = ["graph-test", "vector-test", "object-test", "link-test"] as const;
 
 export type TestSection = (typeof TEST_SECTIONS)[number];
 

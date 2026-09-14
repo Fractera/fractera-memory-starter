@@ -15,6 +15,7 @@ import { GraphSearch } from "./_components/graph-search.client";
 import { BenchCases } from "./_components/bench-cases.client";
 import { VectorSearch, VectorUpload } from "./_components/vector-bench.client";
 import { ObjectSearch, ObjectUpload } from "./_components/object-bench.client";
+import { LinkBench } from "./_components/link-bench.client";
 import { OpenAiTab } from "./_components/openai-tab";
 import { AnthropicKeySection } from "./_components/anthropic-key";
 import { ModelSections } from "./_components/models.client";
@@ -292,6 +293,8 @@ async function MemoryPageBody({
                 <p className="max-w-3xl text-[length:var(--fs-body)] text-muted-foreground">
                   {openTab === "skill"
                     ? ui.testBench.skillLead
+                    : active === "link-test"
+                      ? ui.testBench.link[pageTab]
                     : active === "object-test"
                       ? ui.testBench.object[pageTab]
                       : active === "graph-test"
@@ -335,6 +338,17 @@ async function MemoryPageBody({
                   <GraphUpload words={ui.graphUpload} />
                 ) : active === "graph-test" && openTab === "search" ? (
                   <GraphSearch words={ui.graphSearch} />
+                ) : active === "link-test" && openTab === "upload" ? (
+                  <LinkBench words={ui.linkBench} />
+                ) : active === "link-test" ? (
+                  // 🔒 СТЕНД ССЫЛОК (195-1): поиск, оценка и навык ссылок строятся в 195-5 — вкладки стоят и говорят это
+                  // словами. Общий корпус случаев сюда не выводится: случаев ссылок ещё нет, и чужие числа читались бы как свои.
+                  <p
+                    className="rounded-md border border-border border-dashed p-4 text-[length:var(--fs-small)] text-muted-foreground"
+                    data-link-soon={openTab}
+                  >
+                    {ui.testBench.soon}
+                  </p>
                 ) : openTab === "verdict" ? (
                   // 🔒 ОЦЕНКА ОДНА НА ОБА ХРАНИЛИЩА (189-6). Корпус случаев общий —
                   // иначе числа графа и вектора не с чем сравнивать, а сравнение

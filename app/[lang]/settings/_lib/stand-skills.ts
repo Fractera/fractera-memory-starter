@@ -16,6 +16,8 @@ import type { StandSection } from "./test-tabs";
  */
 export const STAND_SKILLS: Record<StandSection, readonly string[]> = {
   "graph-test": ["use-knowledge-graph"],
+  // 🛑 ПУСТО ДО 195-5: навык агента памяти к API ИИ-браузера ещё не написан; вкладка говорит это словами (`testBench.soon`).
+  "link-test": [],
   "memory-test": ["use-tables", "use-depth-ladder"],
   "object-test": ["describe-incoming-object", "use-object-store"],
   "vector-test": ["use-vector-store"],

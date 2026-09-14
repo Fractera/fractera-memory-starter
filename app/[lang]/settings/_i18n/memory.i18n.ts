@@ -17,6 +17,7 @@ import type { OpenAiKeyWords } from "../_components/openai-key";
 import type { OpenAiTabWords } from "../_components/openai-tab";
 import type { BenchControlWords } from "../_components/memory-test-controls.client";
 import type { ApiKeyWords } from "../_components/api-key.client";
+import type { LinkBenchWords } from "../_components/link-bench.client";
 
 export type MemoryUi = {
   title: string;
@@ -50,6 +51,8 @@ export type MemoryUi = {
     vector: Record<TestTab, string>;
     /** Лиды стенда объектного хранилища (192-3); с 194-6 — и страницы «Навык». */
     object: Record<TestTab | "skill", string>;
+    /** Лиды стенда ссылок (195-1): все четыре вкладки стоят сразу, построена «Загрузка». */
+    link: Record<TestTab | "skill", string>;
     /** Честная строка о том, что органа ещё нет: молчащий экран читается как поломка. */
     soon: string;
     /** Файла навыка на диске нет — сказано словами, а не пустым экраном (194-6). */
@@ -264,6 +267,8 @@ export type MemoryUi = {
   };
   /** Слова карточки ключа доступа — форму задаёт сама карточка (185). */
   apiKey: ApiKeyWords;
+  /** Слова стенда ссылок (195-1) — перенесены из `readTest` словаря службы ИИ-браузера и адаптированы. */
+  linkBench: LinkBenchWords;
   memoryTest: {
     lead: string;
     say: string;
@@ -558,10 +563,33 @@ const EN: MemoryUi = {
       hint: "This tab tests the object store together with every service that keeps data with it: each object that enters memory is written to the database, the vector store and the knowledge graph, and is kept as it is in the object store.",
       title: "Object store test",
     },
+    "link-test": {
+      hint: "A saved link is an object whose source is an address: the AI browser opens the page as a person sees it, and what it extracts goes into the same stores as any object. Today this section shows what the browser extracts — nothing is stored yet.",
+      title: "Link test",
+    },
     passport: {
       hint: "What memory is and how it works — written before it is built. Read it, approve it or change it; the code comes after.",
       title: "Passport",
     },
+  },
+  linkBench: {
+    counts: { audios: "Audio", blocked: "Blocked", buttons: "Buttons", fields: "Fields", forms: "Forms", headings: "Headings", iframes: "Frames", images: "Images", links: "Links", videos: "Video" },
+    error: "Refused",
+    failed: "Not opened",
+    finalUrl: "final address",
+    html: "Final HTML",
+    lead: "Paste one or more addresses, one per line. Memory calls the AI browser on this server: it opens each page, waits for its scripts and returns the final HTML, all the text, headings, interactive elements and media by attributes. Nothing is written to memory here. Addresses of this machine, loopback and private networks are refused by the browser — on every request the page makes, not only the first.",
+    limitNote: "Up to 10 addresses per call, opened one after another.",
+    loadReached: { no: "load not reached — what had rendered", yes: "page loaded" },
+    meta: "Meta",
+    ms: "ms",
+    placeholder: "https://example.com\nhttps://todomvc.com/examples/react/dist/",
+    run: "Open",
+    running: "Opening…",
+    status: "code",
+    text: "Visible text",
+    total: "On the page in total",
+    truncatedNote: "The screen shows the beginning; memory receives the full value.",
   },
   graphUpload: {
     anchorsHint:
@@ -813,6 +841,16 @@ const EN: MemoryUi = {
       verdict:
         "The same verdict and the same case book as the other two stores — three stores judged by one form.",
     },
+    link: {
+      search:
+        "Find a site you analysed earlier by meaning — «a shop that sells an inflatable boat for sea trips» — and get its full description, summary and the link itself.",
+      skill:
+        "The skill the memory agent will follow to call the AI browser: which method, which refusals, what to tell the person.",
+      upload:
+        "Paste one or more addresses and see, link by link, what the AI browser extracted from the page. Saving into memory comes in the next sub-step.",
+      verdict:
+        "The same verdict and the same case book as the other stores — so links are judged by the form every store is judged by.",
+    },
   },
   subtitle:
     "The memory service speaking for itself: send it a phrase, see the answer, see what it built out of it.",
@@ -1052,10 +1090,33 @@ const RU: MemoryUi = {
       hint: "Эта вкладка проверяет связку объектного хранилища со всеми службами, которые участвуют в хранении данных: каждый объект, попавший в память, прописывается в базе данных, векторном хранилище и графе знаний и сохраняется в исходном виде в объектном хранилище.",
       title: "Тест объектного хранилища",
     },
+    "link-test": {
+      hint: "Сохранённая ссылка — это объект, у которого источник — адрес: ИИ-браузер открывает страницу так, как её видит человек, а извлечённое ложится в те же хранилища, что и любой объект. Сегодня раздел показывает, что извлекает браузер, — в память пока ничего не пишется.",
+      title: "Тест ссылок",
+    },
     passport: {
       hint: "Что такое память и как она работает — написанное раньше, чем построено. Читаете, утверждаете или меняете; код идёт после.",
       title: "Паспорт",
     },
+  },
+  linkBench: {
+    counts: { audios: "Звук", blocked: "Отвергнуто", buttons: "Кнопки", fields: "Поля", forms: "Формы", headings: "Заголовки", iframes: "Фреймы", images: "Картинки", links: "Ссылки", videos: "Видео" },
+    error: "Отказ",
+    failed: "Не открылось",
+    finalUrl: "итоговый адрес",
+    html: "Итоговый HTML",
+    lead: "Вставьте один или несколько адресов, по одному в строке. Память зовёт ИИ-браузер на этом сервере: он открывает каждую страницу, дожидается её скриптов и отдаёт итоговый HTML, весь текст, заголовки, интерактивные элементы и медиа по атрибутам. В память здесь ничего не пишется. Адреса самой машины, петли и частных сетей браузер отвергает — на каждом запросе страницы, а не только на первом.",
+    limitNote: "До 10 адресов за вызов, открываются по очереди.",
+    loadReached: { no: "load не дождались — отдано отрисованное", yes: "страница загрузилась" },
+    meta: "Мета",
+    ms: "мс",
+    placeholder: "https://example.com\nhttps://todomvc.com/examples/react/dist/",
+    run: "Открыть",
+    running: "Открываю…",
+    status: "код",
+    text: "Видимый текст",
+    total: "Всего на странице",
+    truncatedNote: "На экране — начало; память получает значение целиком.",
   },
   subtitle:
     "Служба памяти говорит сама за себя: отправьте ей фразу, посмотрите ответ и то, что она из него построила.",
@@ -1309,6 +1370,16 @@ const RU: MemoryUi = {
         "Навык, по которому агент памяти будет действовать, когда файл придёт через API: описать, сохранить целиком, ответить номерами. Это сам файл, прочитанный с диска при каждой загрузке, — тот же текст, что читает агент. Навык написан по-английски: машинный слой памяти одноязычен.",
       verdict:
         "Тот же вердикт и тот же корпус случаев, что у двух других хранилищ, — три хранилища судятся одной формой.",
+    },
+    link: {
+      search:
+        "Найдите сайт, который вы раньше анализировали, по смыслу — «магазин, где есть надувная лодка для морских путешествий» — и получите его полное описание, саммари и саму ссылку.",
+      skill:
+        "Навык, по которому агент памяти будет звать ИИ-браузер: какой метод, какие отказы, что сказать человеку.",
+      upload:
+        "Вставьте один или несколько адресов и посмотрите по каждой ссылке, что ИИ-браузер извлёк со страницы. Сохранение в память — следующим подшагом.",
+      verdict:
+        "Тот же вердикт и тот же корпус случаев, что у других хранилищ, — ссылки судятся той же формой, что и любое хранилище.",
     },
   },
   title: "Память",
