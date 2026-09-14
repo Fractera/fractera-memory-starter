@@ -49,7 +49,7 @@
 | матрица проверки | `scripts/probe/bench-matrix-200-7.mjs`, `recall-english-200-7.mjs` | прибор регресса |
 | реестр признаков чата | `fractera-telegrambot-starter/REGISTRY-CONFIG/registry-config.json`: 49 записей; `key`, `valueType`, `aggregate` (last/list), `subject`, `tags`/`triggers`/`answers`, `index.json` | сырой, в память не передаётся; `storedIn` — таблицы чата |
 | правило глубины | паспорт чата §3п | решение владельца, в памяти не исполняется |
-| ТЗ фильтра объектов | `new-steps/200/200-9.md` | вливается в 201-6 |
+| ТЗ фильтра объектов | `new-steps/200/200-9.md` (удалён с планом 200; восстановление — `200-main.md`) | вливается в 201-6 |
 
 ## 3. Известные ограничения
 - 🛑 Подагенты и прогоны skill-creator запрещены.
