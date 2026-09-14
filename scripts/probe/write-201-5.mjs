@@ -62,7 +62,12 @@ say(
 say(denis.kept_whole?.anchors?.some((a) => a.includes("Денис")) === true, `   якорь графа: ${JSON.stringify(denis.kept_whole?.anchors)}`)
 
 // ── A3: было/стало ───────────────────────────────────────────────────────────
-await remember({ text: "я живу в Толедо", who: WHO })
+// 🔒 ПЕРВЫЙ ШАГ ПРОВЕРЯЕТСЯ ОТДЕЛЬНО. ✗ Оплачено прогоном 2026-09-14 23:55: «перехода не видно» —
+// и по одному только второму ответу нельзя было сказать, что подвело: исправление или сама первая
+// запись. Проверка пары без проверки её половин диагноза не даёт.
+const first = await remember({ text: "я живу в Толедо", who: WHO })
+const firstCity = (first.noted ?? []).find((n) => n.what === "city_where_he_lives_now")
+say(Boolean(firstCity), `«живу в Толедо» записано: ${firstCity ? JSON.stringify(firstCity) : "НЕТ — " + JSON.stringify(first.noted ?? first.what_happened)}`)
 const moved = await remember({ text: "нет, я живу в Севилье", who: WHO })
 const changed = (moved.noted ?? []).find((n) => n.was)
 say(Boolean(changed), `«Толедо» → «Севилья»: ${changed ? `было «${changed.was}», стало «${changed.became}»` : "перехода не видно: " + JSON.stringify(moved.noted)}`)
