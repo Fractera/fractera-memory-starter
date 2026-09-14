@@ -56,6 +56,12 @@ export type LinkBenchWords = {
     viewFailed: string;
     /** 195-9: сайт не отдал страницу — код 400 и выше. */
     pageRefused: string;
+    /** 195-4: ролик YouTube — официальный API, главы из описания, обложка связанным объектом. */
+    sourceApi: string;
+    chaptersTitle: string;
+    chapterOfAsked: string;
+    noChapters: string;
+    keepThumbnail: string;
   };
   /** 195-8: подписи вкладки «Поиск» — поверх слов поиска объектов, вёрстка у них одна (`ObjectSearch`). */
   search: {
@@ -87,6 +93,7 @@ type Result = {
 type Answer = { ok?: boolean; error?: string; why?: string; limit?: number; failed?: number; results?: Result[] };
 
 /** Что модель сказала о снимке, кроме двух полей, которые правит человек. */
+type Chapter = { seconds: number; stamp: string; title: string };
 type Draft = {
   anchors: string[];
   chars: number;
@@ -97,6 +104,13 @@ type Draft = {
   snapshot: string;
   tags: string[];
   title: string;
+  /** 195-4: у ролика YouTube снимок снят официальным API, и у него есть главы, обложка и своё название. */
+  askedSeconds?: number | null;
+  chapterOfAsked?: Chapter | null;
+  chapters?: Chapter[];
+  source?: string;
+  thumbnail?: { height: number; url: string; width: number } | null;
+  videoTitle?: string;
 };
 
 const LISTS = ["headings", "links", "buttons", "forms", "fields", "images", "videos", "audios", "iframes", "blocked"] as const;
@@ -135,6 +149,8 @@ function Pre({ value }: { value: string }) {
  */
 function LinkSave({ savedWords, url, words }: { savedWords: SavedViewWords; url: string; words: LinkBenchWords }) {
   const [html, setHtml] = useState(false);
+  // 195-4: обложку ролика память кладёт отдельным связанным объектом; по умолчанию да — она и есть «связанная картинка».
+  const [keepThumb, setKeepThumb] = useState(true);
   const [describing, setDescribing] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -200,14 +216,20 @@ function LinkSave({ savedWords, url, words }: { savedWords: SavedViewWords; url:
       }
       setDraft({
         anchors: j.anchors ?? [],
+        askedSeconds: j.askedSeconds ?? null,
+        chapterOfAsked: j.chapterOfAsked ?? null,
+        chapters: j.chapters ?? [],
         chars: j.snapshotChars ?? j.snapshot.length,
         described_by: j.described_by ?? "",
         language: j.language ?? "und",
         ms: j.ms ?? 0,
         name: j.name ?? "web-page.md",
         snapshot: j.snapshot,
+        source: j.source,
         tags: j.tags ?? [],
+        thumbnail: j.thumbnail ?? null,
         title: j.title ?? "",
+        videoTitle: j.videoTitle,
       });
       setFull(j.full);
       setAbout(j.summary);
@@ -234,6 +256,8 @@ function LinkSave({ savedWords, url, words }: { savedWords: SavedViewWords; url:
       form.append("described_by", draft.described_by);
       form.append("describe_ms", String(draft.ms));
       form.append("language", draft.language);
+      // 195-4: адрес обложки едет только с согласия человека — иначе память положит лишний объект, о котором он не просил.
+      if (keepThumb && draft.thumbnail?.url) form.append("thumbnail", draft.thumbnail.url);
       const r = await fetch("/api/fractera/link-ingest", { body: form, method: "POST" });
       const j = (await r.json()) as { error?: string; existing?: number; messageId?: number; ms?: number; ok?: boolean; why?: string };
       if (j.ok && j.existing) {
@@ -269,6 +293,42 @@ function LinkSave({ savedWords, url, words }: { savedWords: SavedViewWords; url:
           {describing ? fill(words.save.describing, { s: seconds }) : words.save.describe}
         </Button>
       </div>
+
+      {draft?.source === "youtube-api" && (
+        // 🔒 РОЛИК ЧИТАН ОФИЦИАЛЬНЫМ API, И ЭТО СКАЗАНО ВСЛУХ (195-4): человек обязан знать, что браузер здесь не участвовал, а главы взяты
+        // из описания автора. Нет глав — сказано словами, а не пустым местом.
+        <div className="space-y-2 rounded-md border border-border p-3" data-youtube-draft="">
+          <p className="text-[length:var(--fs-small)] text-muted-foreground">{words.save.sourceApi}</p>
+          {draft.videoTitle && <p className="font-medium text-[length:var(--fs-body)]">{draft.videoTitle}</p>}
+          {draft.chapterOfAsked && (
+            <p className="text-[length:var(--fs-body)]">
+              {fill(words.save.chapterOfAsked, { chapter: draft.chapterOfAsked.title, stamp: draft.chapterOfAsked.stamp })}
+            </p>
+          )}
+          {draft.chapters?.length ? (
+            <details className="rounded-md border border-border">
+              <summary className="cursor-pointer px-3 py-2 font-medium text-[length:var(--fs-small)]">
+                {fill(words.save.chaptersTitle, { n: draft.chapters.length })}
+              </summary>
+              <ul className={`${WINDOW} space-y-1 p-3`}>
+                {draft.chapters.map((c) => (
+                  <li className="text-[length:var(--fs-small)]" key={`${c.seconds}-${c.stamp}`}>
+                    <span className="font-mono text-muted-foreground">{c.stamp}</span> {c.title}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : (
+            <p className="text-[length:var(--fs-small)] text-muted-foreground">{words.save.noChapters}</p>
+          )}
+          {draft.thumbnail && (
+            <label className="flex items-center gap-2 text-[length:var(--fs-small)]">
+              <input checked={keepThumb} disabled={busy} onChange={(e) => setKeepThumb(e.target.checked)} type="checkbox" />
+              {fill(words.save.keepThumbnail, { height: draft.thumbnail.height, width: draft.thumbnail.width })}
+            </label>
+          )}
+        </div>
+      )}
 
       {draft && (
         <>

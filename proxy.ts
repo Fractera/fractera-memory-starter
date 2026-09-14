@@ -88,6 +88,8 @@ const SELF_GUARDED = new Set([
   "/api/fractera/pty-ticket",
   "/api/fractera/openai-key",
   "/api/fractera/anthropic-key",
+  // 🔒 ДВЕРЬ КЛЮЧА YOUTUBE (195-4) — того же класса: сама проверяет роль `architect`, имя стоит до первой сборки.
+  "/api/fractera/youtube-key",
 ]);
 
 /**

@@ -18,6 +18,7 @@ import { ObjectSearch, ObjectUpload } from "./_components/object-bench.client";
 import { LinkBench } from "./_components/link-bench.client";
 import { OpenAiTab } from "./_components/openai-tab";
 import { AnthropicKeySection } from "./_components/anthropic-key";
+import { YoutubeKeySection } from "./_components/youtube-key";
 import { ModelSections } from "./_components/models.client";
 import { PassportBody } from "./_components/passport-body.client";
 import { ApiDoc } from "./_components/api-doc";
@@ -416,6 +417,9 @@ async function MemoryPageBody({
             {active === "settings" && (
               <>
                 <AnthropicKeySection />
+                {/* 🔒 КЛЮЧ YOUTUBE DATA API (195-4, слово владельца: «На вкладке настройки Memory сделай добавление ключа с описанием того как
+                    это сделать»). Стоит после ключа Claude: без Claude не работает ничего, ключ YouTube нужен только ссылкам на ролики. */}
+                <YoutubeKeySection words={ui.youtubeKey} />
                 <ModelSections />
               </>
             )}

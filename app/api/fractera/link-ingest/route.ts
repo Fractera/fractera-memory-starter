@@ -1,8 +1,9 @@
 // @api стенд ссылок памяти: сохранить описанную ссылку в четыре хранилища тем же приёмом, что объект
 import { NextResponse } from "next/server"
 import { benchGuard } from "@/lib/bench-guard"
-import { getSavedByUrl } from "@/lib/messages.mjs"
+import { getSavedByUrl, linkMessages } from "@/lib/messages.mjs"
 import { keep } from "@/lib/fractera/objects"
+import { fetchUrl } from "@/lib/fractera/fetch-url"
 import { pageRefusal, statusOfSnapshot } from "@/lib/fractera/web"
 
 // ДВЕРЬ «СОХРАНИТЬ В ПАМЯТЬ» СТЕНДА ССЫЛОК (195-2).
@@ -52,6 +53,8 @@ export async function POST(request: Request) {
   if (!url) return deny("empty-url", 400)
 
   const bytes = new Uint8Array(await file.arrayBuffer())
+  // 🔒 У СНИМКА РОЛИКА СТРОКИ «Код ответа» НЕТ ВОВСЕ, И ЭТО ЗАКОННО: его снял официальный API, а не браузер. Ворота кода пропускают такой
+  // снимок (`null` — не отказ), и проверяют только снимки страниц (195-9).
   const refused = pageRefusal(statusOfSnapshot(new TextDecoder("utf-8").decode(bytes)), null)
   if (refused) return deny(refused.error, 422, refused.why)
 
@@ -83,5 +86,37 @@ export async function POST(request: Request) {
     const ours = r.error === "no-name" || r.error === "empty-file" || r.error === "no-about" || r.error.includes("no-anchor")
     return NextResponse.json({ error: r.error, messageId: r.messageId ?? null, ok: false }, { status: ours ? 400 : 502 })
   }
-  return NextResponse.json({ cardChars: r.cardChars, messageId: r.messageId, ms: r.ms, object: r.card, ok: true })
+  // 🔒 ОБЛОЖКА РОЛИКА — ОТДЕЛЬНЫЙ ОБЪЕКТ, СВЯЗАННЫЙ С ЗАПИСЬЮ РОЛИКА (195-4, слово владельца: «сохранить его как связанное изображение»).
+  // Адрес обложки называет сам API (`snippet.thumbnails`), а не шаблон `maxresdefault.jpg`: большие размеры есть не у всех роликов.
+  // 🛑 НЕУДАЧА ОБЛОЖКИ НЕ ОТМЕНЯЕТ РОЛИК: ролик уже лежит во всех четырёх хранилищах, и откатывать его из-за картинки значило бы терять
+  // главное ради второстепенного. Причина называется полем `thumbnail` ответа, а не молчанием.
+  const thumbUrl = text("thumbnail")
+  let thumbnail: { error?: string; messageId?: number; why?: string } | null = null
+  if (thumbUrl) {
+    const got = await fetchUrl(thumbUrl)
+    if (!got.ok) {
+      thumbnail = { error: got.error, why: got.why }
+    } else {
+      const kept = await keep({
+        about: `Обложка ролика «${text("title") ?? name}» на YouTube. Источник: ${thumbUrl}`,
+        anchors: list("anchors"),
+        author,
+        bytes: got.bytes,
+        kind: "image",
+        mime: got.mime,
+        name: got.name,
+        source: text("source") ?? "stand",
+        title: `Обложка: ${text("title") ?? name}`,
+        url: thumbUrl,
+        who: text("who"),
+      })
+      if (!kept.ok) thumbnail = { error: kept.error }
+      else {
+        const linked = await linkMessages(kept.messageId, r.messageId)
+        thumbnail = linked.ok ? { messageId: kept.messageId } : { error: `link-failed: ${linked.error}`, messageId: kept.messageId }
+      }
+    }
+  }
+
+  return NextResponse.json({ cardChars: r.cardChars, messageId: r.messageId, ms: r.ms, object: r.card, ok: true, thumbnail })
 }

@@ -18,6 +18,7 @@ import type { OpenAiTabWords } from "../_components/openai-tab";
 import type { BenchControlWords } from "../_components/memory-test-controls.client";
 import type { ApiKeyWords } from "../_components/api-key.client";
 import type { LinkBenchWords } from "../_components/link-bench.client";
+import type { YoutubeKeyCardWords } from "../_components/youtube-key";
 
 export type MemoryUi = {
   title: string;
@@ -281,6 +282,8 @@ export type MemoryUi = {
   };
   /** Слова карточки ключа доступа — форму задаёт сама карточка (185). */
   apiKey: ApiKeyWords;
+  /** Слова карточки ключа YouTube Data API (195-4) — форму задаёт карточка. */
+  youtubeKey: YoutubeKeyCardWords;
   /** Слова стенда ссылок (195-1) — перенесены из `readTest` словаря службы ИИ-браузера и адаптированы. */
   linkBench: LinkBenchWords;
   memoryTest: {
@@ -586,6 +589,45 @@ const EN: MemoryUi = {
       title: "Passport",
     },
   },
+  youtubeKey: {
+    title: "YouTube Data API key",
+    lead:
+      "With this key memory reads a video by its address: title, channel, date, duration, the full description and — the point of it — the chapters the author wrote with timestamps. That is what answers «at which minute was this said», with no transcript at all. The key is kept in the machine secret store and never leaves the server.",
+    exists: "Key is set:",
+    missing: "No key yet — a link to a video is refused with youtube-key-missing.",
+    stepsTitle: "How to get the key",
+    steps: [
+      "Open console.cloud.google.com and choose a project, or create one.",
+      "APIs & Services → Library → find «YouTube Data API v3» → Enable.",
+      "APIs & Services → Credentials → Create credentials → API key.",
+      "Copy the key (it begins with AIza) and paste it below. Restricting the key to the YouTube Data API is recommended.",
+    ],
+    quotaNote:
+      "Google gives 10 000 units a day by default; reading one video costs 1 unit, a search costs 100 calls a day. The text of someone else's subtitles is not available through this API at all — measured: captions.download answers 401 «API keys are not supported by this API».",
+    form: {
+      keyLabel: "API key",
+      keyPlaceholder: "AIza…",
+      keyReplace: "Replace the key",
+      save: "Save",
+      saving: "Saving…",
+      saved: "Saved.",
+      check: "Check with Google",
+      checking: "Checking…",
+      valid: "Google accepted the key. Test video read:",
+      errors: {
+        empty: "The field is empty.",
+        "bad-format": "That does not look like a Google API key: it begins with AIza and is about 39 characters long.",
+        "store-refused": "The machine secret store did not accept the key — the service could not write the file.",
+        "key-missing": "No key is set yet.",
+        "key-rejected": "Google rejected the key: it is invalid, expired, or restricted to other addresses.",
+        quota: "The daily quota of this Google project is spent. It resets at midnight Pacific time.",
+        refused: "Google refused the request.",
+        unreachable: "Could not reach Google from the server.",
+        unauthorized: "Sign in again — the session has expired.",
+        forbidden: "The architect role is required.",
+      },
+    },
+  },
   linkBench: {
     counts: { audios: "Audio", blocked: "Blocked", buttons: "Buttons", fields: "Fields", forms: "Forms", headings: "Headings", iframes: "Frames", images: "Images", links: "Links", videos: "Video" },
     error: "Refused",
@@ -625,6 +667,11 @@ const EN: MemoryUi = {
       htmlWhole: "Keep the whole final HTML in the snapshot (for a close copy of the site)",
       stored: "Saved to the four stores in {ms} ms.",
       viewFailed: "Saved, but what landed could not be read back.",
+      sourceApi: "Read by the official YouTube API, not by the browser: one unit of quota, no bot checks.",
+      chaptersTitle: "Chapters — {n}",
+      chapterOfAsked: "The address pointed inside the chapter «{chapter}», which starts at {stamp}.",
+      noChapters: "The author wrote no timestamped outline in the description, so there is nothing to answer by chapters.",
+      keepThumbnail: "Keep the video cover as a linked image ({width}×{height})",
       pageRefused: "The site did not give this page (code {status}) — most often a bot check on the server's address. There is nothing to describe or save.",
     },
   },
@@ -1138,6 +1185,45 @@ const RU: MemoryUi = {
       title: "Паспорт",
     },
   },
+  youtubeKey: {
+    title: "Ключ YouTube Data API",
+    lead:
+      "С этим ключом память читает ролик по адресу: название, канал, дату, длительность, описание целиком и — главное — главы, которые автор написал с метками времени. Именно они отвечают на вопрос «на какой минуте про это говорили», без всякой расшифровки. Ключ лежит в складе секретов машины и с сервера не уходит.",
+    exists: "Ключ задан:",
+    missing: "Ключа ещё нет — ссылка на ролик получит отказ youtube-key-missing.",
+    stepsTitle: "Как получить ключ",
+    steps: [
+      "Откройте console.cloud.google.com и выберите проект или создайте новый.",
+      "APIs & Services → Library → найдите «YouTube Data API v3» → Enable.",
+      "APIs & Services → Credentials → Create credentials → API key.",
+      "Скопируйте ключ (он начинается на AIza) и вставьте его ниже. Ограничить ключ только YouTube Data API — хорошая привычка.",
+    ],
+    quotaNote:
+      "Google по умолчанию даёт 10 000 единиц в день; чтение одного ролика стоит 1 единицу, поиск — 100 вызовов в день. Текст чужих субтитров этим API не отдаётся вовсе — измерено: captions.download отвечает 401 «API keys are not supported by this API».",
+    form: {
+      keyLabel: "Ключ API",
+      keyPlaceholder: "AIza…",
+      keyReplace: "Заменить ключ",
+      save: "Сохранить",
+      saving: "Сохраняю…",
+      saved: "Сохранено.",
+      check: "Проверить у Google",
+      checking: "Проверяю…",
+      valid: "Google принял ключ. Пробный ролик прочитан:",
+      errors: {
+        empty: "Поле пустое.",
+        "bad-format": "Это не похоже на ключ Google API: он начинается на AIza и длиной около 39 знаков.",
+        "store-refused": "Склад секретов машины не принял ключ — служба не смогла записать файл.",
+        "key-missing": "Ключ ещё не задан.",
+        "key-rejected": "Google отверг ключ: он неверен, истёк или ограничен другими адресами.",
+        quota: "Дневная квота этого проекта Google исчерпана. Она обнуляется в полночь по тихоокеанскому времени.",
+        refused: "Google отказал в запросе.",
+        unreachable: "С сервера не удалось дойти до Google.",
+        unauthorized: "Войдите заново — сессия истекла.",
+        forbidden: "Нужна роль архитектора.",
+      },
+    },
+  },
   linkBench: {
     counts: { audios: "Звук", blocked: "Отвергнуто", buttons: "Кнопки", fields: "Поля", forms: "Формы", headings: "Заголовки", iframes: "Фреймы", images: "Картинки", links: "Ссылки", videos: "Видео" },
     error: "Отказ",
@@ -1177,6 +1263,11 @@ const RU: MemoryUi = {
       htmlWhole: "Сохранить в снимке весь итоговый HTML (для близкой копии сайта)",
       stored: "Сохранено в четыре хранилища за {ms} мс.",
       viewFailed: "Сохранено, но легшее не удалось прочитать обратно.",
+      sourceApi: "Прочитано официальным API YouTube, а не браузером: одна единица квоты и никаких проверок на ботов.",
+      chaptersTitle: "Главы — {n}",
+      chapterOfAsked: "Адрес указывал внутрь главы «{chapter}», которая начинается с {stamp}.",
+      noChapters: "Автор не написал в описании оглавления с метками времени — значит по главам ответить нечем.",
+      keepThumbnail: "Сохранить обложку ролика связанной картинкой ({width}×{height})",
       pageRefused: "Сайт не отдал эту страницу (код {status}) — чаще всего это проверка на ботов по адресу сервера. Описывать и сохранять нечего.",
     },
   },
