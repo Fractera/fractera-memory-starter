@@ -70,6 +70,7 @@ import { find_objects, open_object } from "./lib/object-verbs.mjs"
 // журнала. Проверку сессии для Next делает `lib/session-http.ts`.
 import { describeTable, listTables, nameQuality } from "./lib/catalogue.mjs"
 import { isSafeName } from "./lib/naming.mjs"
+import { featureByKey, listFeatures } from "./lib/features.mjs"
 // 🔒 КЛЮЧ ВНЕШНИХ ИНСТРУМЕНТОВ ЧИТАЕТСЯ С ДИСКА НА КАЖДОМ ЗАПРОСЕ (185): новый
 // ключ начинает работать сразу, без перезапуска службы. Иначе кнопка «отозвать»
 // не отзывала бы ничего до ближайшего `pm2 reload`.
@@ -365,6 +366,21 @@ const server = createServer(async (req, res) => {
     }
     const d = await describeTable(name)
     return send(res, d.ok ? 200 : 404, d)
+  }
+
+  // ── РЕЕСТР ПРИЗНАКОВ (201-3): ЧТО ИМЕЕТ В ВИДУ ЗОВУЩИЙ ───────────────────
+  //
+  // 🔒 ЭТО КАТАЛОГ, А НЕ МЕТОД: он отвечает на вопрос «что ты понимаешь», а методы — «сделай».
+  // 🛑 В ОТВЕТЕ НЕТ НИ ИМЕНИ РОДА, НИ ИМЕНИ ТАБЛИЦЫ (`publicFeature`): каталог смыслов, ставший
+  // картой хранилища, — это конец чёрного ящика, и тот же запрет уже стоит у `/v1/tables`
+  // («имя источника называется в ОТВЕТЕ и не принимается в вопросе»).
+  if (req.method === "GET" && path === "/v1/features") {
+    return send(res, 200, listFeatures())
+  }
+  if (req.method === "GET" && path.startsWith("/v1/features/")) {
+    const key = decodeURIComponent(path.slice("/v1/features/".length))
+    const f = featureByKey(key)
+    return send(res, f.ok ? 200 : 404, f)
   }
 
   // ── ФАЙЛ ОБЪЕКТА (194-17) ────────────────────────────────────────────────

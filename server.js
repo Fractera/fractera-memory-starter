@@ -52,7 +52,6 @@ import { deniedPage, journalPage, renderJournal } from "./lib/page.mjs"
 import { isArchitect, whoIsThere } from "./lib/session.mjs"
 import { describeTable, listTables, nameQuality } from "./lib/catalogue.mjs"
 import { isSafeName } from "./lib/naming.mjs"
-import { featureByKey, listFeatures } from "./lib/features.mjs"
 
 const PORT = Number(process.env.PORT ?? 3700)
 const HOST = process.env.MEMORY_HOST ?? "127.0.0.1"
@@ -208,20 +207,6 @@ const server = createServer(async (req, res) => {
     if (!isSafeName(name)) return send(res, 400, { error: "unsafe-name", ok: false })
     const d = await describeTable(name)
     return send(res, d.ok ? 200 : 404, d)
-  }
-
-  // ── РЕЕСТР ПРИЗНАКОВ: что имеет в виду зовущий, а не где это лежит ────────
-  //
-  // 🔒 ЭТО КАТАЛОГ, А НЕ МЕТОД: он отвечает на вопрос «что ты понимаешь», а методы — «сделай».
-  // 🛑 Ответ не содержит ни имени рода, ни имени таблицы (`publicFeature`): каталог смыслов,
-  // ставший картой хранилища, — это конец чёрного ящика.
-  if (req.method === "GET" && path === "/v1/features") {
-    return send(res, 200, listFeatures())
-  }
-  if (req.method === "GET" && path.startsWith("/v1/features/")) {
-    const key = decodeURIComponent(path.slice("/v1/features/".length))
-    const f = featureByKey(key)
-    return send(res, f.ok ? 200 : 404, f)
   }
 
   // Методы договора: имя в пути, тело — параметры.
