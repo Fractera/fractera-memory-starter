@@ -217,8 +217,12 @@ export async function keep(input: {
   | { ok: false; error: string; messageId?: number }
 > {
   const name = String(input.name ?? "").trim();
-  const about = String(input.about ?? "").trim();
-  const full = String(input.full ?? "").trim();
+  // 🔒 ПЕРЕВОДЫ СТРОК ВОЗВРАЩАЮТСЯ К `\n` (195-2). ✗ Измерено: форма (`FormData`) при отправке превращает каждый `\n` текстового
+  // поля в `\r\n` — так делают и браузер, и Node 22; разбор обратно их не возвращает. Полное описание из 4 строк ложилось на 4
+  // знака длиннее написанного моделью. Касается любого объекта со стенда; уже лежащие описания не переписываются.
+  const lf = (v: unknown) => String(v ?? "").replace(/\r\n/g, "\n").trim();
+  const about = lf(input.about);
+  const full = lf(input.full);
   const title = String(input.title ?? "").trim();
   if (!name) return { error: "no-name", ok: false };
   if (!input.bytes?.length) return { error: "empty-file", ok: false };
