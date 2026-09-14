@@ -1,6 +1,6 @@
 // @api корпус случаев стенда: прогоны, их цена и вердикт человека
 import { NextResponse } from "next/server"
-import { caseBook, forgetProbeCases, judge } from "@/lib/cases.mjs"
+import { caseBook, forgetCase, forgetProbeCases, judge } from "@/lib/cases.mjs"
 import { benchGuard } from "@/lib/bench-guard"
 
 // ДВЕРЬ КОРПУСА СЛУЧАЕВ (189-5).
@@ -21,12 +21,16 @@ import { benchGuard } from "@/lib/bench-guard"
 const deny = (error: string, status: number) =>
   NextResponse.json({ error, ok: false }, { status })
 
-/** Последние случаи и сводка. */
+/**
+ * Последние случаи и сводка.
+ * 🔒 `?order=asc` — сначала старые, всё прочее — сначала новые (195-11): порядок считается на сервере, по всему корпусу.
+ */
 export async function GET(request: Request) {
   const gate = await benchGuard(request)
   if (gate.denied) return gate.denied
 
-  const book = await caseBook(25)
+  const order = new URL(request.url).searchParams.get("order") === "asc" ? "asc" : "desc"
+  const book = await caseBook(25, order)
   return NextResponse.json(book)
 }
 
@@ -55,19 +59,32 @@ export async function POST(request: Request) {
 }
 
 /**
- * Убрать случаи прибора — ТОЛЬКО по его метке, и она обязана прийти.
+ * Удалить случаи: ОДИН по номеру (`?id=`, кнопка человека) или случаи прибора по его метке (`?mark=`).
  *
- * 🛑 ПУСТАЯ МЕТКА ОТВЕРГАЕТСЯ, И ЭТО ГРАНИЦА, А НЕ ПРОВЕРКА ФОРМЫ. `DELETE` без
+ * 🎯 195-11, слово владельца: «сделай во всех кнопку удалить».
+ * 🛑 БЕЗ НОМЕРА И БЕЗ МЕТКИ — ОТКАЗ, И ЭТО ГРАНИЦА, А НЕ ПРОВЕРКА ФОРМЫ (189-5). `DELETE` без
  * условия стёр бы корпус целиком — то есть все вердикты, которые человек
  * ставил руками. В соседней службе прибор, стиравший по хранилищу, уже снёс
  * живую память владельца.
+ * 🔒 НЕСУЩЕСТВУЮЩИЙ НОМЕР — `404`, А НЕ ТИХИЙ УСПЕХ: иначе экран подтверждал бы удаление того, чего не было.
  */
 export async function DELETE(request: Request) {
   const gate = await benchGuard(request)
   if (gate.denied) return gate.denied
 
-  const mark = new URL(request.url).searchParams.get("mark") ?? ""
-  if (!mark.trim()) return deny("empty-mark", 400)
+  const params = new URL(request.url).searchParams
+  const idRaw = params.get("id")
+  if (idRaw !== null) {
+    const result = await forgetCase(idRaw)
+    if (!result.ok) {
+      const code = String(result.error ?? "refused")
+      return deny(code, code === "not-found" ? 404 : 400)
+    }
+    return NextResponse.json({ ok: true, removed: 1 })
+  }
+
+  const mark = params.get("mark") ?? ""
+  if (!mark.trim()) return deny("no-case-or-mark", 400)
 
   const result = await forgetProbeCases(mark)
   if (!result.ok) return deny(String(result.error ?? "refused"), 400)

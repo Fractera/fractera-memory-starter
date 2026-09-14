@@ -293,6 +293,10 @@ async function MemoryPageBody({
                 <p className="max-w-3xl text-[length:var(--fs-body)] text-muted-foreground">
                   {openTab === "skill"
                     ? ui.testBench.skillLead
+                    : openTab === "verdict"
+                      ? // 🔒 ЛИД ОЦЕНКИ ОДИН НА ВСЕ СТЕНДЫ (195-11, слово владельца: «напиши в заголовке этой вкладки зачем она нужна как она
+                        // работает»): одно место словаря вместо четырёх копий. Лиды стендов `testBench.*.verdict` здесь больше не читаются.
+                        ui.benchCases.lead
                     : active === "link-test"
                       ? ui.testBench.link[pageTab]
                     : active === "object-test"

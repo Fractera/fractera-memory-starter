@@ -121,6 +121,15 @@ export type MemoryUi = {
     modelMark: string;
     /** 195-10: подпись хранилища у случая — корпус один на все стенды (решение владельца «Общий + подпись»). */
     stores: Record<string, string>;
+    /** 195-11: порядок по дате и удаление случая. */
+    sortLabel: string;
+    sortNewest: string;
+    sortOldest: string;
+    remove: string;
+    removeConfirm: string;
+    removeCancel: string;
+    removing: string;
+    removeFailed: string;
     pending: string;
     summary: string;
     title: string;
@@ -655,10 +664,18 @@ const EN: MemoryUi = {
     good: "Found the right thing",
     judged: "Judged.",
     lead:
-      "Only you can say whether the right thing was found. The engine is never allowed to grade its own work — a model retelling its own run errs in its own favour.",
+      "Why: search finds what is close in meaning, but only a person can say whether it is the right thing — memory is never allowed to grade its own work, because a model retelling its own run errs in its own favour. How: every search on the Search tab of any store lands here at once, with its price — seconds and whether a model turn was spent — and the name of its store. You mark it «found the right thing» or «found the wrong thing» and may say why. A run without your verdict counts as unfinished, not as a success. The summary counts the runs of all stores together, so the stores are compared by one number. Sort by date either way; a run recorded by mistake can be deleted.",
     legacyMark: "asked the old way",
     modelMark: "model turn: {turn}",
     stores: { graph: "knowledge graph", link: "links", object: "objects", vector: "vector store" },
+    sortLabel: "Order:",
+    sortNewest: "Newest first",
+    sortOldest: "Oldest first",
+    remove: "Delete",
+    removeConfirm: "Delete for good",
+    removeCancel: "Keep",
+    removing: "Deleting…",
+    removeFailed: "Could not delete: {error}",
     pending: "awaiting your verdict",
     summary:
       "Runs: {total} · right: {good} · wrong: {bad} · awaiting verdict: {pending} · average answer: {avg} ms.",
@@ -1209,10 +1226,18 @@ const RU: MemoryUi = {
     good: "Нашло то",
     judged: "Вердикт записан.",
     lead:
-      "Нашлось нужное или нет — можете сказать только вы. Оценивать собственную работу памяти запрещено: модель, пересказывающая свой прогон, ошибается в свою пользу.",
+      "Зачем: поиск находит близкое по смыслу, но нужное ли это, может сказать только человек — оценивать собственную работу памяти запрещено: модель, пересказывающая свой прогон, ошибается в свою пользу. Как: каждый поиск на вкладке «Поиск» любого хранилища сразу ложится сюда с ценой — секунды и был ли ход модели — и подписью хранилища. Вы отмечаете «нашло то» или «нашло не то» и можете сказать почему. Прогон без вашего вердикта считается незавершённым, а не удачным. Сводка считает прогоны всех хранилищ вместе, поэтому хранилища сравниваются одним числом. Порядок — по дате в любую сторону; случай, записанный по ошибке, можно удалить.",
     legacyMark: "спрошено по-старому",
     modelMark: "ход модели: {turn}",
     stores: { graph: "граф знаний", link: "ссылки", object: "объекты", vector: "векторное хранилище" },
+    sortLabel: "Порядок:",
+    sortNewest: "Сначала новые",
+    sortOldest: "Сначала старые",
+    remove: "Удалить",
+    removeConfirm: "Удалить насовсем",
+    removeCancel: "Оставить",
+    removing: "Удаляю…",
+    removeFailed: "Не удалось удалить: {error}",
     pending: "ждёт вашего вердикта",
     summary:
       "Прогонов: {total} · нашло то: {good} · не то: {bad} · без вердикта: {pending} · ответ в среднем: {avg} мс.",
