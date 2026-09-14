@@ -564,7 +564,7 @@ const EN: MemoryUi = {
       title: "Object store test",
     },
     "link-test": {
-      hint: "A saved link is an object whose source is an address: the AI browser opens the page as a person sees it, and what it extracts goes into the same stores as any object. Today this section shows what the browser extracts — nothing is stored yet.",
+      hint: "A saved link is an object whose source is an address: the AI browser opens the page as a person sees it, a model describes what it extracted, and on «Save to memory» it goes into the same four stores as any object.",
       title: "Link test",
     },
     passport: {
@@ -578,7 +578,7 @@ const EN: MemoryUi = {
     failed: "Not opened",
     finalUrl: "final address",
     html: "Final HTML",
-    lead: "Paste one or more addresses, one per line. Memory calls the AI browser on this server: it opens each page, waits for its scripts and returns the final HTML, all the text, headings, interactive elements and media by attributes. Nothing is written to memory here. Addresses of this machine, loopback and private networks are refused by the browser — on every request the page makes, not only the first.",
+    lead: "Paste one or more addresses, one per line. Memory calls the AI browser on this server: it opens each page, waits for its scripts and returns the final HTML, all the text, headings, interactive elements and media by attributes. «Get description» has a model write the full description and summary; «Save to memory» puts the link into the four stores. Addresses of this machine, loopback and private networks are refused by the browser — on every request the page makes, not only the first.",
     limitNote: "Up to 10 addresses per call, opened one after another.",
     loadReached: { no: "load not reached — what had rendered", yes: "page loaded" },
     meta: "Meta",
@@ -862,7 +862,7 @@ const EN: MemoryUi = {
       skill:
         "The skill the memory agent will follow to call the AI browser: which method, which refusals, what to tell the person.",
       upload:
-        "Paste one or more addresses and see, link by link, what the AI browser extracted from the page. Saving into memory comes in the next sub-step.",
+        "Paste one or more addresses and see, link by link, what the AI browser extracted from the page. «Get description» has a model write the full description and summary; «Save to memory» puts the link into the four stores.",
       verdict:
         "The same verdict and the same case book as the other stores — so links are judged by the form every store is judged by.",
     },
@@ -1106,7 +1106,7 @@ const RU: MemoryUi = {
       title: "Тест объектного хранилища",
     },
     "link-test": {
-      hint: "Сохранённая ссылка — это объект, у которого источник — адрес: ИИ-браузер открывает страницу так, как её видит человек, а извлечённое ложится в те же хранилища, что и любой объект. Сегодня раздел показывает, что извлекает браузер, — в память пока ничего не пишется.",
+      hint: "Сохранённая ссылка — это объект, у которого источник — адрес: ИИ-браузер открывает страницу так, как её видит человек, модель описывает извлечённое, а по «Сохранить в память» ссылка ложится в те же четыре хранилища, что и любой объект.",
       title: "Тест ссылок",
     },
     passport: {
@@ -1120,7 +1120,7 @@ const RU: MemoryUi = {
     failed: "Не открылось",
     finalUrl: "итоговый адрес",
     html: "Итоговый HTML",
-    lead: "Вставьте один или несколько адресов, по одному в строке. Память зовёт ИИ-браузер на этом сервере: он открывает каждую страницу, дожидается её скриптов и отдаёт итоговый HTML, весь текст, заголовки, интерактивные элементы и медиа по атрибутам. В память здесь ничего не пишется. Адреса самой машины, петли и частных сетей браузер отвергает — на каждом запросе страницы, а не только на первом.",
+    lead: "Вставьте один или несколько адресов, по одному в строке. Память зовёт ИИ-браузер на этом сервере: он открывает каждую страницу, дожидается её скриптов и отдаёт итоговый HTML, весь текст, заголовки, интерактивные элементы и медиа по атрибутам. «Получить описание» пишет моделью полное описание и саммари, «Сохранить в память» кладёт ссылку в четыре хранилища. Адреса самой машины, петли и частных сетей браузер отвергает — на каждом запросе страницы, а не только на первом.",
     limitNote: "До 10 адресов за вызов, открываются по очереди.",
     loadReached: { no: "load не дождались — отдано отрисованное", yes: "страница загрузилась" },
     meta: "Мета",
@@ -1407,7 +1407,7 @@ const RU: MemoryUi = {
       skill:
         "Навык, по которому агент памяти будет звать ИИ-браузер: какой метод, какие отказы, что сказать человеку.",
       upload:
-        "Вставьте один или несколько адресов и посмотрите по каждой ссылке, что ИИ-браузер извлёк со страницы. Сохранение в память — следующим подшагом.",
+        "Вставьте один или несколько адресов и посмотрите по каждой ссылке, что ИИ-браузер извлёк со страницы. «Получить описание» — полное описание и саммари моделью, «Сохранить в память» — в четыре хранилища.",
       verdict:
         "Тот же вердикт и тот же корпус случаев, что у других хранилищ, — ссылки судятся той же формой, что и любое хранилище.",
     },
