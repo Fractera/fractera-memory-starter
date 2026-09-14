@@ -67,6 +67,26 @@ const moved = await remember({ text: "нет, я живу в Севилье", wh
 const changed = (moved.noted ?? []).find((n) => n.was)
 say(Boolean(changed), `«Толедо» → «Севилья»: ${changed ? `было «${changed.was}», стало «${changed.became}»` : "перехода не видно: " + JSON.stringify(moved.noted)}`)
 
+// ── A4: вводная часть документа графа (требование владельца 2026-09-14) ──────
+//
+// 🔒 ПРОВЕРЯЕТСЯ НЕ «ЗАПИСЬ ПРИНЯТА», А ЧТО ИМЕННО ГРАФ ИЗ НЕЁ ИЗВЛЁК: имя человека и канал обязаны
+// стать СУЩНОСТЯМИ, иначе вопрос «что говорил Рома» не находит ничего. Имя проверяем поиском по
+// меткам — он модель не зовёт.
+await remember({ text: "меня зовут Рома Армстронг", who: WHO, via: "Telegram" })
+const named = await remember({ text: "вчера встречался с Денисом в Севилье", via: "Telegram", who: WHO })
+say(named.ok, `фраза с каналом принята: ${String(named.what_happened).slice(0, 70)}`)
+for (let i = 0; i < 20; i++) {
+  const l = await dataCall(`/service/rag/graph/label/search?q=${encodeURIComponent("Армстронг")}&limit=5`, undefined, "GET")
+  if (Array.isArray(l.body) && l.body.length) break
+  await new Promise((r) => setTimeout(r, 3000))
+}
+const lblName = await dataCall(`/service/rag/graph/label/search?q=${encodeURIComponent("Армстронг")}&limit=5`, undefined, "GET")
+const lblVia = await dataCall(`/service/rag/graph/label/search?q=${encodeURIComponent("Telegram")}&limit=5`, undefined, "GET")
+const lblNone = await dataCall(`/service/rag/graph/label/search?q=${encodeURIComponent("Гиацинтов")}&limit=5`, undefined, "GET")
+say(Array.isArray(lblName.body) && lblName.body.length > 0, `имя человека стало сущностью графа: ${JSON.stringify(lblName.body)}`)
+console.log(`   канал как сущность: ${JSON.stringify(lblVia.body)} (не обязателен, но виден)`)
+say(Array.isArray(lblNone.body) && lblNone.body.length === 0, `НЕГАТИВ: несуществующее имя меткой не стало: ${JSON.stringify(lblNone.body)}`)
+
 // ── B1: значение не того типа от зовущего ────────────────────────────────────
 const badValue = await remember({
   features: [{ key: "money.spent-on-a-purchase", value: "много" }],

@@ -55,6 +55,35 @@ between entities** — what a field can never express and no table holds.
 Occasions to call it are deliberately not listed here: a list of examples would narrow your
 decision, and you see the whole question and judge better than a list.
 
+## What the memory puts in, and why your questions work at all
+
+You do not write here — but knowing what a record looks like tells you what can be asked for.
+
+Every phrase a person says is placed into the graph with an **opening line** the memory builds
+(`lib/graph.mjs`, step 201-5, the owner's requirement of 2026-09-14):
+
+```
+Входящее сообщение из Telegram от Рома Армстронг (roma@telegram), 2026-09-15.
+Относится к: Денис, Рома Армстронг, roma@telegram. Признаки реестра: person.people-he-calls-his-friends.
+```
+
+Four things live there on purpose, because the store makes entities **out of the text itself** and
+out of nothing else:
+
+- **the person's name**, not only the technical key — otherwise the entity is `roma@telegram`, and
+  "what did Roma say" finds nothing;
+- **the channel** the message arrived through, when the caller named it;
+- **the anchors** — first-level entities (a friend, a pet, someone met): the path from the person to
+  this record;
+- **the registry feature keys** — so a record can be reached by the meaning of what was said, not
+  only by names.
+
+Below the phrase the memory adds what was written into tables exactly, and what stayed here only —
+second-order history such as "Денис служил в президентском полку", which never goes into a table.
+
+🛑 **Nothing service-like belongs in that line**: whatever is written there becomes an entity. A
+line naming a probe once put "Прибор 201-2" at the top of an unrelated answer.
+
 ## Limits
 
 **You cannot write through this tool.** The graph grows when the memory places knowledge into it.
