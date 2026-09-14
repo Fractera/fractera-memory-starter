@@ -44,7 +44,8 @@ console.log(`ПРИБОР 200-6 — схема ответа двух глаго�
 console.log("=".repeat(72))
 
 // ── 1. ДОГОВОР ПО HTTP ОТДАЁТ ТУ ЖЕ СХЕМУ ─────────────────────────────────────────
-const live = await (await fetch(`${BASE}/v1/contract`)).json()
+// ✗ ПЕРВЫЙ ПРОГОН ЗВАЛ ДОГОВОР БЕЗ КЛЮЧА: открыт без ключа только `/v1/health`, пришёл `401`, и пять строк прибора покраснели по его вине.
+const live = await (await fetch(`${BASE}/v1/contract`, { headers: { "x-memory-key": KEY } })).json()
 check(live.version === CONTRACT_VERSION, "договор на сервере той же версии, что код", `${live.version} / ${CONTRACT_VERSION}`)
 for (const verb of ["remember", "recall"]) {
   const m = (live.methods ?? []).find((x) => x.name === verb)
