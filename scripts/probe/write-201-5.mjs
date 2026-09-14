@@ -77,7 +77,8 @@ say(
   (badValue.dropped ?? []).some((d) => /не принят/.test(d)),
   `НЕГАТИВ: «много» как деньги отвергнуто и названо: ${(badValue.dropped ?? []).join("; ") || "МОЛЧА"}`,
 )
-say(badValue.kept_whole?.ok === true, `   но сказанное всё равно в графе: ${badValue.kept_whole?.ok}`)
+// 🔒 ПРОВЕРЯЕТСЯ И ТОТ ПУТЬ, ГДЕ РАЗБОР ОТКАЗАЛ: фраза обязана уцелеть в графе даже тогда.
+say(badValue.kept_whole?.ok === true, `   но сказанное всё равно в графе: ${JSON.stringify(badValue.kept_whole)} (ответ: ${String(badValue.what_happened).slice(0, 60)})`)
 
 // ── B2: паритет — та же фраза с признаками и без ─────────────────────────────
 const WHO2 = `${WHO}-parity`
