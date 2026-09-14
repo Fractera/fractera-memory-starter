@@ -1,5 +1,0 @@
-# МЕТКА ЯЗЫКА РЕПОЗИТОРИЯ НА GITHUB (Linguist) СЧИТАЕТСЯ ПО БАЙТАМ ФАЙЛОВ.
-# Отчёты прогонов навыков — страницы, СГЕНЕРИРОВАННЫЕ skill-creator: 1,94 МБ HTML против 1,14 МБ TypeScript.
-# Они давали репозиторию метку HTML — замер API 2026-09-14: HTML 50.8% · TypeScript 28.9% · JavaScript 19.8%.
-# Помечены сгенерированными ИМЕННО ОНИ, а не все *.html: настоящая HTML-страница в будущем обязана считаться.
-development-docs/instruments/**/*.html linguist-generated=true
