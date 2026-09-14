@@ -1,77 +1,191 @@
-// @api испытательный стенд памяти: позвать её метод и увидеть ответ целиком
+// @api испытательный стенд памяти: позвать её ПУБЛИЧНЫЙ API и увидеть запрос и ответ целиком
+import { lookup } from "node:dns/promises"
+import { networkInterfaces } from "node:os"
 import { NextResponse } from "next/server"
-// 🔒 ИСПОЛНИТЕЛИ ПАМЯТИ ЖИВУТ В `.mjs` И ЗОВУТСЯ ОТСЮДА НАПРЯМУЮ. Это ядро
-// службы, написанное до появления страницы; переписывать его под TypeScript
-// значило бы ровно то «программирование заново», которого владелец просил
-// избежать. TypeScript выводит их типы сам — объявлять ничего не нужно.
-import { forget_journal, journal } from "@/lib/journal-verbs.mjs"
-import { people, recall, remember } from "@/lib/verbs.mjs"
+import { maskKey, readKey } from "@/lib/api-key.mjs"
+import { publicMemoryUrl } from "@/lib/fractera/auth-url"
 // 🔒 СЕССИЯ СПРАШИВАЕТСЯ ТЕМ ЖЕ ПОМОЩНИКОМ, ЧТО У ЧАТА, — СКОПИРОВАННЫМ ДОСЛОВНО.
-// 🪦 Здесь стоял `lib/session-http.ts`, написанный мной с нуля, — ровно то
-// «программирование заново», против которого владелец возражал дважды. Два
-// способа узнать человека в одной службе однажды ответили бы по-разному:
-// шапка — «вошёл», дверь — «нет». Удалён тем же коммитом, восстанавливается
-// из git.
 import { fracteraSession } from "@/lib/fractera/session"
 
-// ДВЕРЬ СТЕНДА — ТЕПЕРЬ ВНУТРИ САМОЙ ПАМЯТИ (178-2).
+// ДВЕРЬ СТЕНДА — ПРОВОДНИК В ПУБЛИЧНЫЙ `/v1/*` (200-1).
 //
-// 🪦 РАНЬШЕ ОНА ЖИЛА НА СЛУЖБЕ ЧАТА И ХОДИЛА К ПАМЯТИ ПО HTTP, ЧЕРЕЗ ПЕТЛЮ,
-// с секретом машины. Это было единственным способом: страницы у памяти не было.
-// 🔒 ТЕПЕРЬ СЕТИ В ЦЕПОЧКЕ НЕТ ВОВСЕ — исполнители зовутся прямо, как их зовёт
-// собственный `server.mjs`. Цель владельца дословно: «чтобы мы прям память
-// тестировали из памяти, а не из чата».
-// 🛑 И ЭТО НЕ «УПРОЩЕНИЕ РАДИ СКОРОСТИ», А УСТРАНЕНИЕ ПОСРЕДНИКА, КОТОРЫЙ МОГ
-// ВРАТЬ. Разбор 2026-09-10 показал: между вопросом и памятью стояли перезапуск
-// чужой службы и два промаха с именами — и всё это выглядело как медлительность
-// памяти.
+// 🔒 СТЕНД ЗОВЁТ ПАМЯТЬ ТЕМ ЖЕ ПУТЁМ, ЧТО ЛЮБАЯ ПРОГРАММА: nginx → `server.mjs` →
+// замок ключа → проверка обязательных по договору → исполнитель. Слово владельца
+// 2026-09-14: «it most important page , which for test must have API request ,
+// but not direct call as another pages». Адрес — публичный домен (его выбор).
+// 🪦 До 200-1 дверь импортировала исполнителей ядра памяти и звала их напрямую
+// (178-2): замок ключа, проверка обязательных и отказы договора стендом не
+// проходились, а методов было пять из восьми. Восстанавливается из git.
 //
-// 🔒 ЗАМОК — СЕССИЯ ЧЕЛОВЕКА, РОЛЬ `architect`, тем же конвейером, что у панели,
-// сайта и чата: куки → служба входа `:3001` → `{email, roles}`.
+// 🔒 КЛЮЧ ПАМЯТИ ЖИВЁТ ТОЛЬКО НА СЕРВЕРЕ (закон 185): экран видит его маску.
+// 🛑 И УХОДИТ ОН ТОЛЬКО АДРЕСУ ЭТОЙ МАШИНЫ. Адрес выводится из заголовка `Host`,
+// а заголовок пишет клиент: подделанный `Host` увёл бы ключ на чужой сервер.
+// Поэтому домен разрешается и сверяется с адресами собственных интерфейсов
+// (измерено 2026-09-14: публичный IP стоит на `eth0`); перенаправления не
+// выполняются — ключ не едет следом за `Location`.
 //
+// 🔒 ЗАМОК ДВЕРИ — СЕССИЯ ЧЕЛОВЕКА, РОЛЬ `architect`, конвейером панели и сайта.
 // 🛑 `runtime` И `dynamic` НЕ ОБЪЯВЛЯЮТСЯ: `cacheComponents` их отвергает.
 
-/**
- * 🔒 СЛУЖЕБНОЕ ИМЯ СТЕНДА. Решение владельца 2026-09-10: «какой ещё ключ?.. я
- * никакие ключи не даю… если что-то надо сделай свою».
- *
- * 🪦 ДО 183-3 ДВЕРЬ ПОДСТАВЛЯЛА ЕГО МОЛЧА, И ПОЛЯ НА ЭКРАНЕ НЕ БЫЛО ВОВСЕ.
- * Это было верно ровно до тех пор, пока стенд умел спрашивать одного человека.
- * Теперь имя приходит с экрана — из списка, который память назвала сама
- * (метод `people`), — и дверь ничего не досочиняет: молчаливая подстановка
- * означала бы, что человек на экране видит один вопрос, а память отвечает на
- * другой. Само имя никуда не делось: оно стоит в списке первым.
- */
+/** Служебное имя стенда: первое в списке людей на экране (183-3). */
 export const BENCH_WHO = "bench-1"
 
-/**
- * 🔒 ИСПОЛНИТЕЛИ ПЕРЕЧИСЛЕНЫ ЗДЕСЬ ТАК ЖЕ, КАК В `server.mjs` — по имени из
- * договора. Второй список разошёлся бы с первым молча; он и остаётся вторым,
- * и это названный долг: свести их в один можно, только когда ядро памяти
- * получит типы, а это отдельное решение.
- */
-// 🛑 ТИП АРГУМЕНТА НАМЕРЕННО ШИРОКИЙ. У исполнителей разные подписи: одни ждут
-// `{who, text}`, другие ничего; стенд же обязан позвать ЛЮБОЙ метод договора —
-// в том числе тот, что появится завтра. Сузить тип значило бы запретить стенду
-// его единственное назначение.
-// 🔒 ПРОВЕРКУ ДЕЛАЕТ САМА ПАМЯТЬ, И ЭТО ПРАВИЛЬНОЕ МЕСТО: она отвечает
-// `need-who-and-text`, и стенд обязан ЭТОТ отказ показать, а не подменить своим.
-const RUN: Record<string, (body: never) => Promise<unknown>> = {
-  forget_journal,
-  journal,
-  people,
-  recall,
-  remember,
+const NO_STORE = { "Cache-Control": "no-store" }
+
+/** Ход модели на глубине идёт минутами; nginx держит `proxy_read_timeout 86400`. */
+const LONG_MS = 600_000
+
+type Call = { json?: unknown; path: string; verb: "GET" | "POST" }
+
+function thisMachine(): Set<string> {
+  const out = new Set<string>(["127.0.0.1", "::1"])
+  for (const list of Object.values(networkInterfaces())) {
+    for (const a of list ?? []) out.add(a.address)
+  }
+  return out
 }
 
-export async function POST(request: Request) {
-  const session = await fracteraSession()
-  if (!session) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 })
+async function publicBase(request: Request): Promise<{ base: string; refused: string | null }> {
+  const h = request.headers
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? ""
+  const proto = h.get("x-forwarded-proto") ?? "https"
+  const base = publicMemoryUrl(host, proto)
+  let hostname: string
+  try {
+    hostname = new URL(base).hostname.replace(/^\[|\]$/g, "")
+  } catch {
+    return { base, refused: "bad-host" }
   }
+  try {
+    const found = await lookup(hostname, { all: true })
+    const mine = thisMachine()
+    if (!found.length || !found.every((f) => mine.has(f.address))) {
+      return { base, refused: "host-not-this-machine" }
+    }
+  } catch {
+    return { base, refused: "host-not-resolved" }
+  }
+  return { base, refused: null }
+}
+
+/** Файл объекта не собирается в память двери: считаются байты, тело уходит в никуда. */
+async function countBytes(r: Response): Promise<number> {
+  const reader = r.body?.getReader()
+  if (!reader) return 0
+  let n = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) return n
+    n += value.byteLength
+  }
+}
+
+async function callPublic(request: Request, call: Call) {
+  const { base, refused } = await publicBase(request)
+  const key = readKey()
+  const url = `${base}${call.path}`
+  const payload = call.json === undefined ? undefined : JSON.stringify(call.json)
+
+  // 🔒 ЭКРАН ВИДИТ РОВНО ОТПРАВЛЕННОЕ: адрес, заголовки (ключ маской), тело.
+  const shown: Record<string, string> = {}
+  if (payload !== undefined) shown["content-type"] = "application/json"
+  if (key) shown["x-memory-key"] = maskKey(key) ?? "fmk_…"
+  const sentRequest = { body: call.json ?? null, headers: shown, method: call.verb, url }
+  const sent = { body: call.json ?? null, method: call.path.replace(/^\/v1\//, "") }
+
+  if (refused) {
+    return NextResponse.json(
+      {
+        body: null,
+        ms: 0,
+        request: sentRequest,
+        sent,
+        status: 0,
+        trouble: `адрес ${base} не указывает на эту машину — ключ памяти туда не отправлен (${refused})`,
+      },
+      { headers: NO_STORE }
+    )
+  }
+
+  // 🛑 НЕТ КЛЮЧА — ЗОВЁМ БЕЗ НЕГО: отказ `no-access` есть ответ договора, и стенд
+  // обязан его показать, а не подменить своей ошибкой.
+  const headers: Record<string, string> = {}
+  if (payload !== undefined) headers["content-type"] = "application/json"
+  if (key) headers["x-memory-key"] = key
+
+  const started = Date.now()
+  try {
+    const r = await fetch(url, {
+      body: payload,
+      cache: "no-store",
+      headers,
+      method: call.verb,
+      redirect: "manual",
+      signal: AbortSignal.timeout(LONG_MS),
+    })
+    const type = r.headers.get("content-type") ?? ""
+    let body: unknown
+    if (type.includes("application/json")) {
+      const text = await r.text()
+      try {
+        body = JSON.parse(text)
+      } catch {
+        body = { raw: text.slice(0, 4000) }
+      }
+    } else if (type.startsWith("text/")) {
+      body = { content_type: type, raw: (await r.text()).slice(0, 4000) }
+    } else {
+      body = {
+        bytes: await countBytes(r),
+        content_disposition: r.headers.get("content-disposition"),
+        content_type: type || null,
+      }
+    }
+    return NextResponse.json(
+      { body, ms: Date.now() - started, request: sentRequest, sent, status: r.status, trouble: null },
+      { headers: NO_STORE }
+    )
+  } catch (e) {
+    return NextResponse.json(
+      {
+        body: null,
+        ms: Date.now() - started,
+        request: sentRequest,
+        sent,
+        status: 0,
+        trouble: `публичный API памяти не ответил: ${String((e as Error).message)}`,
+      },
+      { headers: NO_STORE }
+    )
+  }
+}
+
+async function gate(): Promise<NextResponse | null> {
+  const session = await fracteraSession()
+  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   if (!session.roles.includes("architect")) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 })
   }
+  return null
+}
+
+/** Строка каталога чтения → путь договора. Незнакомое не зовётся вовсе. */
+function catalogPath(get: string): string | null {
+  if (get === "tables" || get === "health" || get === "contract") return `/v1/${get}`
+  const table = /^tables\/(.+)$/.exec(get)
+  if (table) return `/v1/tables/${encodeURIComponent(table[1])}`
+  const file = /^objects\/([^/]+)\/file$/.exec(get)
+  if (file) return `/v1/objects/${encodeURIComponent(file[1])}/file`
+  return null
+}
+
+/**
+ * `{ method, body }` — метод договора, тело уезжает КАК НАБРАНО.
+ * `{ get }` — строка каталога: `tables` · `tables/<имя>` · `health` · `contract` · `objects/<id>/file`.
+ */
+export async function POST(request: Request) {
+  const refused = await gate()
+  if (refused) return refused
 
   let body: Record<string, unknown>
   try {
@@ -80,56 +194,33 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "bad-json", ok: false }, { status: 400 })
   }
 
+  if (typeof body.get === "string") {
+    const path = catalogPath(body.get)
+    if (!path) return NextResponse.json({ error: "bad-get", ok: false }, { status: 400 })
+    return callPublic(request, { path, verb: "GET" })
+  }
+
+  // 🔒 ИМЯ МЕТОДА НЕ СВЕРЯЕТСЯ СО СПИСКОМ: метод вне договора получает отказ
+  // `not-built` ОТ САМОЙ ПАМЯТИ. Образец лишь не даёт имени стать чужим путём.
   const method = typeof body.method === "string" ? body.method.trim() : ""
   if (!/^[a-z][a-z0-9_-]{0,40}$/.test(method)) {
     return NextResponse.json({ error: "bad-method", ok: false }, { status: 400 })
   }
+  return callPublic(request, { json: body.body ?? {}, path: `/v1/${method}`, verb: "POST" })
+}
 
-  // 🔒 ЧТО НАБРАНО, ТО И УЕЗЖАЕТ (183-3). Дверь ничего не добавляет от себя:
-  // отказ памяти «не сказано, о ком спрашиваем» — это ЕЁ ответ, и стенд обязан
-  // его показать, а не подменить своей заботливостью.
-  const payload = (body.body ?? {}) as Record<string, unknown>
-
-  const run = RUN[method] as ((body: unknown) => Promise<unknown>) | undefined
-  if (!run) {
-    // 🔒 ОТКАЗ ПОВТОРЯЕТ ФОРМУ САМОЙ СЛУЖБЫ: «не построено», а не «не бывает».
-    // Стенд заведён в том числе для методов, которых ещё нет, и он обязан
-    // показывать их отказ, а не прятать за своей ошибкой.
-    return NextResponse.json(
-      {
-        body: {
-          error: "not-built",
-          hint: "этого метода в договоре нет: методы наполняются по одному, осознанно",
-          ok: false,
-        },
-        ms: 0,
-        sent: { body: payload, method },
-        status: 501,
-        trouble: null,
-      },
-      { headers: { "Cache-Control": "no-store" } }
-    )
+// ✗ ТАБЛИЦЫ СТЕНДА ЗВАЛИ `GET` С 178-1, А ДВЕРЬ ЕГО НЕ ДЕРЖАЛА: журнал nginx
+// 2026-09-14 — 14 обращений `?what=tables`, все `405`. Раздел «Что память
+// построила» был пуст всё это время.
+export async function GET(request: Request) {
+  const refused = await gate()
+  if (refused) return refused
+  const q = new URL(request.url).searchParams
+  const what = q.get("what")
+  const name = q.get("name")
+  if (what === "tables") return callPublic(request, { path: "/v1/tables", verb: "GET" })
+  if (what === "table" && name) {
+    return callPublic(request, { path: `/v1/tables/${encodeURIComponent(name)}`, verb: "GET" })
   }
-
-  const started = Date.now()
-  try {
-    const answer = await run(payload)
-    return NextResponse.json(
-      { body: answer, ms: Date.now() - started, sent: { body: payload, method }, status: 200, trouble: null },
-      { headers: { "Cache-Control": "no-store" } }
-    )
-  } catch (e) {
-    // 🛑 ОТКАЗ ИСПОЛНИТЕЛЯ — ЭТО ОТВЕТ, А НЕ ПАДЕНИЕ СТРАНИЦЫ. Стенд для того и
-    // есть, чтобы видеть, как память ведёт себя на самом деле.
-    return NextResponse.json(
-      {
-        body: null,
-        ms: Date.now() - started,
-        sent: { body: payload, method },
-        status: 0,
-        trouble: `память отказала: ${String((e as Error).message)}`,
-      },
-      { headers: { "Cache-Control": "no-store" } }
-    )
-  }
+  return NextResponse.json({ error: "bad-what", ok: false }, { status: 400 })
 }
