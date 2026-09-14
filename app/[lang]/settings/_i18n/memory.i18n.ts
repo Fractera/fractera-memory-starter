@@ -17,6 +17,8 @@ import type { OpenAiKeyWords } from "../_components/openai-key";
 import type { OpenAiTabWords } from "../_components/openai-tab";
 import type { BenchControlWords } from "../_components/memory-test-controls.client";
 import type { ApiKeyWords } from "../_components/api-key.client";
+import type { LinkBenchWords } from "../_components/link-bench.client";
+import type { YoutubeKeyCardWords } from "../_components/youtube-key";
 
 export type MemoryUi = {
   title: string;
@@ -46,10 +48,13 @@ export type MemoryUi = {
     /** Названия трёх страниц: загрузка · поиск · оценка. */
     tabs: Record<TestTab | "skill" | "bench", string>;
     /** Лид каждой страницы у графа и у вектора — что человек здесь делает. */
-    graph: Record<TestTab, string>;
-    vector: Record<TestTab, string>;
+    // 🪦 195-11: лид «Оценки» у стендов удалён — вкладка оценки на всех стендах читает один `benchCases.lead`.
+    graph: Record<Exclude<TestTab, "verdict">, string>;
+    vector: Record<Exclude<TestTab, "verdict">, string>;
     /** Лиды стенда объектного хранилища (192-3); с 194-6 — и страницы «Навык». */
-    object: Record<TestTab | "skill", string>;
+    object: Record<Exclude<TestTab, "verdict"> | "skill", string>;
+    /** Лиды стенда ссылок (195-1): все четыре вкладки стоят сразу, построена «Загрузка». */
+    link: Record<Exclude<TestTab, "verdict"> | "skill", string>;
     /** Честная строка о том, что органа ещё нет: молчащий экран читается как поломка. */
     soon: string;
     /** Файла навыка на диске нет — сказано словами, а не пустым экраном (194-6). */
@@ -116,6 +121,17 @@ export type MemoryUi = {
     lead: string;
     legacyMark: string;
     modelMark: string;
+    /** 195-10: подпись хранилища у случая — корпус один на все стенды (решение владельца «Общий + подпись»). */
+    stores: Record<string, string>;
+    /** 195-11: порядок по дате и удаление случая. */
+    sortLabel: string;
+    sortNewest: string;
+    sortOldest: string;
+    remove: string;
+    removeConfirm: string;
+    removeCancel: string;
+    removing: string;
+    removeFailed: string;
     pending: string;
     summary: string;
     title: string;
@@ -191,6 +207,8 @@ export type MemoryUi = {
     savedRow: string;
     savedSummary: string;
     savedTitle: string;
+    /** 195-8: подпись адреса ссылки в блоке «что легло в память». */
+    savedUrl: string;
     /** 194-8: подписи просмотра объекта — слова медиатеки панели дословно, плюс аудио. */
     preview: {
       close: string;
@@ -264,6 +282,10 @@ export type MemoryUi = {
   };
   /** Слова карточки ключа доступа — форму задаёт сама карточка (185). */
   apiKey: ApiKeyWords;
+  /** Слова карточки ключа YouTube Data API (195-4) — форму задаёт карточка. */
+  youtubeKey: YoutubeKeyCardWords;
+  /** Слова стенда ссылок (195-1) — перенесены из `readTest` словаря службы ИИ-браузера и адаптированы. */
+  linkBench: LinkBenchWords;
   memoryTest: {
     lead: string;
     say: string;
@@ -558,9 +580,102 @@ const EN: MemoryUi = {
       hint: "This tab tests the object store together with every service that keeps data with it: each object that enters memory is written to the database, the vector store and the knowledge graph, and is kept as it is in the object store.",
       title: "Object store test",
     },
+    "link-test": {
+      hint: "A saved link is an object whose source is an address: the AI browser opens the page as a person sees it, a model describes what it extracted, and on «Save to memory» it goes into the same four stores as any object.",
+      title: "Link test",
+    },
     passport: {
       hint: "What memory is and how it works — written before it is built. Read it, approve it or change it; the code comes after.",
       title: "Passport",
+    },
+  },
+  youtubeKey: {
+    title: "YouTube Data API key",
+    lead:
+      "With this key memory reads a video by its address: title, channel, date, duration, the full description and — the point of it — the chapters the author wrote with timestamps. That is what answers «at which minute was this said», with no transcript at all. The key is kept in the machine secret store and never leaves the server.",
+    exists: "Key is set:",
+    missing: "No key yet — a link to a video is refused with youtube-key-missing.",
+    stepsTitle: "How to get the key",
+    steps: [
+      "Open console.cloud.google.com and choose a project, or create one.",
+      "APIs & Services → Library → find «YouTube Data API v3» → Enable.",
+      "APIs & Services → Credentials → Create credentials → API key.",
+      "Copy the key (it begins with AIza) and paste it below. Restricting the key to the YouTube Data API is recommended.",
+    ],
+    quotaNote:
+      "Google gives 10 000 units a day by default; reading one video costs 1 unit, a search costs 100 calls a day. The text of someone else's subtitles is not available through this API at all — measured: captions.download answers 401 «API keys are not supported by this API».",
+    form: {
+      keyLabel: "API key",
+      keyPlaceholder: "AIza…",
+      keyReplace: "Replace the key",
+      save: "Save",
+      saving: "Saving…",
+      saved: "Saved.",
+      check: "Check with Google",
+      checking: "Checking…",
+      valid: "Google accepted the key. Test video read:",
+      errors: {
+        empty: "The field is empty.",
+        "bad-format": "That does not look like a Google API key: it begins with AIza and is about 39 characters long.",
+        "store-refused": "The machine secret store did not accept the key — the service could not write the file.",
+        "key-missing": "No key is set yet.",
+        "key-rejected": "Google rejected the key: it is invalid, expired, or restricted to other addresses.",
+        quota: "The daily quota of this Google project is spent. It resets at midnight Pacific time.",
+        refused: "Google refused the request.",
+        unreachable: "Could not reach Google from the server.",
+        unauthorized: "Sign in again — the session has expired.",
+        forbidden: "The architect role is required.",
+      },
+    },
+  },
+  linkBench: {
+    counts: { audios: "Audio", blocked: "Blocked", buttons: "Buttons", fields: "Fields", forms: "Forms", headings: "Headings", iframes: "Frames", images: "Images", links: "Links", videos: "Video" },
+    error: "Refused",
+    failed: "Not opened",
+    finalUrl: "final address",
+    html: "Final HTML",
+    lead: "Paste one or more addresses, one per line. Memory calls the AI browser on this server — and for a YouTube link the official API instead. What goes into memory is the DESCRIPTION and the STRUCTURE: headings, interactive elements, media by attributes, chapters of a video, the page snippet. The whole text of a page is kept only if you ask for it below. «Get description» has a model write the full description and summary; «Save to memory» puts the link into the four stores. Addresses of this machine, loopback and private networks are refused by the browser — on every request the page makes, not only the first.",
+    limitNote: "Up to 10 addresses per call, opened one after another.",
+    loadReached: { no: "load not reached — what had rendered", yes: "page loaded" },
+    meta: "Meta",
+    ms: "ms",
+    placeholder: "https://example.com\nhttps://todomvc.com/examples/react/dist/",
+    run: "Open",
+    running: "Opening…",
+    status: "code",
+    text: "Visible text",
+    total: "On the page in total",
+    truncatedNote: "The screen shows the beginning; memory receives the full value.",
+    search: {
+      askLabel: "Which site are you looking for — in your own words",
+      askPlaceholder: "a site that sells an inflatable boat for sea trips, among the ones I analysed",
+      hits: "Links found: {n} (closer than {threshold}).",
+      nearestWas: "The nearest saved link was at {score}:",
+      nothing: "No saved link is closer than {threshold}.",
+    },
+    save: {
+      aboutHint: "About 50 words. Goes to the table row and to the search card in the vector store — as with any object.",
+      aboutLabel: "Summary",
+      busy: "Saving…",
+      button: "Save to memory",
+      describe: "Get description",
+      describedBy: "Described by {by} · language {lang} · {s} s · snapshot {chars} characters",
+      describing: "Opening the page and describing… {s} s",
+      existing: "This link is already in memory — nothing was done. Below is what is stored.",
+      fullHint: "Goes with the page snapshot into the object store and into the knowledge graph with the address and origin — as with any object.",
+      fullLabel: "Full description",
+      htmlWhole: "Also keep all the visible text of the page (the final HTML is never stored)",
+      stored: "Saved to the four stores in {ms} ms.",
+      viewFailed: "Saved, but what landed could not be read back.",
+      sourceApi: "Read by the official YouTube API, not by the browser: one unit of quota, no bot checks.",
+      chaptersTitle: "Chapters — {n}",
+      chapterOfAsked: "The address pointed inside the chapter «{chapter}», which starts at {stamp}.",
+      noChapters: "The author wrote no timestamped outline in the description, so there is nothing to answer by chapters.",
+      keepThumbnail: "Keep the video cover as a linked image ({width}×{height})",
+      keepSnippet: "Keep the page snippet as a linked image",
+      snippetTitle: "Snippet in memory",
+      snippetFailed: "The snippet was not saved: {error}. The link itself is in memory.",
+      pageRefused: "The site did not give this page (code {status}) — most often a bot check on the server's address. There is nothing to describe or save.",
     },
   },
   graphUpload: {
@@ -600,9 +715,18 @@ const EN: MemoryUi = {
     good: "Found the right thing",
     judged: "Judged.",
     lead:
-      "Only you can say whether the right thing was found. The engine is never allowed to grade its own work — a model retelling its own run errs in its own favour.",
+      "Why: search finds what is close in meaning, but only a person can say whether it is the right thing — memory is never allowed to grade its own work, because a model retelling its own run errs in its own favour. How: every search on the Search tab of any store lands here at once, with its price — seconds and whether a model turn was spent — and the name of its store. You mark it «found the right thing» or «found the wrong thing» and may say why. A run without your verdict counts as unfinished, not as a success. The summary counts the runs of all stores together, so the stores are compared by one number. Sort by date either way; a run recorded by mistake can be deleted.",
     legacyMark: "asked the old way",
     modelMark: "model turn: {turn}",
+    stores: { graph: "knowledge graph", link: "links", object: "objects", vector: "vector store" },
+    sortLabel: "Order:",
+    sortNewest: "Newest first",
+    sortOldest: "Oldest first",
+    remove: "Delete",
+    removeConfirm: "Delete for good",
+    removeCancel: "Keep",
+    removing: "Deleting…",
+    removeFailed: "Could not delete: {error}",
     pending: "awaiting your verdict",
     summary:
       "Runs: {total} · right: {good} · wrong: {bad} · awaiting verdict: {pending} · average answer: {avg} ms.",
@@ -690,6 +814,7 @@ const EN: MemoryUi = {
     savedRow: "Row in messages_that_came_into_memory",
     savedSummary: "Summary — in the table row and the search card",
     savedTitle: "What went into memory",
+    savedUrl: "Link",
     preview: {
       close: "Close",
       code: "Code",
@@ -780,8 +905,6 @@ const EN: MemoryUi = {
         "Ask in words that are not in the text. The graph answers from entities and relations it extracted at load time — this is where the answer must be instant.",
       upload:
         "Paste your text and press the button. A model reads it once and pulls out entities and relations: the cost sits here, at load time, on purpose.",
-      verdict:
-        "Only you can say whether the right thing was found. The numbers next to your verdict — seconds and model turns — are measured, not guessed.",
     },
     skillMissing:
       "The skill file {path} is not on this server — the delivery did not bring it.",
@@ -800,8 +923,6 @@ const EN: MemoryUi = {
         "Ask by meaning, not by matching words. The store returns the closest passages with their distance — and an unrelated question must return nothing.",
       upload:
         "The same text becomes a fingerprint of its meaning. No model reads it; only the embeddings are computed, and that is much cheaper.",
-      verdict:
-        "The same verdict, the same case book. Two stores judged by one form, so their numbers can be compared at all.",
     },
     object: {
       search:
@@ -810,8 +931,14 @@ const EN: MemoryUi = {
         "Put a file as it is. It is kept whole; what makes it findable is its card — the name, your description and, for a text file, its opening. Nobody looks inside a picture or a PDF, so describe those in words.",
       skill:
         "The skill the memory agent will follow when a file arrives from the API: describe it, store it whole, answer by id. This is the file itself, read from disk on every load — the same text the agent reads.",
-      verdict:
-        "The same verdict and the same case book as the other two stores — three stores judged by one form.",
+    },
+    link: {
+      search:
+        "Find a site you analysed earlier by meaning — «a shop that sells an inflatable boat for sea trips» — and get its full description, summary and the link itself.",
+      skill:
+        "The skill the memory agent will follow to call the AI browser: which method, which refusals, what to tell the person.",
+      upload:
+        "Paste one or more addresses and see, link by link, what the AI browser extracted from the page. «Get description» has a model write the full description and summary; «Save to memory» puts the link into the four stores.",
     },
   },
   subtitle:
@@ -1052,9 +1179,102 @@ const RU: MemoryUi = {
       hint: "Эта вкладка проверяет связку объектного хранилища со всеми службами, которые участвуют в хранении данных: каждый объект, попавший в память, прописывается в базе данных, векторном хранилище и графе знаний и сохраняется в исходном виде в объектном хранилище.",
       title: "Тест объектного хранилища",
     },
+    "link-test": {
+      hint: "Сохранённая ссылка — это объект, у которого источник — адрес: ИИ-браузер открывает страницу так, как её видит человек, модель описывает извлечённое, а по «Сохранить в память» ссылка ложится в те же четыре хранилища, что и любой объект.",
+      title: "Тест ссылок",
+    },
     passport: {
       hint: "Что такое память и как она работает — написанное раньше, чем построено. Читаете, утверждаете или меняете; код идёт после.",
       title: "Паспорт",
+    },
+  },
+  youtubeKey: {
+    title: "Ключ YouTube Data API",
+    lead:
+      "С этим ключом память читает ролик по адресу: название, канал, дату, длительность, описание целиком и — главное — главы, которые автор написал с метками времени. Именно они отвечают на вопрос «на какой минуте про это говорили», без всякой расшифровки. Ключ лежит в складе секретов машины и с сервера не уходит.",
+    exists: "Ключ задан:",
+    missing: "Ключа ещё нет — ссылка на ролик получит отказ youtube-key-missing.",
+    stepsTitle: "Как получить ключ",
+    steps: [
+      "Откройте console.cloud.google.com и выберите проект или создайте новый.",
+      "APIs & Services → Library → найдите «YouTube Data API v3» → Enable.",
+      "APIs & Services → Credentials → Create credentials → API key.",
+      "Скопируйте ключ (он начинается на AIza) и вставьте его ниже. Ограничить ключ только YouTube Data API — хорошая привычка.",
+    ],
+    quotaNote:
+      "Google по умолчанию даёт 10 000 единиц в день; чтение одного ролика стоит 1 единицу, поиск — 100 вызовов в день. Текст чужих субтитров этим API не отдаётся вовсе — измерено: captions.download отвечает 401 «API keys are not supported by this API».",
+    form: {
+      keyLabel: "Ключ API",
+      keyPlaceholder: "AIza…",
+      keyReplace: "Заменить ключ",
+      save: "Сохранить",
+      saving: "Сохраняю…",
+      saved: "Сохранено.",
+      check: "Проверить у Google",
+      checking: "Проверяю…",
+      valid: "Google принял ключ. Пробный ролик прочитан:",
+      errors: {
+        empty: "Поле пустое.",
+        "bad-format": "Это не похоже на ключ Google API: он начинается на AIza и длиной около 39 знаков.",
+        "store-refused": "Склад секретов машины не принял ключ — служба не смогла записать файл.",
+        "key-missing": "Ключ ещё не задан.",
+        "key-rejected": "Google отверг ключ: он неверен, истёк или ограничен другими адресами.",
+        quota: "Дневная квота этого проекта Google исчерпана. Она обнуляется в полночь по тихоокеанскому времени.",
+        refused: "Google отказал в запросе.",
+        unreachable: "С сервера не удалось дойти до Google.",
+        unauthorized: "Войдите заново — сессия истекла.",
+        forbidden: "Нужна роль архитектора.",
+      },
+    },
+  },
+  linkBench: {
+    counts: { audios: "Звук", blocked: "Отвергнуто", buttons: "Кнопки", fields: "Поля", forms: "Формы", headings: "Заголовки", iframes: "Фреймы", images: "Картинки", links: "Ссылки", videos: "Видео" },
+    error: "Отказ",
+    failed: "Не открылось",
+    finalUrl: "итоговый адрес",
+    html: "Итоговый HTML",
+    lead: "Вставьте один или несколько адресов, по одному в строке. Память зовёт ИИ-браузер на этом сервере, а для ссылки на YouTube — официальный API. В память ложится ОПИСАНИЕ и СТРУКТУРА: заголовки, интерактивные элементы, медиа по атрибутам, главы ролика, сниппет страницы. Весь текст страницы сохраняется только по вашей отметке ниже. «Получить описание» пишет моделью полное описание и саммари, «Сохранить в память» кладёт ссылку в четыре хранилища. Адреса самой машины, петли и частных сетей браузер отвергает — на каждом запросе страницы, а не только на первом.",
+    limitNote: "До 10 адресов за вызов, открываются по очереди.",
+    loadReached: { no: "load не дождались — отдано отрисованное", yes: "страница загрузилась" },
+    meta: "Мета",
+    ms: "мс",
+    placeholder: "https://example.com\nhttps://todomvc.com/examples/react/dist/",
+    run: "Открыть",
+    running: "Открываю…",
+    status: "код",
+    text: "Видимый текст",
+    total: "Всего на странице",
+    truncatedNote: "На экране — начало; память получает значение целиком.",
+    search: {
+      askLabel: "Какой сайт вы ищете — своими словами",
+      askPlaceholder: "сайт, где продают надувную лодку для морских путешествий, среди тех, что я анализировал",
+      hits: "Найдено ссылок: {n} (ближе порога {threshold}).",
+      nearestWas: "Ближайшая сохранённая ссылка была на расстоянии {score}:",
+      nothing: "Среди сохранённых ссылок нет ни одной ближе порога {threshold}.",
+    },
+    save: {
+      aboutHint: "Около 50 слов. Уходит в строку таблицы и в карточку поиска векторного хранилища — как у любого объекта.",
+      aboutLabel: "Саммари",
+      busy: "Сохраняю…",
+      button: "Сохранить в память",
+      describe: "Получить описание",
+      describedBy: "Описал {by} · язык {lang} · {s} с · снимок {chars} знаков",
+      describing: "Открываю страницу и описываю… {s} с",
+      existing: "Эта ссылка уже в памяти — ничего не сделано. Ниже то, что лежит.",
+      fullHint: "Уходит вместе со снимком страницы в объектное хранилище и в граф знаний с адресом и происхождением — как у любого объекта.",
+      fullLabel: "Полное описание",
+      htmlWhole: "Сохранить ещё и весь видимый текст страницы (итоговый HTML не сохраняется никогда)",
+      stored: "Сохранено в четыре хранилища за {ms} мс.",
+      viewFailed: "Сохранено, но легшее не удалось прочитать обратно.",
+      sourceApi: "Прочитано официальным API YouTube, а не браузером: одна единица квоты и никаких проверок на ботов.",
+      chaptersTitle: "Главы — {n}",
+      chapterOfAsked: "Адрес указывал внутрь главы «{chapter}», которая начинается с {stamp}.",
+      noChapters: "Автор не написал в описании оглавления с метками времени — значит по главам ответить нечем.",
+      keepThumbnail: "Сохранить обложку ролика связанной картинкой ({width}×{height})",
+      keepSnippet: "Сохранить сниппет страницы связанной картинкой",
+      snippetTitle: "Сниппет в памяти",
+      snippetFailed: "Сниппет не сохранён: {error}. Сама ссылка в памяти есть.",
+      pageRefused: "Сайт не отдал эту страницу (код {status}) — чаще всего это проверка на ботов по адресу сервера. Описывать и сохранять нечего.",
     },
   },
   subtitle:
@@ -1096,9 +1316,18 @@ const RU: MemoryUi = {
     good: "Нашло то",
     judged: "Вердикт записан.",
     lead:
-      "Нашлось нужное или нет — можете сказать только вы. Оценивать собственную работу памяти запрещено: модель, пересказывающая свой прогон, ошибается в свою пользу.",
+      "Зачем: поиск находит близкое по смыслу, но нужное ли это, может сказать только человек — оценивать собственную работу памяти запрещено: модель, пересказывающая свой прогон, ошибается в свою пользу. Как: каждый поиск на вкладке «Поиск» любого хранилища сразу ложится сюда с ценой — секунды и был ли ход модели — и подписью хранилища. Вы отмечаете «нашло то» или «нашло не то» и можете сказать почему. Прогон без вашего вердикта считается незавершённым, а не удачным. Сводка считает прогоны всех хранилищ вместе, поэтому хранилища сравниваются одним числом. Порядок — по дате в любую сторону; случай, записанный по ошибке, можно удалить.",
     legacyMark: "спрошено по-старому",
     modelMark: "ход модели: {turn}",
+    stores: { graph: "граф знаний", link: "ссылки", object: "объекты", vector: "векторное хранилище" },
+    sortLabel: "Порядок:",
+    sortNewest: "Сначала новые",
+    sortOldest: "Сначала старые",
+    remove: "Удалить",
+    removeConfirm: "Удалить насовсем",
+    removeCancel: "Оставить",
+    removing: "Удаляю…",
+    removeFailed: "Не удалось удалить: {error}",
     pending: "ждёт вашего вердикта",
     summary:
       "Прогонов: {total} · нашло то: {good} · не то: {bad} · без вердикта: {pending} · ответ в среднем: {avg} мс.",
@@ -1186,6 +1415,7 @@ const RU: MemoryUi = {
     savedRow: "Строка messages_that_came_into_memory",
     savedSummary: "Саммари — в строке таблицы и в карточке поиска",
     savedTitle: "Что легло в память",
+    savedUrl: "Ссылка",
     preview: {
       close: "Закрыть",
       code: "Код",
@@ -1277,8 +1507,6 @@ const RU: MemoryUi = {
         "Спросите словами, которых в тексте нет. Граф отвечает из сущностей и связей, добытых при загрузке, — здесь ответ обязан приходить мгновенно.",
       upload:
         "Вставьте свой текст и нажмите кнопку. Модель прочитает его один раз и вытащит сущности и связи: цена стоит здесь, на загрузке, и это сделано намеренно.",
-      verdict:
-        "Нашлось нужное или нет — можете сказать только вы. Числа рядом с вашим вердиктом — секунды и ходы модели — измерены, а не прикинуты.",
     },
     skillMissing:
       "Файла навыка {path} на этом сервере нет — доставка его не привезла.",
@@ -1297,8 +1525,6 @@ const RU: MemoryUi = {
         "Спрашивайте по смыслу, а не по совпадению слов. Хранилище вернёт ближайшие куски и их близость — а посторонний вопрос обязан не найти ничего.",
       upload:
         "Тот же текст превращается в отпечаток смысла. Модель его не читает — считаются только встраивания, и это заметно дешевле.",
-      verdict:
-        "Тот же вердикт и тот же корпус случаев. Два хранилища судятся одной формой — иначе их числа не с чем сравнивать.",
     },
     object: {
       search:
@@ -1307,8 +1533,14 @@ const RU: MemoryUi = {
         "Положите файл как есть. Он хранится целиком, а находит его карточка — имя, ваше описание и, у текстового файла, его начало. Внутрь картинки и PDF никто не смотрит, поэтому их описывайте словами.",
       skill:
         "Навык, по которому агент памяти будет действовать, когда файл придёт через API: описать, сохранить целиком, ответить номерами. Это сам файл, прочитанный с диска при каждой загрузке, — тот же текст, что читает агент. Навык написан по-английски: машинный слой памяти одноязычен.",
-      verdict:
-        "Тот же вердикт и тот же корпус случаев, что у двух других хранилищ, — три хранилища судятся одной формой.",
+    },
+    link: {
+      search:
+        "Найдите сайт, который вы раньше анализировали, по смыслу — «магазин, где есть надувная лодка для морских путешествий» — и получите его полное описание, саммари и саму ссылку.",
+      skill:
+        "Навык, по которому агент памяти будет звать ИИ-браузер: какой метод, какие отказы, что сказать человеку.",
+      upload:
+        "Вставьте один или несколько адресов и посмотрите по каждой ссылке, что ИИ-браузер извлёк со страницы. «Получить описание» — полное описание и саммари моделью, «Сохранить в память» — в четыре хранилища.",
     },
   },
   title: "Память",

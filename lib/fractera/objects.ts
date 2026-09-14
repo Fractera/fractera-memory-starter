@@ -1,6 +1,6 @@
 import { dataFetch, dataJson, dataService } from "./data-service";
 import { forgetDocuments, learn } from "./knowledge";
-import { getMessage, getMessageByObject, insertMessage } from "@/lib/messages.mjs";
+import { getMessage, getMessageByObject, insertMessage, objectIdsOfKind } from "@/lib/messages.mjs";
 import type { PreviewItem } from "@/_tools/object-view/client/object-preview.client";
 import { describe, kindOf, messageKindOf } from "@/lib/describe.mjs";
 import { isCodeName } from "@/_tools/code-view/types/code-langs.mjs";
@@ -198,25 +198,36 @@ export async function keep(input: {
   described_by?: string;
   describe_ms?: number;
   full?: string;
+  /**
+   * Род строки таблицы, когда его не вывести из имени файла (195-2): снимок ссылки — файл `.md`, а род у него `web`.
+   * 🔒 Раскладка по хранилищам от рода НЕ ЗАВИСИТ — слово владельца: «абсолютно одинаковое решение что для объекта что для ссылки».
+   */
+  kind?: string;
   language?: string;
   mime: string;
   name: string;
   source?: string;
   tags?: string[];
   title?: string;
+  /** Адрес ссылки (195-2): ложится в колонку `url` и в происхождение документа графа. */
+  url?: string;
   who?: string;
 }): Promise<
   | { ok: true; card: ObjectCard; cardChars: number; messageId: number; ms: number }
   | { ok: false; error: string; messageId?: number }
 > {
   const name = String(input.name ?? "").trim();
-  const about = String(input.about ?? "").trim();
-  const full = String(input.full ?? "").trim();
+  // 🔒 ПЕРЕВОДЫ СТРОК ВОЗВРАЩАЮТСЯ К `\n` (195-2). ✗ Измерено: форма (`FormData`) при отправке превращает каждый `\n` текстового
+  // поля в `\r\n` — так делают и браузер, и Node 22; разбор обратно их не возвращает. Полное описание из 4 строк ложилось на 4
+  // знака длиннее написанного моделью. Касается любого объекта со стенда; уже лежащие описания не переписываются.
+  const lf = (v: unknown) => String(v ?? "").replace(/\r\n/g, "\n").trim();
+  const about = lf(input.about);
+  const full = lf(input.full);
   const title = String(input.title ?? "").trim();
   if (!name) return { error: "no-name", ok: false };
   if (!input.bytes?.length) return { error: "empty-file", ok: false };
 
-  const kind = messageKindOf(kindOf(name, input.mime) ?? "text", name);
+  const kind = input.kind || messageKindOf(kindOf(name, input.mime) ?? "text", name);
   // 🔒 КОД УХОДИТ `text/plain`, А НЕ ТЕМ, ЧТО ПРИСЛАЛ БРАУЗЕР (194-10): `.ts` приходит `video/mp2t`, и
   // медиатека записала бы исходник видео — дверь файла отдала бы его плееру.
   const mime = isCodeName(name) ? CODE_MIME : input.mime;
@@ -236,6 +247,7 @@ export async function keep(input: {
       summary: about || null,
       tags: Array.isArray(input.tags) ? input.tags : null,
       title: title || name,
+      url: input.url || null,
       who: input.who || "stand",
       ...extra,
     });
@@ -282,6 +294,22 @@ export async function keep(input: {
   const dropMedia = () => dataFetch(`/media/${item!.id}`, { method: "DELETE" }).catch(() => undefined);
   const dropVector = () => dataFetch(`/vectors/${vectorId(item!.id)}`, { method: "DELETE" }).catch(() => undefined);
 
+  // 🔒 ПОЛНОЕ ОПИСАНИЕ ПЕРЕПИСЫВАЕТСЯ JSON-ДВЕРЬЮ МЕДИАТЕКИ СРАЗУ ПОСЛЕ ЗАГРУЗКИ (195-2). ✗ Измерено: форма `/media/upload`
+  // превращает каждый `\n` описания в `\r\n` — у всех объектов, сохранённых с 194-4, в описании только `\r\n`. JSON переводов
+  // строк не трогает, и дверь возвращает перечитанную строку — сверяем легшее с отправленным байт в байт.
+  // 🔒 НЕ СОВПАЛО — ОТКАТ, А НЕ ПОЛОВИНА УСПЕХА: объект с искажённым описанием — ровно то, от чего закон «четыре или ничего».
+  const description = full || about;
+  try {
+    const p = await dataJson<{ item?: { description?: string }; ok?: boolean }>(`/media/${item.id}`, {
+      body: JSON.stringify({ description }),
+      method: "PATCH",
+    });
+    if (p.ok !== true || p.item?.description !== description) throw new Error("description differs");
+  } catch {
+    await dropMedia();
+    return fail("store-refused: description");
+  }
+
   try {
     const v = await dataJson<{ ok?: boolean }>("/vectors", {
       body: JSON.stringify({
@@ -310,7 +338,9 @@ export async function keep(input: {
   const SOURCE_WORDS: Record<string, string> = { api: "API памяти", stand: "тестовый стенд памяти", telegram: "Telegram" };
   const sourceWord = SOURCE_WORDS[input.source || "stand"] ?? String(input.source);
   const when = new Date().toISOString().replace(/\.\d{3}Z$/, " UTC").replace("T", " ");
-  const origin = `${sourceWord}${input.author ? `, прислал ${input.author}` : ""}, ${when}, файл «${name}»`;
+  // 195-2: у ссылки происхождение называет страницу — адрес находим в графе так же, как дату и автора.
+  const what = input.url ? `страница «${input.url}»` : `файл «${name}»`;
+  const origin = `${sourceWord}${input.author ? `, прислал ${input.author}` : ""}, ${when}, ${what}`;
   const anchors = Array.isArray(input.anchors) ? input.anchors : [title || name];
   const tagLine = Array.isArray(input.tags) && input.tags.length ? `\n\nТеги: ${input.tags.join(", ")}.` : "";
   const g = await learn({
@@ -351,19 +381,26 @@ export async function keep(input: {
  * 🛑 КАРТОЧКА БЕЗ ФАЙЛА ПРОПУСКАЕТСЯ И СЧИТАЕТСЯ. Объект могли стереть из
  * медиатеки мимо памяти; отдать его id значило бы послать зовущего в пустоту.
  */
-export async function find(input: { k?: number; question: string }): Promise<
+export async function find(input: { k?: number; kind?: string; question: string }): Promise<
   | { ok: true; hits: ObjectHit[]; near: ObjectHit[]; lost: number }
   | { ok: false; error: string; hits: []; near: []; lost: 0 }
 > {
   try {
+    const k = input.k ?? 5;
+    // 🔒 С РОДОМ (195-8) ИЩЕМ ШИРЕ И ОСТАВЛЯЕМ ТОЛЬКО ЭТОТ РОД. Ссылки и объекты лежат в одной коллекции векторов, и род живёт в
+    // таблице сообщений: взяв ровно `k` кандидатов, поиск ссылок отдал бы пустоту там, где первые `k` мест заняли документы.
+    // Без рода поведение прежнее — кандидатов ровно `k`.
+    const only = input.kind ? await objectIdsOfKind(input.kind) : null;
     const r = await dataJson<{ results?: { refId?: string; score: number; text?: string }[] }>("/vectors/search", {
-      body: JSON.stringify({ collection: OBJECT_COLLECTION, k: input.k ?? 5, query: input.question }),
+      body: JSON.stringify({ collection: OBJECT_COLLECTION, k: only ? Math.max(k * 10, 50) : k, query: input.question }),
       method: "POST",
     });
     const rows = await mediaRows();
     const hits: ObjectHit[] = [];
     let lost = 0;
     for (const p of r.results ?? []) {
+      if (only && !only.has(String(p.refId))) continue;
+      if (hits.length >= k) break;
       const m = rows.get(String(p.refId));
       if (!m) {
         lost += 1;

@@ -15,8 +15,10 @@ import { GraphSearch } from "./_components/graph-search.client";
 import { BenchCases } from "./_components/bench-cases.client";
 import { VectorSearch, VectorUpload } from "./_components/vector-bench.client";
 import { ObjectSearch, ObjectUpload } from "./_components/object-bench.client";
+import { LinkBench } from "./_components/link-bench.client";
 import { OpenAiTab } from "./_components/openai-tab";
 import { AnthropicKeySection } from "./_components/anthropic-key";
+import { YoutubeKeySection } from "./_components/youtube-key";
 import { ModelSections } from "./_components/models.client";
 import { PassportBody } from "./_components/passport-body.client";
 import { ApiDoc } from "./_components/api-doc";
@@ -292,11 +294,17 @@ async function MemoryPageBody({
                 <p className="max-w-3xl text-[length:var(--fs-body)] text-muted-foreground">
                   {openTab === "skill"
                     ? ui.testBench.skillLead
+                    : openTab === "verdict"
+                      ? // 🔒 ЛИД ОЦЕНКИ ОДИН НА ВСЕ СТЕНДЫ (195-11, слово владельца: «напиши в заголовке этой вкладки зачем она нужна как она
+                        // работает»): одно место словаря вместо четырёх копий. Лиды стендов `testBench.*.verdict` здесь больше не читаются.
+                        ui.benchCases.lead
+                    : active === "link-test"
+                      ? ui.testBench.link[pageTab as Exclude<TestTab, "verdict">]
                     : active === "object-test"
-                      ? ui.testBench.object[pageTab]
+                      ? ui.testBench.object[pageTab as Exclude<TestTab, "verdict">]
                       : active === "graph-test"
-                        ? ui.testBench.graph[pageTab]
-                        : ui.testBench.vector[pageTab]}
+                        ? ui.testBench.graph[pageTab as Exclude<TestTab, "verdict">]
+                        : ui.testBench.vector[pageTab as Exclude<TestTab, "verdict">]}
                 </p>
                 {/* 🔒 ВВОДНЫЙ ТЕКСТ СТЕНДА ОБЪЕКТОВ — СВЁРНУТОЙ КАРТОЧКОЙ ПОД ОПИСАНИЕМ (слово владельца
                     2026-09-13: «занимает слишком много места… разместить вверху сразу под описанием…
@@ -335,6 +343,33 @@ async function MemoryPageBody({
                   <GraphUpload words={ui.graphUpload} />
                 ) : active === "graph-test" && openTab === "search" ? (
                   <GraphSearch words={ui.graphSearch} />
+                ) : active === "link-test" && openTab === "upload" ? (
+                  <LinkBench
+                    // 🔒 БЛОК «ЧТО ЛЕГЛО В ПАМЯТЬ» — ОБЩИЙ СО СТЕНДОМ ОБЪЕКТОВ (195-2), И СЛОВА ЕМУ УЕЗЖАЮТ ПОИМЁННО.
+                    savedWords={{
+                      close: ui.objectBench.close,
+                      preview: ui.objectBench.preview,
+                      savedFile: ui.objectBench.savedFile,
+                      savedFull: ui.objectBench.savedFull,
+                      savedNoRow: ui.objectBench.savedNoRow,
+                      savedRow: ui.objectBench.savedRow,
+                      savedSummary: ui.objectBench.savedSummary,
+                      savedTitle: ui.objectBench.savedTitle,
+                      savedUrl: ui.objectBench.savedUrl,
+                    }}
+                    words={ui.linkBench}
+                  />
+                ) : active === "link-test" && openTab === "search" ? (
+                  // 🔒 ПОИСК ССЫЛОК — ТА ЖЕ ВЁРСТКА, ЧТО У ОБЪЕКТОВ (195-8): своя дверь, свои подписи поверх слов объектов, окно
+                  // полного описания до 1000 px (слово владельца 195-2).
+                  <ObjectSearch
+                    door="/api/fractera/link-search"
+                    fullClassName="max-h-[1000px]"
+                    words={{ ...ui.objectBench, ...ui.linkBench.search }}
+                  />
+                ) : active === "link-test" && openTab === "verdict" ? (
+                  // 🔒 ОЦЕНКА ССЫЛОК — ОБЩИЙ КОРПУС С ПОДПИСЬЮ ХРАНИЛИЩА (195-10, решение владельца «Общий + подпись»).
+                  <BenchCases words={ui.benchCases} />
                 ) : openTab === "verdict" ? (
                   // 🔒 ОЦЕНКА ОДНА НА ОБА ХРАНИЛИЩА (189-6). Корпус случаев общий —
                   // иначе числа графа и вектора не с чем сравнивать, а сравнение
@@ -373,6 +408,9 @@ async function MemoryPageBody({
             {active === "settings" && (
               <>
                 <AnthropicKeySection />
+                {/* 🔒 КЛЮЧ YOUTUBE DATA API (195-4, слово владельца: «На вкладке настройки Memory сделай добавление ключа с описанием того как
+                    это сделать»). Стоит после ключа Claude: без Claude не работает ничего, ключ YouTube нужен только ссылкам на ролики. */}
+                <YoutubeKeySection words={ui.youtubeKey} />
                 <ModelSections />
               </>
             )}

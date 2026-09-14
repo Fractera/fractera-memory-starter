@@ -16,6 +16,9 @@ import type { StandSection } from "./test-tabs";
  */
 export const STAND_SKILLS: Record<StandSection, readonly string[]> = {
   "graph-test": ["use-knowledge-graph"],
+  // 🔒 НАВЫК ССЫЛОК (195-5, решение владельца «195-13 и навык, потом закрыть»): `use-links` — что в сохранённой ссылке есть, каких рук у
+  // агента НЕТ, почему имя с ошибкой не находится и какие отказы значат «нельзя», а не «повтори».
+  "link-test": ["use-links"],
   "memory-test": ["use-tables", "use-depth-ladder"],
   "object-test": ["describe-incoming-object", "use-object-store"],
   "vector-test": ["use-vector-store"],

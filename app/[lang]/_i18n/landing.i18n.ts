@@ -199,7 +199,7 @@ const EN: LandingWords = {
           },
           {
             feature: "Native multimodality",
-            ours: "Built in: audio, video, images, PDF, Markdown, HTML, source code",
+            ours: "Built in: audio, video, images, PDF, Markdown, HTML, source code, links and YouTube",
             rivals: ["Requires external parsers", "Requires external parsers", "Text focused"],
           },
           {
@@ -287,7 +287,7 @@ const EN: LandingWords = {
         q: "Can it answer questions about a place by coordinates, not by a word?",
       },
       {
-        a: "Voice notes, images, video, PDF, Markdown, HTML and source code (TypeScript, Python, SQL and more). Every file gets a full description detailed enough for another AI to reconstruct it, and a summary of about 50 words: speech is transcribed by OpenAI whisper-1 with timestamps, a video is split into its sound track and frames on one timeline, and pictures, documents, pages and code are read by Claude — code is never executed. The original stays in the built-in object store next to its full description and is referenced from answers by id.",
+        a: "Voice notes, images, video, PDF, Markdown, HTML, source code (TypeScript, Python, SQL and more), links to web pages and YouTube videos. Every file gets a full description detailed enough for another AI to reconstruct it, and a summary of about 50 words: speech is transcribed by OpenAI whisper-1 with timestamps, a video is split into its sound track and frames on one timeline, and pictures, documents, pages and code are read by Claude — code is never executed. The original stays in the built-in object store next to its full description and is referenced from answers by id.",
         q: "What can I send besides text?",
       },
       {
@@ -390,6 +390,7 @@ const EN: LandingWords = {
       { body: "The document is read whole: its structure and its content, tables row by row.", title: "PDF" },
       { body: "Markdown is kept as the document it renders into; HTML as a page and as its source.", title: "Markdown and HTML" },
       { body: "Source code is described — purpose, structure, exports — with the source verbatim, and never run.", title: "Source code" },
+      { body: "A link is opened by a real browser; a YouTube video is read by the official API — description, structure, chapters and the page snippet. The whole text and the final HTML are not stored.", title: "Links and YouTube" },
     ],
     lead: "Not a preprocessor bolted on the side. The pipeline lives inside the engine.",
     title: "Native multimodality",
@@ -435,7 +436,7 @@ const EN: LandingWords = {
     cheapCost: "Zero tokens, no model, sub-10 ms",
     deepBranch: "Levels 4–5 · vector search and deep reasoning",
     deepCost: "A model turn: hypothesis chains and reports",
-    inbox: "Incoming stream — text, geolocation, voice, images, video, PDF, Markdown, HTML, code, dates",
+    inbox: "Incoming stream — text, geolocation, voice, images, video, PDF, Markdown, HTML, code, links, dates",
     lead: "One entry point, one router, two very different costs behind it.",
     routerBox: "Deterministic multi-level router",
     title: "How a request travels",
@@ -536,7 +537,7 @@ const RU: LandingWords = {
           },
           {
             feature: "Родная мультимодальность",
-            ours: "Встроена: звук, видео, изображения, PDF, Markdown, HTML, исходный код",
+            ours: "Встроена: звук, видео, изображения, PDF, Markdown, HTML, исходный код, ссылки и YouTube",
             rivals: ["Нужны внешние парсеры", "Нужны внешние парсеры", "Ориентирован на текст"],
           },
           {
@@ -624,7 +625,7 @@ const RU: LandingWords = {
         q: "Умеет ли она отвечать про место по координатам, а не по слову?",
       },
       {
-        a: "Голосовые заметки, изображения, видео, PDF, Markdown, HTML и исходный код (TypeScript, Python, SQL и другие). Каждый файл получает полное описание — настолько подробное, что другой ИИ восстановит по нему сам объект, — и саммари примерно в 50 слов: речь расшифровывает OpenAI whisper-1 с метками времени, видео разбирается на звуковую дорожку и кадры на одной шкале, а картинки, документы, страницы и код читает Claude — код при этом никогда не запускается. Оригинал остаётся во встроенном объектном хранилище рядом со своим полным описанием и адресуется из ответа по id.",
+        a: "Голосовые заметки, изображения, видео, PDF, Markdown, HTML, исходный код (TypeScript, Python, SQL и другие), ссылки на веб-страницы и ролики YouTube. Каждый файл получает полное описание — настолько подробное, что другой ИИ восстановит по нему сам объект, — и саммари примерно в 50 слов: речь расшифровывает OpenAI whisper-1 с метками времени, видео разбирается на звуковую дорожку и кадры на одной шкале, а картинки, документы, страницы и код читает Claude — код при этом никогда не запускается. Оригинал остаётся во встроенном объектном хранилище рядом со своим полным описанием и адресуется из ответа по id.",
         q: "Что можно присылать, кроме текста?",
       },
       {
@@ -727,6 +728,7 @@ const RU: LandingWords = {
       { body: "Документ читается целиком: структура и содержание, таблицы построчно.", title: "PDF" },
       { body: "Markdown хранится тем документом, которым становится; HTML — страницей и её исходником.", title: "Markdown и HTML" },
       { body: "Исходный код описывается — назначение, устройство, экспорт — и хранится дословно, но никогда не запускается.", title: "Исходный код" },
+      { body: "Ссылку открывает настоящий браузер, ролик YouTube читает официальный API — описание, структура, главы и сниппет страницы. Весь текст и итоговый HTML не сохраняются.", title: "Ссылки и YouTube" },
     ],
     lead: "Не препроцессор, который приделывают сбоку. Конвейер живёт внутри памяти.",
     title: "Нативная мультимодальность",
@@ -772,7 +774,7 @@ const RU: LandingWords = {
     cheapCost: "0 токенов, без ИИ, задержка меньше 10 мс",
     deepBranch: "Уровни 4–5 · векторы и глубокие рассуждения",
     deepCost: "Вызов языковой модели: цепочки гипотез и отчёты",
-    inbox: "Входящий поток — текст, геолокация, голос, фото, видео, PDF, Markdown, HTML, код, даты",
+    inbox: "Входящий поток — текст, геолокация, голос, фото, видео, PDF, Markdown, HTML, код, ссылки, даты",
     lead: "Один вход, один роутер и две очень разные цены за ним.",
     routerBox: "Детерминированный многоуровневый роутер",
     title: "Как проходит запрос",

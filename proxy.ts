@@ -74,11 +74,22 @@ const SELF_GUARDED = new Set([
   // 🔒 ДВЕРЬ ПРИЁМА ОБЪЕКТА (194-15) — `benchGuard`; в неё проводит договор `/v1/keep_object`. Имя стоит до
   // первой сборки: перехваченная привратником, она ответила бы страницей входа, и договор отдал бы её наружу.
   "/api/fractera/object-ingest",
+  // 🔒 ДВЕРЬ СТЕНДА ССЫЛОК (195-1) — `benchGuard`; имя стоит до первой сборки: перехваченная привратником, она отдала бы
+  // страницу входа, и экран решил бы, что не ответил ИИ-браузер, хотя истекла сессия.
+  "/api/fractera/link-test",
+  // 🔒 ДВЕ ДВЕРИ СОХРАНЕНИЯ ССЫЛКИ (195-2) — `benchGuard`, имена до первой сборки. Набор сверяется точным именем: вложенный
+  // `/link-test/describe` соседнее `/link-test` не открывает.
+  "/api/fractera/link-test/describe",
+  "/api/fractera/link-ingest",
+  // 🔒 ДВЕРЬ ПОИСКА ССЫЛОК (195-8) — `benchGuard`, имя до первой сборки.
+  "/api/fractera/link-search",
   "/api/fractera/memory-test",
   "/api/me",
   "/api/fractera/pty-ticket",
   "/api/fractera/openai-key",
   "/api/fractera/anthropic-key",
+  // 🔒 ДВЕРЬ КЛЮЧА YOUTUBE (195-4) — того же класса: сама проверяет роль `architect`, имя стоит до первой сборки.
+  "/api/fractera/youtube-key",
 ]);
 
 /**
