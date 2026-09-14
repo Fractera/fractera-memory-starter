@@ -159,7 +159,9 @@ export async function fetchUrl(raw: string): Promise<Fetched> {
     const mime = String(res.headers["content-type"] ?? "").split(";")[0].trim().toLowerCase();
     if (mime === "text/html" || mime === "application/xhtml+xml") {
       res.resume();
-      return { error: "is-a-page", ok: false, why: "это страница: страницы память кладёт методом ссылок, а не как файл" };
+      // 🔒 195-13: отказ называет ВЕРНЫЙ путь. Прежде здесь стояло «кладёт методом ссылок» — метода с таким именем нет ни в договоре, ни в
+      // коде; слой ссылок живёт внутри памяти и открыт человеку стендом «Тест ссылок».
+      return { error: "is-a-page", ok: false, why: "это страница, а не файл: страницы и ролики память кладёт слоем ссылок (стенд «Тест ссылок»)" };
     }
     const declared = Number(res.headers["content-length"] ?? 0);
     if (declared > URL_LIMIT_BYTES) {
