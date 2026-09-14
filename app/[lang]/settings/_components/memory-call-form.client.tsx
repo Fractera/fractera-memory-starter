@@ -33,6 +33,14 @@ type ScopeCard = { at: string; place: string };
 const boxClass =
   "w-full rounded-md border border-muted-foreground/30 bg-transparent px-2 py-1 text-[length:var(--fs-small)]";
 
+// ✗ ВЫПАДАЮЩИЙ СПИСОК НЕ ПРОЗРАЧНЫЙ, И ПРИЧИНА — ЧУЖОЕ ОКНО (находка владельца 2026-09-14: «i can not see light
+// green text on white bg»). Раскрытый список рисует браузер сам, отдельным окном: при `bg-transparent` оно
+// белое, а пункты наследуют светлый цвет текста тёмной страницы — и не читаются. Лечение токенами, а не
+// цветом: фон и текст списка И ЕГО ПУНКТОВ названы явно, а в тёмной теме `color-scheme: dark` делает тёмным
+// само окно браузера.
+const selectClass =
+  "w-full rounded-md border border-muted-foreground/30 bg-background px-2 py-1 text-foreground text-[length:var(--fs-small)] dark:[color-scheme:dark] [&_optgroup]:bg-background [&_optgroup]:text-foreground [&_option]:bg-background [&_option]:text-foreground";
+
 /** Параметры, которые человек пишет фразой: им нужно поле в несколько строк. */
 const LONG_TEXT = new Set(["text", "history", "prior", "deny", "summary", "full", "question"]);
 
@@ -101,7 +109,7 @@ export function CallForm({
     }
     if (p.name === "lang") {
       return (
-        <select aria-label={label} className={`${boxClass} max-w-[10rem]`} onChange={(e) => onValue("lang", e.target.value)} value={str("lang")}>
+        <select aria-label={label} className={`${selectClass} max-w-[10rem]`} onChange={(e) => onValue("lang", e.target.value)} value={str("lang")}>
           <option value="">{words.notSet}</option>
           <option value="ru">ru</option>
           <option value="en">en</option>
@@ -110,7 +118,7 @@ export function CallForm({
     }
     if (p.name === "depth") {
       return (
-        <select aria-label={label} className={`${boxClass} max-w-[16rem]`} onChange={(e) => onValue("depth", e.target.value)} value={str("depth")}>
+        <select aria-label={label} className={`${selectClass} max-w-[16rem]`} onChange={(e) => onValue("depth", e.target.value)} value={str("depth")}>
           <option value="">{words.notSet}</option>
           <option value="standard">standard — {controls.depth.standard}</option>
           <option value="deep">deep — {controls.depth.deep}</option>
@@ -229,7 +237,7 @@ export function CallForm({
         <label className="text-[length:var(--fs-small)] font-medium" htmlFor="memory-call-target">
           {words.target}
         </label>
-        <select className={`${boxClass} font-mono`} id="memory-call-target" onChange={(e) => onTarget(e.target.value)} value={target.id}>
+        <select className={`${selectClass} font-mono`} id="memory-call-target" onChange={(e) => onTarget(e.target.value)} value={target.id}>
           <optgroup label={words.methodsGroup}>
             {methods.map((t) => (
               <option key={t.id} value={t.id}>
