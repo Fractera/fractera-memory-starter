@@ -399,6 +399,95 @@ async function cleanupGraph(source) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Режим `graph2` — второй проход графа, после того как негатив первого поймал слепоту замера.
+//
+// ✗ ПЕРВЫЙ ПРОГОН (2026-09-14 22:43 UTC): «Тарбат в контексте» был true и для ОТСУТСТВУЮЩЕЙ сущности —
+// граф отдаёт ~60 тыс. знаков ближайшего при любых словах. Значит присутствие слова ничего не доказывает;
+// здесь меряется МЕСТО нашей сущности и нашего куска и то, что меняет `top_k` / `chunk_top_k`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function parseContext(text) {
+  const entities = []
+  for (const m of text.matchAll(/\{"entity": "([^"]+)"/g)) entities.push(m[1])
+  const chunkAt = text.indexOf("Тарбат")
+  const chunksStart = text.search(/Document Chunks|Chunks/)
+  return { entities, chunkAt, chunksStart, size: text.length }
+}
+
+async function measureGraph2() {
+  out("\n── G2: место нашей сущности в контексте графа ──")
+  const source = `${TAG}/graph2-${STAMP}`
+  let t = Date.now()
+  await data("/service/rag/documents/text", {
+    method: "POST",
+    body: JSON.stringify({ text: `Относится к: ${ANCHOR}. Откуда это известно: прибор 201-2.\n\n${FACT}`, file_source: source }),
+  })
+  for (let i = 0; i < 150; i++) {
+    if ((await docsOf(source)).some((d) => d.status === "processed")) break
+    await sleep(2000)
+  }
+  out(`проиндексировано за ${ms(t)} мс`)
+  for (const cfg of [{}, { top_k: 5, chunk_top_k: 3 }]) {
+    for (const mode of ["local", "hybrid"]) {
+      for (const who of [ANCHOR, ABSENT, "кто служил смотрителем маяка"]) {
+        const tq = Date.now()
+        const r = await data("/service/rag/query", {
+          method: "POST",
+          body: JSON.stringify({ query: `что известно про ${who}`, mode, only_need_context: true, enable_rerank: false, hl_keywords: [], ll_keywords: [who], ...cfg }),
+        })
+        const c = parseContext(String(r.body?.response ?? ""))
+        const place = c.entities.indexOf(ANCHOR)
+        out(`${JSON.stringify(cfg)} ${mode} · слова [${who}] · ${ms(tq)} мс · сущностей ${c.entities.length} · «${ANCHOR}» на месте ${place < 0 ? "НЕТ" : place + 1} · первые 3: ${c.entities.slice(0, 3).join(" | ")} · «Тарбат» ${c.chunkAt < 0 ? "нет" : `на знаке ${c.chunkAt} из ${c.size}`}`)
+      }
+    }
+  }
+  return source
+}
+
+// Режим `mcp` — почему MCP-сервер памяти не стартует в вызове модели. Процесс снимается на строке
+// инициализации: ответ модели здесь не нужен, нужен статус серверов.
+async function mcpStatus(configPath) {
+  return new Promise((resolve) => {
+    let buf = ""
+    const child = spawn("claude", ["-p", "ok", "--model", "sonnet", "--mcp-config", configPath, "--strict-mcp-config", "--no-session-persistence", "--output-format", "stream-json", "--verbose"],
+      { cwd: WORKDIR, env: { ...process.env, HOME: "/root" }, stdio: ["ignore", "pipe", "pipe"] })
+    const done = (v) => { try { child.kill("SIGKILL") } catch { /* уже нет */ } resolve(v) }
+    const timer = setTimeout(() => done("(инициализации не дождались)"), 60000)
+    child.stdout.on("data", (d) => {
+      buf += d
+      for (const line of buf.split("\n")) {
+        try {
+          const j = JSON.parse(line)
+          if (j.type === "system" && j.subtype === "init") {
+            clearTimeout(timer)
+            return done((j.mcp_servers ?? []).map((s) => `${s.name}:${s.status}`).join(", ") || "(нет серверов)")
+          }
+        } catch { /* неполная строка */ }
+      }
+    })
+  })
+}
+
+if (process.argv[2] === "mcp") {
+  const { writeFileSync } = await import("node:fs")
+  const abs = "/tmp/probe-201-2-mcp.json"
+  writeFileSync(abs, JSON.stringify({ mcpServers: { memory: { command: "node", args: [join(ROOT, "scripts/agent/memory-tools.mjs")] } } }))
+  out(`${MARK} mcp ${new Date().toISOString()}`)
+  out(`как сегодня (${join(ROOT, ".mcp.json")}, путь сервера относительный, cwd ${WORKDIR}): ${await mcpStatus(join(ROOT, ".mcp.json"))}`)
+  out(`тот же сервер абсолютным путём (${abs}): ${await mcpStatus(abs)}`)
+  execSync(`rm -f ${abs}`)
+  out(`${MARK} end`)
+  process.exit(0)
+}
+
+if (process.argv[2] === "graph2") {
+  out(`${MARK} graph2 start ${new Date().toISOString()}`)
+  let s2 = null
+  try { s2 = await measureGraph2() } catch (e) { out(`ОТКАЗ: ${e?.stack ?? e}`) }
+  if (s2) await cleanupGraph(s2)
+  out(`${MARK} end ${new Date().toISOString()}`)
+  process.exit(0)
+}
 
 out(`${MARK} start ${new Date().toISOString()} tag=${TAG}`)
 let source = null
