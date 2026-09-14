@@ -121,6 +121,8 @@ you must to do test for all ui items for all existing api with report /plan». �
 
 ✅ **200-5, положительный путь API ДОКАЗАН (прибор `remember-attachments`, сервер, ~21:52 CEST): ВСЁ ЗЕЛЁНОЕ, RC=0.** Полная форма `POST https://memory.aifa.dev/v1/remember` → 200 за 75,5 с; `objects`: файл `markdown` messageId 39 · страница MDN (`links`) messageId 40 · ролик «Me at the zoo» (`youtube`) messageId 41 · `link-is-youtube` · `youtube-not-youtube`; JSON-путь тоже отвергает ролик в `links`. Уборка сняла 3 объекта из 3. 🛑 **Долг уборки:** строки 39–41 таблицы сообщений и документы графа остались → `getSavedByUrl` для MDN и ролика теперь отвечает `existing` при удалённых объектах. **Идёт отправка со стенда в Chrome владельца.**
 
+✅ **200-5 ЗАКРЫТ (2026-09-14, ~21:55 CEST):** итог `completed-steps/200-5.md`. A — прибор `remember-attachments` зелёный (файл messageId 39, страница 40, ролик 41, оба отказа рода, missing-params); B — Chrome владельца: подсветка рода + запертая кнопка; отправка формы со стенда → `POST /v1/remember` 200, судьбы «markdown · 42», «web · 40 · existing», «youtube · 41 · existing»; nginx 21:54:16 пара браузер→`memory-test?method=remember` и `213.199.61.7 POST /v1/remember`. Объект стенда снят. 🛑 Долг уборки: строки сообщений 39–42 и документы графа остаются → `existing` при удалённом объекте. 🛑 **Ждёт взгляда владельца.** **Следующее — 200-6** (типизированный ответ обоих глаголов: `text` фактов + `objects` с идентификаторами, схема `output` в договоре и на вкладке API).
+
 ## ⏸ (ИСТОРИЯ) 2026-09-14, вечер
 
 **Открытых шагов в работе нет.** Шаг 195 «ссылки в памяти» закрыт по слову владельца: «195-13 и навык, потом закрыть».
