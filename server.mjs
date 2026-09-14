@@ -403,6 +403,15 @@ const server = createServer(async (req, res) => {
   // 🔒 ОБЪЕКТ — ДО ОБЩЕЙ ВЕТКИ (194-15): общая ветка читает тело как JSON, а тело объекта ещё не прочитано и
   // должно остаться непрочитанным, чтобы уйти потоком.
   if (req.method === "POST" && path === "/v1/keep_object") return passToDoor(req, res, "object-ingest")
+  // 🔒 «СКАЗАТЬ» С ФАЙЛАМИ (200-5) — ТОЖЕ ДО ОБЩЕЙ ВЕТКИ: форма с файлами уходит потоком во внутреннюю дверь, где ложится
+  // тем же `ingest()` и тем же `remember()`; JSON-тело идёт прежней общей веткой без изменений.
+  if (
+    req.method === "POST" &&
+    path === "/v1/remember" &&
+    String(req.headers["content-type"] ?? "").toLowerCase().startsWith("multipart/form-data")
+  ) {
+    return passToDoor(req, res, "remember-ingest")
+  }
 
   if (req.method === "POST" && path.startsWith("/v1/")) {
     const name = path.slice(4)

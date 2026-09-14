@@ -24,6 +24,10 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     appNewScrollHandler: true,
+    // 🔒 ПРЕДЕЛ ТЕЛА НА ПУТИ ЧЕРЕЗ `proxy.ts` — 200 МБ, КАК У nginx И ДОГОВОРА (200-5): файлы «Сказать» и `keep_object`
+    // идут в Next через привратника. ✗ Умолчание Next 16 — 10 МБ, и тело сверх него ОБРЕЗАЕТСЯ МОЛЧА: файл приехал бы
+    // в дверь неполным. Числа держатся равными — иначе один слой врёт о том, что влезает.
+    proxyClientMaxBodySize: "200mb",
     cachedNavigations: true,
     inlineCss: true,
     prefetchInlining: true,

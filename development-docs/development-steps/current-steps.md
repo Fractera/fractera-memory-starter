@@ -95,6 +95,10 @@ you must to do test for all ui items for all existing api with report /plan». �
 
 ▶ **200-5 ОТКРЫТ словом владельца «go» (2026-09-14)** после показа 200-4 (агент советовал `/clear` — владелец продолжил). Замысел: `POST /v1/remember` принимает `multipart` (часть `payload` = JSON тела, части `files`), новые `links`/`youtube` с проверкой рода, внутренняя дверь кладёт вложения готовыми путями и зовёт `remember`; на стенде кнопки по родам и два поля ссылок. Идёт разведка.
 
+🧱 **200-5, порция А (API), код написан, не закоммичен (2026-09-14):** договор 2.6.0 — `remember` `body: json | multipart`, параметры `files`/`links`/`youtube`; `server.mjs` — форма `/v1/remember` потоком в новую дверь `app/api/fractera/remember-ingest/route.ts` (обязательное до файлов тем же `missing-params`, файлы — `ingest()`, затем `remember()`, судьбы в `objects`); `lib/link-ingest.mjs` — `ingestLinks` (род по `youtubeId`: `link-is-youtube`/`youtube-not-youtube`; иначе двери `link-test/describe` → `link-ingest` по петле той же формой, что стенд, без обложки); `lib/params.mjs` — SPEC `links`/`youtube`; `lib/verbs.mjs` — вызов рядом с `media`; `proxy.ts` — имя двери; `next.config.ts` — `proxyClientMaxBodySize: "200mb"`. `tsc` 0; `check-contract` ✓ 2.6.0; прибор `api-i18n` — 3 провала (нет переводов `files`/`links`/`youtube`) → правка словаря API идёт. Попутно: перевод `media` на вкладке API в обоих языках обещал «метода для ссылок нет» — исправляется. Порция Б (стенд) — после.
+
+🚚 **200-5 порция А: переводы `files`/`links`/`youtube` и исправленный `media` в `api.i18n.ts` en/ru; прибор `scripts/probe/remember-attachments.mjs` написан (цена до 5 ходов модели + 1 ед. YouTube + 1 страница браузером; уборка своих id). Идёт коммит и доставка от `9330b09`, затем прогон прибора на сервере.**
+
 ## ⏸ (ИСТОРИЯ) 2026-09-14, вечер
 
 **Открытых шагов в работе нет.** Шаг 195 «ссылки в памяти» закрыт по слову владельца: «195-13 и навык, потом закрыть».
