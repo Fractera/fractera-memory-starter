@@ -37,7 +37,7 @@ export type Saved = { media: PreviewItem | null; object: Card | null; row: Recor
 /** Слова блока «что легло в память» — поимённо: стенд ссылок (195-2) получает только их, а не весь словарь объектов. */
 export type SavedViewWords = Pick<
   MemoryUi["objectBench"],
-  "close" | "preview" | "savedFile" | "savedFull" | "savedNoRow" | "savedRow" | "savedSummary" | "savedTitle"
+  "close" | "preview" | "savedFile" | "savedFull" | "savedNoRow" | "savedRow" | "savedSummary" | "savedTitle" | "savedUrl"
 >;
 
 /** Файл объекта — через свою дверь: ключ склада в браузер не уезжает. */
@@ -90,6 +90,17 @@ export function SavedView({
           </button>
         )}
       </div>
+
+      {/* 🔒 АДРЕС ССЫЛКИ — ПЕРВЫМ, КОГДА ОН ЕСТЬ В СТРОКЕ (195-8). Слово владельца: «полное описание краткое описание и самому
+          ссылку». У объектов `url` пуст — строки нет, их блок не меняется. */}
+      {row?.url ? (
+        <p className="break-all text-[length:var(--fs-body)]" data-saved-url="">
+          <span className="font-medium text-[length:var(--fs-small)]">{words.savedUrl}: </span>
+          <a className="text-primary underline" href={String(row.url)} rel="noopener noreferrer" target="_blank">
+            {String(row.url)}
+          </a>
+        </p>
+      ) : null}
 
       {saved.media && (
         <div className="space-y-2">
@@ -451,7 +462,19 @@ export function ObjectUpload({ words }: { words: MemoryUi["objectBench"] }) {
   );
 }
 
-export function ObjectSearch({ words }: { words: MemoryUi["objectBench"] }) {
+/**
+ * Поиск объектов — и ссылок (195-8): ОДНА ВЁРСТКА, дверь и высота окна полного описания приходят параметрами.
+ * 🔒 Вторая копия экрана поиска для ссылок разошлась бы с этой на первой правке — закон 194-9 «одна вёрстка, а не две».
+ */
+export function ObjectSearch({
+  door = "/api/fractera/object-search",
+  fullClassName,
+  words,
+}: {
+  door?: string;
+  fullClassName?: string;
+  words: MemoryUi["objectBench"];
+}) {
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -467,7 +490,7 @@ export function ObjectSearch({ words }: { words: MemoryUi["objectBench"] }) {
     setAnswer(null);
     setViews({});
     try {
-      const r = await fetch("/api/fractera/object-search", {
+      const r = await fetch(door, {
         body: JSON.stringify({ question }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
@@ -562,7 +585,7 @@ export function ObjectSearch({ words }: { words: MemoryUi["objectBench"] }) {
                         {words.savedMissing}
                       </p>
                     ) : (
-                      <SavedView saved={views[h.id] as Saved} words={words} />
+                      <SavedView fullClassName={fullClassName} saved={views[h.id] as Saved} words={words} />
                     )}
                   </li>
                 ))}

@@ -350,8 +350,17 @@ async function MemoryPageBody({
                       savedRow: ui.objectBench.savedRow,
                       savedSummary: ui.objectBench.savedSummary,
                       savedTitle: ui.objectBench.savedTitle,
+                      savedUrl: ui.objectBench.savedUrl,
                     }}
                     words={ui.linkBench}
+                  />
+                ) : active === "link-test" && openTab === "search" ? (
+                  // 🔒 ПОИСК ССЫЛОК — ТА ЖЕ ВЁРСТКА, ЧТО У ОБЪЕКТОВ (195-8): своя дверь, свои подписи поверх слов объектов, окно
+                  // полного описания до 1000 px (слово владельца 195-2).
+                  <ObjectSearch
+                    door="/api/fractera/link-search"
+                    fullClassName="max-h-[1000px]"
+                    words={{ ...ui.objectBench, ...ui.linkBench.search }}
                   />
                 ) : active === "link-test" ? (
                   // 🔒 СТЕНД ССЫЛОК (195-1): поиск, оценка и навык ссылок строятся в 195-5 — вкладки стоят и говорят это

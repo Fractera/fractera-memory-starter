@@ -194,6 +194,8 @@ export type MemoryUi = {
     savedRow: string;
     savedSummary: string;
     savedTitle: string;
+    /** 195-8: подпись адреса ссылки в блоке «что легло в память». */
+    savedUrl: string;
     /** 194-8: подписи просмотра объекта — слова медиатеки панели дословно, плюс аудио. */
     preview: {
       close: string;
@@ -590,6 +592,13 @@ const EN: MemoryUi = {
     text: "Visible text",
     total: "On the page in total",
     truncatedNote: "The screen shows the beginning; memory receives the full value.",
+    search: {
+      askLabel: "Which site are you looking for — in your own words",
+      askPlaceholder: "a site that sells an inflatable boat for sea trips, among the ones I analysed",
+      hits: "Links found: {n} (closer than {threshold}).",
+      nearestWas: "The nearest saved link was at {score}:",
+      nothing: "No saved link is closer than {threshold}.",
+    },
     save: {
       aboutHint: "About 50 words. Goes to the table row and to the search card in the vector store — as with any object.",
       aboutLabel: "Summary",
@@ -733,6 +742,7 @@ const EN: MemoryUi = {
     savedRow: "Row in messages_that_came_into_memory",
     savedSummary: "Summary — in the table row and the search card",
     savedTitle: "What went into memory",
+    savedUrl: "Link",
     preview: {
       close: "Close",
       code: "Code",
@@ -1132,6 +1142,13 @@ const RU: MemoryUi = {
     text: "Видимый текст",
     total: "Всего на странице",
     truncatedNote: "На экране — начало; память получает значение целиком.",
+    search: {
+      askLabel: "Какой сайт вы ищете — своими словами",
+      askPlaceholder: "сайт, где продают надувную лодку для морских путешествий, среди тех, что я анализировал",
+      hits: "Найдено ссылок: {n} (ближе порога {threshold}).",
+      nearestWas: "Ближайшая сохранённая ссылка была на расстоянии {score}:",
+      nothing: "Среди сохранённых ссылок нет ни одной ближе порога {threshold}.",
+    },
     save: {
       aboutHint: "Около 50 слов. Уходит в строку таблицы и в карточку поиска векторного хранилища — как у любого объекта.",
       aboutLabel: "Саммари",
@@ -1277,6 +1294,7 @@ const RU: MemoryUi = {
     savedRow: "Строка messages_that_came_into_memory",
     savedSummary: "Саммари — в строке таблицы и в карточке поиска",
     savedTitle: "Что легло в память",
+    savedUrl: "Ссылка",
     preview: {
       close: "Закрыть",
       code: "Код",

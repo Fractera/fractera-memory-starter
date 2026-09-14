@@ -1,6 +1,6 @@
 import { dataFetch, dataJson, dataService } from "./data-service";
 import { forgetDocuments, learn } from "./knowledge";
-import { getMessage, getMessageByObject, insertMessage } from "@/lib/messages.mjs";
+import { getMessage, getMessageByObject, insertMessage, objectIdsOfKind } from "@/lib/messages.mjs";
 import type { PreviewItem } from "@/_tools/object-view/client/object-preview.client";
 import { describe, kindOf, messageKindOf } from "@/lib/describe.mjs";
 import { isCodeName } from "@/_tools/code-view/types/code-langs.mjs";
@@ -381,19 +381,26 @@ export async function keep(input: {
  * 🛑 КАРТОЧКА БЕЗ ФАЙЛА ПРОПУСКАЕТСЯ И СЧИТАЕТСЯ. Объект могли стереть из
  * медиатеки мимо памяти; отдать его id значило бы послать зовущего в пустоту.
  */
-export async function find(input: { k?: number; question: string }): Promise<
+export async function find(input: { k?: number; kind?: string; question: string }): Promise<
   | { ok: true; hits: ObjectHit[]; near: ObjectHit[]; lost: number }
   | { ok: false; error: string; hits: []; near: []; lost: 0 }
 > {
   try {
+    const k = input.k ?? 5;
+    // 🔒 С РОДОМ (195-8) ИЩЕМ ШИРЕ И ОСТАВЛЯЕМ ТОЛЬКО ЭТОТ РОД. Ссылки и объекты лежат в одной коллекции векторов, и род живёт в
+    // таблице сообщений: взяв ровно `k` кандидатов, поиск ссылок отдал бы пустоту там, где первые `k` мест заняли документы.
+    // Без рода поведение прежнее — кандидатов ровно `k`.
+    const only = input.kind ? await objectIdsOfKind(input.kind) : null;
     const r = await dataJson<{ results?: { refId?: string; score: number; text?: string }[] }>("/vectors/search", {
-      body: JSON.stringify({ collection: OBJECT_COLLECTION, k: input.k ?? 5, query: input.question }),
+      body: JSON.stringify({ collection: OBJECT_COLLECTION, k: only ? Math.max(k * 10, 50) : k, query: input.question }),
       method: "POST",
     });
     const rows = await mediaRows();
     const hits: ObjectHit[] = [];
     let lost = 0;
     for (const p of r.results ?? []) {
+      if (only && !only.has(String(p.refId))) continue;
+      if (hits.length >= k) break;
       const m = rows.get(String(p.refId));
       if (!m) {
         lost += 1;

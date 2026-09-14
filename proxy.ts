@@ -81,6 +81,8 @@ const SELF_GUARDED = new Set([
   // `/link-test/describe` соседнее `/link-test` не открывает.
   "/api/fractera/link-test/describe",
   "/api/fractera/link-ingest",
+  // 🔒 ДВЕРЬ ПОИСКА ССЫЛОК (195-8) — `benchGuard`, имя до первой сборки.
+  "/api/fractera/link-search",
   "/api/fractera/memory-test",
   "/api/me",
   "/api/fractera/pty-ticket",

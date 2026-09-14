@@ -55,6 +55,14 @@ export type LinkBenchWords = {
     stored: string;
     viewFailed: string;
   };
+  /** 195-8: подписи вкладки «Поиск» — поверх слов поиска объектов, вёрстка у них одна (`ObjectSearch`). */
+  search: {
+    askLabel: string;
+    askPlaceholder: string;
+    hits: string;
+    nearestWas: string;
+    nothing: string;
+  };
 };
 
 type Listed = { items: unknown[]; total: number };
