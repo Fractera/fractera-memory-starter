@@ -8,6 +8,11 @@
 // выставленный параметр либо в теле запроса, либо в списке «не доезжает».
 // Третьего исхода — исчезнуть молча — у значения быть не должно.
 //
+// 🔒 С 200-4 ПРОВЕРЯЕТСЯ КАЖДЫЙ ОРГАН У КАЖДОГО ИЗ ДВУХ ГЛАГОЛОВ. ✗ До 200-4 сборка
+// тела подставляла `null` органам «чужого» глагола: глубина у «Сказать», отрицание и
+// требование таблицы у «Спросить» исчезали молча — прибор этого не видел, потому что
+// спрашивал у записи только про `deny` и `need_table`, а у вопроса — только про пять.
+//
 // 🛑 ПРИБОР НИЧЕГО НЕ ПИШЕТ И НИЧЕГО НЕ УДАЛЯЕТ: он зовёт чистую функцию.
 // Спрашивать у прибора надо не «что он проверяет», а «что он удаляет и чьё
 // это» — здесь ответ «ничего», и это тоже измерение.
@@ -36,12 +41,16 @@ const FULL = {
 
   prior: "нашли только имя",
   priorOn: true,
+  thread: "00000000-0000-0000-0000-000000000000",
   wantChain: true,
   who: "bench-1",
 }
 
+/** Имена органов в теле запроса — те же, что у параметров договора. */
+const CONTROLS = ["depth", "history", "prior", "want_chain", "scope", "thread", "deny", "need_table"]
+
 console.log("=".repeat(72))
-console.log("ПРИБОР 183-1 — что уедет со стенда")
+console.log("ПРИБОР 183-1 / 200-4 — что уедет со стенда")
 console.log("=".repeat(72))
 console.log("")
 
@@ -57,21 +66,20 @@ say(ask.method === "recall", "режим «спросить» зовёт recall"
 say(ask.body.who === "bench-1" && ask.body.text === "что ты знаешь обо мне", "имя и вопрос в теле")
 say(ask.body.lang === "ru", "язык называет зовущий, а не угадывает служба")
 
-// ── 2. ГЛАВНОЕ: ЛИБО В ТЕЛЕ, ЛИБО В «НЕ ДОЕЗЖАЕТ» ────────────────────────────
-const declaredRecall = paramsOf("recall")
-const wantedByAsk = ["depth", "history", "prior", "want_chain", "scope"]
-for (const name of wantedByAsk) {
-  const inBody = name in ask.body
-  const inDropped = ask.dropped.includes(name)
-  say(
-    inBody !== inDropped,
-    `«${name}»: ровно один исход — ${inBody ? "уехал" : "назван непринятым"}`,
-    declaredRecall.includes(name) ? "договор его принимает" : "договор его не объявляет",
-  )
-  say(
-    inBody === declaredRecall.includes(name),
-    `«${name}» уезжает ТОЛЬКО если объявлен договором`,
-  )
+// ── 2. ГЛАВНОЕ: КАЖДЫЙ ОРГАН У КАЖДОГО ГЛАГОЛА — ЛИБО В ТЕЛЕ, ЛИБО В «НЕ ДОЕЗЖАЕТ» ─
+for (const [mode, verb] of [["say", "remember"], ["ask", "recall"]]) {
+  const call = buildCall({ lang: "ru", mode, params: FULL, supported: paramsOf(verb), text: "фраза" })
+  const declared = paramsOf(verb)
+  for (const name of CONTROLS) {
+    const inBody = name in call.body
+    const inDropped = call.dropped.includes(name)
+    say(
+      inBody !== inDropped,
+      `${verb} · «${name}»: ровно один исход`,
+      inBody ? "уехал" : inDropped ? "назван «не доезжает»" : "ИСЧЕЗ МОЛЧА",
+    )
+    say(inBody === declared.includes(name), `${verb} · «${name}» уезжает ТОЛЬКО если объявлен договором`)
+  }
 }
 
 // ── 3. ЗАПИСЬ ────────────────────────────────────────────────────────────────
@@ -84,38 +92,29 @@ const say_ = buildCall({
 })
 say(say_.method === "remember", "режим «сказать» зовёт remember", say_.method)
 say(!("depth" in say_.body), "глубины у записи нет: запись не ищет", JSON.stringify(Object.keys(say_.body)))
-for (const name of ["deny", "need_table"]) {
-  say(
-    (name in say_.body) === paramsOf("remember").includes(name),
-    `«${name}» у записи следует договору`,
-  )
-}
+
+// 🔒 ГЛУБИНА «СТАНДАРТ» — УМОЛЧАНИЕ, А НЕ ВЫСТАВЛЕННОЕ ЗНАЧЕНИЕ: у записи она не
+// называется «не доезжает», иначе строка висела бы на экране всегда.
+const plainSay = buildCall({ lang: "ru", mode: "say", params: EMPTY_PARAMS, supported: paramsOf("remember"), text: "фраза" })
+say(!plainSay.dropped.includes("depth"), "стандартная глубина у записи не шумит «не доезжает»", plainSay.dropped.join(", ") || "пусто")
 
 // ── 4. НЕГАТИВНЫЙ КОНТРОЛЬ: ПУСТОЙ ДОГОВОР ───────────────────────────────────
 // 🔒 ЭТО И ЕСТЬ ПРОВЕРКА САМОГО ПРИБОРА: скажи мы, что договор не принимает
 // ничего, — ни один орган не имеет права оказаться в теле. Прибор, не умеющий
 // ответить «ничего не уехало», зелен по причине собственной слепоты.
-const none = buildCall({ lang: "ru", mode: "ask", params: FULL, supported: [], text: "вопрос" })
-const leaked = wantedByAsk.filter((n) => n in none.body)
-say(leaked.length === 0, "НЕГАТИВНЫЙ: пустой договор — ни один орган не уехал", leaked.join(", ") || "утечек нет")
-say(
-  none.dropped.length === wantedByAsk.length,
-  "НЕГАТИВНЫЙ: всё выставленное названо непринятым",
-  `${none.dropped.length} из ${wantedByAsk.length}`,
-)
+for (const mode of ["say", "ask"]) {
+  const none = buildCall({ lang: "ru", mode, params: FULL, supported: [], text: "вопрос" })
+  const leaked = CONTROLS.filter((n) => n in none.body)
+  say(leaked.length === 0, `НЕГАТИВНЫЙ (${mode}): пустой договор — ни один орган не уехал`, leaked.join(", ") || "утечек нет")
+  say(
+    none.dropped.length === CONTROLS.length,
+    `НЕГАТИВНЫЙ (${mode}): всё выставленное названо непринятым`,
+    `${none.dropped.length} из ${CONTROLS.length}`,
+  )
+}
 
 // ── 5. ОХВАТ ЕДЕТ СПИСКОМ, А ПУСТЫЕ КАРТОЧКИ ОТСЕИВАЮТСЯ (183-7) ─────────────
-// 🔒 ЭТО И ЕСТЬ ГЛАВНОЕ УТВЕРЖДЕНИЕ ПОДШАГА: записей бывает много, и заготовка,
-// которую человек не заполнил, охватом не является. Уедь она — служба ответила
-// бы отказом по форме за то, чего человек не выставлял.
-const scopeAsk = buildCall({
-  lang: "ru",
-  mode: "ask",
-  params: FULL,
-  supported: paramsOf("recall"),
-  text: "вопрос",
-})
-const sentScope = scopeAsk.body.scope
+const sentScope = ask.body.scope
 say(Array.isArray(sentScope), "охват уехал списком", JSON.stringify(sentScope))
 say(
   Array.isArray(sentScope) && sentScope.length === 2,
@@ -129,25 +128,20 @@ say(
 )
 
 // ── 6. НЕГАТИВНЫЙ КОНТРОЛЬ: НИЧЕГО НЕ ВЫСТАВЛЕНО ─────────────────────────────
-const empty = buildCall({
-  lang: "ru",
-  mode: "ask",
-  params: EMPTY_PARAMS,
-  supported: declaredRecall,
-  text: "",
-})
-// 🔒 «ПУСТО» ЗДЕСЬ НЕ ЗНАЧИТ «НИ ОДНОГО ПАРАМЕТРА»: глубина выставлена ВСЕГДА,
-// у неё нет незаполненного состояния — стандарт и есть её умолчание. Поэтому
-// проверяем ровно то, что должно быть верно: пустое поле вопроса не рождает
-// `text`, а прочие семь органов молчат.
-const emptyNames = [...Object.keys(empty.body), ...empty.dropped].filter(
-  (n) => n !== "lang" && n !== "who" && n !== "depth",
-)
-say(
-  emptyNames.length === 0 && !("text" in empty.body),
-  "НЕГАТИВНЫЙ: пустые органы ничего не досочиняют",
-  emptyNames.join(", ") || JSON.stringify(empty.body),
-)
+// 🔒 «ПУСТО» НЕ ЗНАЧИТ «НИ ОДНОГО ПАРАМЕТРА»: у вопроса глубина выставлена ВСЕГДА —
+// стандарт и есть её умолчание. Проверяем, что пустое поле не рождает `text`, а
+// прочие органы молчат у обоих глаголов.
+for (const [mode, verb] of [["say", "remember"], ["ask", "recall"]]) {
+  const empty = buildCall({ lang: "ru", mode, params: EMPTY_PARAMS, supported: paramsOf(verb), text: "" })
+  const emptyNames = [...Object.keys(empty.body), ...empty.dropped].filter(
+    (n) => n !== "lang" && n !== "who" && n !== "depth",
+  )
+  say(
+    emptyNames.length === 0 && !("text" in empty.body),
+    `НЕГАТИВНЫЙ (${verb}): пустые органы ничего не досочиняют`,
+    emptyNames.join(", ") || JSON.stringify(empty.body),
+  )
+}
 
 console.log("")
 console.log("-".repeat(72))

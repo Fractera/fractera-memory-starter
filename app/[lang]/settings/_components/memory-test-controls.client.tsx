@@ -1,6 +1,6 @@
 "use client";
 
-// ОРГАНЫ УПРАВЛЕНИЯ СТЕНДА ПАМЯТИ — ДЕВЯТЬ ШТУК, ПО РАЗДЕЛУ 13 ПАСПОРТА (183-1).
+// ОРГАНЫ УПРАВЛЕНИЯ СТЕНДА ПАМЯТИ — ВОСЕМЬ ШТУК (183-1; девятый, «Загрузка», снят 200-4).
 //
 // 🔒 ЗАЧЕМ ОНИ ЗДЕСЬ ВООБЩЕ. Стенд — прибор, а не витрина: человек говорит со
 // службой напрямую и видит сырой ответ. Значит стенд обязан уметь всё, что
@@ -57,7 +57,6 @@ export type BenchControlWords = {
   };
   deny: { label: string; hint: string; placeholder: string };
   needTable: { label: string; hint: string };
-  upload: { label: string; hint: string; image: string; video: string; sound: string; html: string; pdf: string };
 };
 
 /** Метка у органа: доезжает ли параметр до договора сегодня. */
@@ -436,30 +435,6 @@ export function BenchControls({
         </label>
       </Row>
 
-      {/* ⑨ ЗАГРУЗКА ФАЙЛОВ — КНОПКИ ЕСТЬ, СПОСОБНОСТИ НЕТ, И ЭТО СКАЗАНО СЛОВАМИ.
-          🔒 Так требует паспорт §13: роды данных объявлены (текст · изображение ·
-          видео · звук · HTML · PDF), а память умеет только текст. Молчаливое
-          отсутствие кнопок читалось бы как «род не предусмотрен вовсе». */}
-      <Row hint={words.upload.hint} label={words.upload.label} ok={false} words={words}>
-        <div className="flex flex-wrap gap-2">
-          {[
-            words.upload.image,
-            words.upload.video,
-            words.upload.sound,
-            words.upload.html,
-            words.upload.pdf,
-          ].map((label) => (
-            <button
-              className="cursor-not-allowed rounded-md border border-muted-foreground/30 px-3 py-1 text-[length:var(--fs-small)] text-muted-foreground opacity-60"
-              disabled
-              key={label}
-              type="button"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </Row>
       </div>
     </div>
   );

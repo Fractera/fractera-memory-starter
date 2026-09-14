@@ -306,7 +306,7 @@ export type MemoryUi = {
     /** Панель «что уедет» и строка о непринятых параметрах (183-1). */
     whatGoes: string;
     droppedTitle: string;
-    /** Слова девяти органов управления — форму задаёт сам компонент (183-1). */
+    /** Слова восьми органов управления — форму задаёт сам компонент (183-1, 200-4). */
     controls: BenchControlWords;
     /** Нет файла ключа памяти — вызов уйдёт без ключа (200-1). */
     keyMissing: string;
@@ -460,15 +460,6 @@ const EN: MemoryUi = {
       },
       title: "Controls",
       unsupported: "does not reach yet",
-      upload: {
-        hint: "Memory only understands text today. The buttons stand here because the kinds of data are declared — and they are switched off because the ability is not built.",
-        html: "HTML",
-        image: "Image",
-        label: "Send data that is not text",
-        pdf: "PDF",
-        sound: "Sound",
-        video: "Video",
-      },
       who: {
         bench: "bench-1 — the bench's own name",
         hint: "Memory answers about a particular person. The list is what memory itself knows — the bench does not invent people.",
@@ -1056,15 +1047,6 @@ const RU: MemoryUi = {
       },
       title: "Органы управления",
       unsupported: "пока не доезжает",
-      upload: {
-        hint: "Память сегодня понимает только текст. Кнопки стоят здесь потому, что роды данных объявлены, — и выключены потому, что способности нет.",
-        html: "HTML",
-        image: "Изображение",
-        label: "Отправить не текст",
-        pdf: "PDF",
-        sound: "Звук",
-        video: "Видео",
-      },
       who: {
         bench: "bench-1 — служебное имя стенда",
         hint: "Память отвечает про конкретного человека. Список — тот, что память знает сама; людей стенд не выдумывает.",
