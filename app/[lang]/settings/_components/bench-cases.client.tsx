@@ -101,6 +101,12 @@ export function BenchCases({ words }: { words: MemoryUi["benchCases"] }) {
               <li className="space-y-2 rounded-md border border-border p-4" key={c.id}>
                 <p className="text-[length:var(--fs-body)]">{c.question}</p>
                 <p className="text-[length:var(--fs-small)] text-muted-foreground">
+                  {/* 🔒 ПОДПИСЬ ХРАНИЛИЩА — ПЕРВОЙ (195-10, решение владельца «Общий + подпись»): корпус один на все стенды, и без
+                      подписи поиск ссылки неотличим от поиска графа. Незнакомый ключ показывается как есть, а не пустотой. */}
+                  <span className="font-medium text-foreground" data-case-store={c.store}>
+                    {words.stores[c.store] ?? c.store}
+                  </span>
+                  {" · "}
                   {c.ask_ms} мс · {c.entities} · {fill(words.modelMark, { turn: c.model_turn ?? "—" })}
                   {c.legacy ? ` · ${words.legacyMark}` : ""}
                 </p>

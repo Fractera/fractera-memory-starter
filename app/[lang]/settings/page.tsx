@@ -362,6 +362,9 @@ async function MemoryPageBody({
                     fullClassName="max-h-[1000px]"
                     words={{ ...ui.objectBench, ...ui.linkBench.search }}
                   />
+                ) : active === "link-test" && openTab === "verdict" ? (
+                  // 🔒 ОЦЕНКА ССЫЛОК — ОБЩИЙ КОРПУС С ПОДПИСЬЮ ХРАНИЛИЩА (195-10, решение владельца «Общий + подпись»).
+                  <BenchCases words={ui.benchCases} />
                 ) : active === "link-test" ? (
                   // 🔒 СТЕНД ССЫЛОК (195-1): поиск, оценка и навык ссылок строятся в 195-5 — вкладки стоят и говорят это
                   // словами. Общий корпус случаев сюда не выводится: случаев ссылок ещё нет, и чужие числа читались бы как свои.

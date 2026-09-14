@@ -119,6 +119,8 @@ export type MemoryUi = {
     lead: string;
     legacyMark: string;
     modelMark: string;
+    /** 195-10: подпись хранилища у случая — корпус один на все стенды (решение владельца «Общий + подпись»). */
+    stores: Record<string, string>;
     pending: string;
     summary: string;
     title: string;
@@ -656,6 +658,7 @@ const EN: MemoryUi = {
       "Only you can say whether the right thing was found. The engine is never allowed to grade its own work — a model retelling its own run errs in its own favour.",
     legacyMark: "asked the old way",
     modelMark: "model turn: {turn}",
+    stores: { graph: "knowledge graph", link: "links", object: "objects", vector: "vector store" },
     pending: "awaiting your verdict",
     summary:
       "Runs: {total} · right: {good} · wrong: {bad} · awaiting verdict: {pending} · average answer: {avg} ms.",
@@ -1209,6 +1212,7 @@ const RU: MemoryUi = {
       "Нашлось нужное или нет — можете сказать только вы. Оценивать собственную работу памяти запрещено: модель, пересказывающая свой прогон, ошибается в свою пользу.",
     legacyMark: "спрошено по-старому",
     modelMark: "ход модели: {turn}",
+    stores: { graph: "граф знаний", link: "ссылки", object: "объекты", vector: "векторное хранилище" },
     pending: "ждёт вашего вердикта",
     summary:
       "Прогонов: {total} · нашло то: {good} · не то: {bad} · без вердикта: {pending} · ответ в среднем: {avg} мс.",
