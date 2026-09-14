@@ -370,15 +370,6 @@ async function MemoryPageBody({
                 ) : active === "link-test" && openTab === "verdict" ? (
                   // 🔒 ОЦЕНКА ССЫЛОК — ОБЩИЙ КОРПУС С ПОДПИСЬЮ ХРАНИЛИЩА (195-10, решение владельца «Общий + подпись»).
                   <BenchCases words={ui.benchCases} />
-                ) : active === "link-test" ? (
-                  // 🔒 СТЕНД ССЫЛОК (195-1): поиск, оценка и навык ссылок строятся в 195-5 — вкладки стоят и говорят это
-                  // словами. Общий корпус случаев сюда не выводится: случаев ссылок ещё нет, и чужие числа читались бы как свои.
-                  <p
-                    className="rounded-md border border-border border-dashed p-4 text-[length:var(--fs-small)] text-muted-foreground"
-                    data-link-soon={openTab}
-                  >
-                    {ui.testBench.soon}
-                  </p>
                 ) : openTab === "verdict" ? (
                   // 🔒 ОЦЕНКА ОДНА НА ОБА ХРАНИЛИЩА (189-6). Корпус случаев общий —
                   // иначе числа графа и вектора не с чем сравнивать, а сравнение
