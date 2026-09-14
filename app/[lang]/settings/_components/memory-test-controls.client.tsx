@@ -103,6 +103,13 @@ function Row({
 const boxClass =
   "w-full rounded-md border border-muted-foreground/30 bg-transparent px-2 py-1 text-[length:var(--fs-small)]";
 
+// ✗ ВЫПАДАЮЩИЙ СПИСОК НЕ ПРОЗРАЧНЫЙ, И ПРИЧИНА — ЧУЖОЕ ОКНО (находка владельца 2026-09-14: «i can not see light
+// green text on white bg»). Раскрытый список рисует браузер сам, отдельным окном: при `bg-transparent` оно
+// белое, а пункты наследуют светлый цвет текста тёмной страницы — и не читаются. Лечение токенами: фон и
+// текст списка И ЕГО ПУНКТОВ названы явно, в тёмной теме `color-scheme: dark` делает тёмным само окно.
+const selectClass =
+  "w-full rounded-md border border-muted-foreground/30 bg-background px-2 py-1 text-foreground text-[length:var(--fs-small)] dark:[color-scheme:dark] [&_option]:bg-background [&_option]:text-foreground";
+
 export function BenchControls({
   lastThread,
   onChange,
@@ -230,7 +237,7 @@ export function BenchControls({
           его пустой ответ читается как отказ памяти. */}
       <Row hint={words.who.hint} label={words.who.label} ok={has("who")} words={words}>
         <select
-          className={boxClass}
+          className={selectClass}
           onChange={(e) => onChange({ who: e.target.value })}
           value={params.who}
         >

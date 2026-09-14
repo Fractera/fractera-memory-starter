@@ -16,7 +16,6 @@ import type { TestTab } from "../_lib/test-tabs";
 import type { OpenAiKeyWords } from "../_components/openai-key";
 import type { OpenAiTabWords } from "../_components/openai-tab";
 import type { BenchControlWords } from "../_components/memory-test-controls.client";
-import type { CallFormWords } from "../_components/memory-call-form.client";
 import type { ApiKeyWords } from "../_components/api-key.client";
 import type { LinkBenchWords } from "../_components/link-bench.client";
 import type { YoutubeKeyCardWords } from "../_components/youtube-key";
@@ -291,12 +290,8 @@ export type MemoryUi = {
     lead: string;
     say: string;
     ask: string;
-    raw: string;
     sayHint: string;
     askHint: string;
-    rawHint: string;
-    rawMethod: string;
-    rawBody: string;
     send: string;
     sending: string;
     inputTitle: string;
@@ -313,13 +308,8 @@ export type MemoryUi = {
     droppedTitle: string;
     /** Слова девяти органов управления — форму задаёт сам компонент (183-1). */
     controls: BenchControlWords;
-    /** Вход «Метод договора» и форма, порождённая из договора (200-2). */
-    method: string;
-    methodHint: string;
+    /** Нет файла ключа памяти — вызов уйдёт без ключа (200-1). */
     keyMissing: string;
-    missingTitle: string;
-    badTitle: string;
-    call: CallFormWords;
   };
   memoryTables: {
     title: string;
@@ -486,35 +476,13 @@ const EN: MemoryUi = {
         loading: "asking memory who it knows…",
       },
     },
-    badTitle: "Filled in the wrong form — not sent",
-    call: {
-      arrayHint: 'JSON array, e.g. [{"url": "https://…"}]',
-      badForm: "not valid for this type — this field is not sent",
-      catalogueGroup: "Catalogue — reading",
-      fileNext: "A file travels as multipart/form-data; that arrives in sub-step 200-3, and until then a file is not sent.",
-      methodsGroup: "Methods",
-      noParams: "This address takes no parameters.",
-      notSet: "— not set —",
-      optional: "optional",
-      required: "required",
-      target: "Method or address",
-    },
     droppedTitle: "Set here, but this method does not accept it yet",
     failed: "The bench could not reach the door",
     inputTitle: "What we send",
     keyMissing: "no memory key yet — the call goes without it and gets 401 no-access (the key is created on the API tab)",
-    lead: "Every call goes to the public memory API /v1/* — the same way any program calls it. The address, headers and body below are exactly what is sent.",
-    method: "Contract method",
-    methodHint:
-      "Any method or catalogue address of the contract. The form is built from the contract itself: each parameter with its type, whether it is required, and its description. Only what you fill in is sent.",
-    missingTitle: "Required but empty — the call goes without it, and the contract will refuse",
+    lead: "Two verbs — Say and Ask — each with its own advanced parameters. Every call goes to the public memory API /v1/*, the same way any program calls it; the address, headers and body below are exactly what is sent.",
     nothingSent: "Nothing sent yet.",
     nothingYet: "Memory has not answered yet — send a phrase on the left.",
-    raw: "Raw call",
-    rawBody: "Request body, JSON",
-    rawHint:
-      "Any method of the contract, body as JSON. A method that is not built answers 501 — and the bench shows that too.",
-    rawMethod: "Method name",
     say: "Say",
     sayHint: "The phrase goes to remember — the same way a person tells the bot something.",
     send: "Send",
@@ -1104,34 +1072,13 @@ const RU: MemoryUi = {
         loading: "спрашиваем память, кого она знает…",
       },
     },
-    badTitle: "Заполнено не той формы — не уедет",
-    call: {
-      arrayHint: 'JSON-массив, например [{"url": "https://…"}]',
-      badForm: "не подходит под тип — это поле не уедет",
-      catalogueGroup: "Каталог — чтение",
-      fileNext: "Файл уезжает как multipart/form-data; это подшаг 200-3, и до него файл не отправляется.",
-      methodsGroup: "Методы",
-      noParams: "У этого адреса параметров нет.",
-      notSet: "— не выставлено —",
-      optional: "необязательный",
-      required: "обязательный",
-      target: "Метод или адрес",
-    },
     droppedTitle: "Выставлено здесь, но этот метод пока такого не принимает",
     failed: "Стенд не достучался до двери",
     inputTitle: "Что отправляем",
     keyMissing: "ключа памяти пока нет — вызов уйдёт без него и получит 401 no-access (ключ создаётся на вкладке API)",
-    lead: "Каждый вызов идёт в публичный API памяти /v1/* — тем же путём, что у любой программы. Адрес, заголовки и тело ниже — ровно то, что уходит.",
-    method: "Метод договора",
-    methodHint:
-      "Любой метод и адрес каталога из договора. Форма построена по самому договору: у каждого параметра тип, обязательность и описание. Уезжает только заполненное.",
-    missingTitle: "Обязательное не заполнено — вызов уйдёт без него, и откажет договор",
+    lead: "Два глагола — «Сказать» и «Спросить», у каждого свои расширенные параметры. Каждый вызов идёт в публичный API памяти /v1/* — тем же путём, что у любой программы; адрес, заголовки и тело ниже — ровно то, что уходит.",
     nothingSent: "Пока ничего не отправляли.",
     nothingYet: "Память ещё не отвечала — отправьте фразу слева.",
-    raw: "Сырой вызов",
-    rawBody: "Тело запроса, JSON",
-    rawHint: "Любой метод договора, тело — JSON. Непостроенный метод отвечает 501, и стенд это тоже покажет.",
-    rawMethod: "Имя метода",
     say: "Сказать",
     sayHint: "Фраза уходит в remember — так же, как человек рассказывает что-то боту.",
     send: "Отправить",

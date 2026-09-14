@@ -24,10 +24,9 @@ export function MemoryBench({
   lang,
   supported,
   tablesWords,
-  targets,
   testWords,
 }: {
-  /** Публичный адрес памяти — из запроса страницы (200-2). */
+  /** Публичный адрес памяти — из запроса страницы (200-1). */
   base: TestProps["base"];
   /** Маска ключа памяти; сам ключ остаётся на сервере (закон 185). */
   keyMask: TestProps["keyMask"];
@@ -40,8 +39,6 @@ export function MemoryBench({
    */
   supported: TestProps["supported"];
   tablesWords: React.ComponentProps<typeof MemoryTables>["words"];
-  /** Все методы и адреса каталога — порождены из договора (200-2); проезжают насквозь. */
-  targets: TestProps["targets"];
   testWords: TestProps["words"];
 }) {
   const tables = useRef<MemoryTablesHandle>(null);
@@ -54,7 +51,6 @@ export function MemoryBench({
         lang={lang}
         onSent={() => tables.current?.reload()}
         supported={supported}
-        targets={targets}
         words={testWords}
       />
       <MemoryTables ref={tables} words={tablesWords} />
