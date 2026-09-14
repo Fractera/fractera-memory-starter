@@ -44,6 +44,8 @@ you must to do test for all ui items for all existing api with report /plan». �
 
 🔧 **ПОПУТНО ПО СЛОВУ ВЛАДЕЛЬЦА (2026-09-14): метка языка GitHub.** Вопрос: «why gitHub add for it label HTML but need Typescript , how change ?». Замер API: из 18 репозиториев Fractera HTML только у `fractera-memory-starter` — HTML 50.8% · TypeScript 28.9% · JavaScript 19.8%; причина — три отчёта прогонов навыков `review.html` в `development-docs/instruments/*-eval-runs/` (1,94 МБ против 1,14 МБ TS). Совет внешней модели `*.html linguist-documentation` отвергнут как широкий. Сделано: `.gitattributes` — `development-docs/instruments/**/*.html linguist-generated=true`, прямо в `main` `58d2764` (метка считается по `main`), влито в `new-step-200` `92d02cc`; `git check-attr` — отчёт `true`, код `unspecified`. Пересчёт GitHub — проверить позже.
 
+✅ **Метка языка GitHub проверена первоисточником (API, 18:11 UTC, через 23 с после отправки):** `language=TypeScript`, раскладка TypeScript 58.7% · JavaScript 40.2% · CSS 0.9% — HTML из статистики ушёл. До правки: `language=HTML`, HTML 50.8%.
+
 ## ⏸ (ИСТОРИЯ) 2026-09-14, вечер
 
 **Открытых шагов в работе нет.** Шаг 195 «ссылки в памяти» закрыт по слову владельца: «195-13 и навык, потом закрыть».
