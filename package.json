@@ -6,9 +6,10 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "build": "next build",
+    "build": "node scripts/check-features.mjs && next build",
     "dev": "next dev",
-    "check": "node scripts/check-contract.mjs",
+    "check": "node scripts/check-contract.mjs && node scripts/check-features.mjs",
+    "check:features": "node scripts/check-features.mjs",
     "probe": "node scripts/probe/alive.mjs"
   },
   "dependencies": {

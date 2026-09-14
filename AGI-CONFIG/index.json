@@ -1,0 +1,132 @@
+{
+  "generated_from": "AGI-CONFIG/agi-config.json",
+  "count": 21,
+  "features": [
+    {
+      "key": "person.name-he-is-called",
+      "title": "Как человека зовут и как он представился",
+      "valueType": "text",
+      "aggregate": "last"
+    },
+    {
+      "key": "person.language-he-speaks-with-us",
+      "title": "Язык, на котором человек разговаривает с нами",
+      "valueType": "text",
+      "aggregate": "last"
+    },
+    {
+      "key": "person.time-zone-he-lives-in",
+      "title": "Часовой пояс, по которому человеку считать сроки",
+      "valueType": "text",
+      "aggregate": "last"
+    },
+    {
+      "key": "person.city-where-he-lives-now",
+      "title": "Город, где человек живёт сейчас",
+      "valueType": "text",
+      "aggregate": "last"
+    },
+    {
+      "key": "person.date-of-his-birthday",
+      "title": "День рождения человека",
+      "valueType": "date",
+      "aggregate": "last"
+    },
+    {
+      "key": "person.age-he-is-now",
+      "title": "Возраст, названный человеком",
+      "valueType": "number",
+      "aggregate": "last"
+    },
+    {
+      "key": "person.nationality-he-names-for-himself",
+      "title": "Национальность, названная человеком о себе",
+      "valueType": "text",
+      "aggregate": "last"
+    },
+    {
+      "key": "person.job-title-he-has",
+      "title": "Чем человек занимается и какая у него роль",
+      "valueType": "text",
+      "aggregate": "last"
+    },
+    {
+      "key": "person.projects-he-is-working-on",
+      "title": "Над какими проектами человек работает сейчас",
+      "valueType": "text",
+      "aggregate": "list"
+    },
+    {
+      "key": "person.work-hours-he-keeps-each-day",
+      "title": "В какие часы человек работает и когда ему можно писать",
+      "valueType": "text",
+      "aggregate": "last"
+    },
+    {
+      "key": "person.how-he-wants-to-be-addressed",
+      "title": "На «ты» или на «вы», и как именно обращаться",
+      "valueType": "text",
+      "aggregate": "last"
+    },
+    {
+      "key": "person.tone-he-asks-us-to-use",
+      "title": "Каким тоном человек просит с ним говорить",
+      "valueType": "text",
+      "aggregate": "last"
+    },
+    {
+      "key": "person.reply-length-he-prefers",
+      "title": "Насколько подробные ответы человек хочет получать",
+      "valueType": "text",
+      "aggregate": "last"
+    },
+    {
+      "key": "person.things-he-asked-us-never-to-do",
+      "title": "Чего человек просил не делать никогда",
+      "valueType": "text",
+      "aggregate": "list"
+    },
+    {
+      "key": "person.currency-he-counts-money-in",
+      "title": "В какой валюте человек считает деньги",
+      "valueType": "text",
+      "aggregate": "last"
+    },
+    {
+      "key": "person.people-he-calls-his-friends",
+      "title": "Важные люди рядом: друзья, родные, коллеги",
+      "valueType": "object",
+      "aggregate": "list"
+    },
+    {
+      "key": "person.pets-that-live-with-him",
+      "title": "Животные, которые живут с человеком",
+      "valueType": "object",
+      "aggregate": "list"
+    },
+    {
+      "key": "person.drinks-he-says-he-likes",
+      "title": "Напитки, которые человек называет любимыми",
+      "valueType": "text",
+      "aggregate": "list"
+    },
+    {
+      "key": "person.color-he-calls-his-favorite",
+      "title": "Цвет, который человек называет любимым",
+      "valueType": "text",
+      "aggregate": "last"
+    },
+    {
+      "key": "person.meetings-he-had-with-people",
+      "title": "Встречи человека с людьми",
+      "valueType": "object",
+      "aggregate": "list"
+    },
+    {
+      "key": "money.spent-on-a-purchase",
+      "title": "Траты человека: на что и сколько",
+      "valueType": "money",
+      "aggregate": "sum-able"
+    }
+  ]
+}
