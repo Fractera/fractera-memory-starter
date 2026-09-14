@@ -47,12 +47,13 @@ export type MemoryUi = {
     /** Названия трёх страниц: загрузка · поиск · оценка. */
     tabs: Record<TestTab | "skill" | "bench", string>;
     /** Лид каждой страницы у графа и у вектора — что человек здесь делает. */
-    graph: Record<TestTab, string>;
-    vector: Record<TestTab, string>;
+    // 🪦 195-11: лид «Оценки» у стендов удалён — вкладка оценки на всех стендах читает один `benchCases.lead`.
+    graph: Record<Exclude<TestTab, "verdict">, string>;
+    vector: Record<Exclude<TestTab, "verdict">, string>;
     /** Лиды стенда объектного хранилища (192-3); с 194-6 — и страницы «Навык». */
-    object: Record<TestTab | "skill", string>;
+    object: Record<Exclude<TestTab, "verdict"> | "skill", string>;
     /** Лиды стенда ссылок (195-1): все четыре вкладки стоят сразу, построена «Загрузка». */
-    link: Record<TestTab | "skill", string>;
+    link: Record<Exclude<TestTab, "verdict"> | "skill", string>;
     /** Честная строка о том, что органа ещё нет: молчащий экран читается как поломка. */
     soon: string;
     /** Файла навыка на диске нет — сказано словами, а не пустым экраном (194-6). */
@@ -854,8 +855,6 @@ const EN: MemoryUi = {
         "Ask in words that are not in the text. The graph answers from entities and relations it extracted at load time — this is where the answer must be instant.",
       upload:
         "Paste your text and press the button. A model reads it once and pulls out entities and relations: the cost sits here, at load time, on purpose.",
-      verdict:
-        "Only you can say whether the right thing was found. The numbers next to your verdict — seconds and model turns — are measured, not guessed.",
     },
     skillMissing:
       "The skill file {path} is not on this server — the delivery did not bring it.",
@@ -874,8 +873,6 @@ const EN: MemoryUi = {
         "Ask by meaning, not by matching words. The store returns the closest passages with their distance — and an unrelated question must return nothing.",
       upload:
         "The same text becomes a fingerprint of its meaning. No model reads it; only the embeddings are computed, and that is much cheaper.",
-      verdict:
-        "The same verdict, the same case book. Two stores judged by one form, so their numbers can be compared at all.",
     },
     object: {
       search:
@@ -884,8 +881,6 @@ const EN: MemoryUi = {
         "Put a file as it is. It is kept whole; what makes it findable is its card — the name, your description and, for a text file, its opening. Nobody looks inside a picture or a PDF, so describe those in words.",
       skill:
         "The skill the memory agent will follow when a file arrives from the API: describe it, store it whole, answer by id. This is the file itself, read from disk on every load — the same text the agent reads.",
-      verdict:
-        "The same verdict and the same case book as the other two stores — three stores judged by one form.",
     },
     link: {
       search:
@@ -894,8 +889,6 @@ const EN: MemoryUi = {
         "The skill the memory agent will follow to call the AI browser: which method, which refusals, what to tell the person.",
       upload:
         "Paste one or more addresses and see, link by link, what the AI browser extracted from the page. «Get description» has a model write the full description and summary; «Save to memory» puts the link into the four stores.",
-      verdict:
-        "The same verdict and the same case book as the other stores — so links are judged by the form every store is judged by.",
     },
   },
   subtitle:
@@ -1417,8 +1410,6 @@ const RU: MemoryUi = {
         "Спросите словами, которых в тексте нет. Граф отвечает из сущностей и связей, добытых при загрузке, — здесь ответ обязан приходить мгновенно.",
       upload:
         "Вставьте свой текст и нажмите кнопку. Модель прочитает его один раз и вытащит сущности и связи: цена стоит здесь, на загрузке, и это сделано намеренно.",
-      verdict:
-        "Нашлось нужное или нет — можете сказать только вы. Числа рядом с вашим вердиктом — секунды и ходы модели — измерены, а не прикинуты.",
     },
     skillMissing:
       "Файла навыка {path} на этом сервере нет — доставка его не привезла.",
@@ -1437,8 +1428,6 @@ const RU: MemoryUi = {
         "Спрашивайте по смыслу, а не по совпадению слов. Хранилище вернёт ближайшие куски и их близость — а посторонний вопрос обязан не найти ничего.",
       upload:
         "Тот же текст превращается в отпечаток смысла. Модель его не читает — считаются только встраивания, и это заметно дешевле.",
-      verdict:
-        "Тот же вердикт и тот же корпус случаев. Два хранилища судятся одной формой — иначе их числа не с чем сравнивать.",
     },
     object: {
       search:
@@ -1447,8 +1436,6 @@ const RU: MemoryUi = {
         "Положите файл как есть. Он хранится целиком, а находит его карточка — имя, ваше описание и, у текстового файла, его начало. Внутрь картинки и PDF никто не смотрит, поэтому их описывайте словами.",
       skill:
         "Навык, по которому агент памяти будет действовать, когда файл придёт через API: описать, сохранить целиком, ответить номерами. Это сам файл, прочитанный с диска при каждой загрузке, — тот же текст, что читает агент. Навык написан по-английски: машинный слой памяти одноязычен.",
-      verdict:
-        "Тот же вердикт и тот же корпус случаев, что у двух других хранилищ, — три хранилища судятся одной формой.",
     },
     link: {
       search:
@@ -1457,8 +1444,6 @@ const RU: MemoryUi = {
         "Навык, по которому агент памяти будет звать ИИ-браузер: какой метод, какие отказы, что сказать человеку.",
       upload:
         "Вставьте один или несколько адресов и посмотрите по каждой ссылке, что ИИ-браузер извлёк со страницы. «Получить описание» — полное описание и саммари моделью, «Сохранить в память» — в четыре хранилища.",
-      verdict:
-        "Тот же вердикт и тот же корпус случаев, что у других хранилищ, — ссылки судятся той же формой, что и любое хранилище.",
     },
   },
   title: "Память",

@@ -298,12 +298,12 @@ async function MemoryPageBody({
                         // работает»): одно место словаря вместо четырёх копий. Лиды стендов `testBench.*.verdict` здесь больше не читаются.
                         ui.benchCases.lead
                     : active === "link-test"
-                      ? ui.testBench.link[pageTab]
+                      ? ui.testBench.link[pageTab as Exclude<TestTab, "verdict">]
                     : active === "object-test"
-                      ? ui.testBench.object[pageTab]
+                      ? ui.testBench.object[pageTab as Exclude<TestTab, "verdict">]
                       : active === "graph-test"
-                        ? ui.testBench.graph[pageTab]
-                        : ui.testBench.vector[pageTab]}
+                        ? ui.testBench.graph[pageTab as Exclude<TestTab, "verdict">]
+                        : ui.testBench.vector[pageTab as Exclude<TestTab, "verdict">]}
                 </p>
                 {/* 🔒 ВВОДНЫЙ ТЕКСТ СТЕНДА ОБЪЕКТОВ — СВЁРНУТОЙ КАРТОЧКОЙ ПОД ОПИСАНИЕМ (слово владельца
                     2026-09-13: «занимает слишком много места… разместить вверху сразу под описанием…
