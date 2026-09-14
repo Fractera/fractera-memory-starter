@@ -294,6 +294,22 @@ export async function keep(input: {
   const dropMedia = () => dataFetch(`/media/${item!.id}`, { method: "DELETE" }).catch(() => undefined);
   const dropVector = () => dataFetch(`/vectors/${vectorId(item!.id)}`, { method: "DELETE" }).catch(() => undefined);
 
+  // 🔒 ПОЛНОЕ ОПИСАНИЕ ПЕРЕПИСЫВАЕТСЯ JSON-ДВЕРЬЮ МЕДИАТЕКИ СРАЗУ ПОСЛЕ ЗАГРУЗКИ (195-2). ✗ Измерено: форма `/media/upload`
+  // превращает каждый `\n` описания в `\r\n` — у всех объектов, сохранённых с 194-4, в описании только `\r\n`. JSON переводов
+  // строк не трогает, и дверь возвращает перечитанную строку — сверяем легшее с отправленным байт в байт.
+  // 🔒 НЕ СОВПАЛО — ОТКАТ, А НЕ ПОЛОВИНА УСПЕХА: объект с искажённым описанием — ровно то, от чего закон «четыре или ничего».
+  const description = full || about;
+  try {
+    const p = await dataJson<{ item?: { description?: string }; ok?: boolean }>(`/media/${item.id}`, {
+      body: JSON.stringify({ description }),
+      method: "PATCH",
+    });
+    if (p.ok !== true || p.item?.description !== description) throw new Error("description differs");
+  } catch {
+    await dropMedia();
+    return fail("store-refused: description");
+  }
+
   try {
     const v = await dataJson<{ ok?: boolean }>("/vectors", {
       body: JSON.stringify({
