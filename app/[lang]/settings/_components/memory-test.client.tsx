@@ -3,38 +3,40 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { BenchControls, type BenchControlWords } from "./memory-test-controls.client";
+import { CallForm, type CallFormWords } from "./memory-call-form.client";
 import { buildCall, EMPTY_PARAMS } from "@/lib/bench-call.mjs";
 import type { BenchMode, BenchParams } from "@/lib/bench-call.mjs";
+import { buildContractCall, type CallTarget } from "@/lib/contract-call.mjs";
 
-// СТЕНД ПАМЯТИ — ВЕРХНЯЯ ПОЛОВИНА РАЗДЕЛА (176-2, перестроен 183-1).
+// СТЕНД ПАМЯТИ — ВЕРХНЯЯ ПОЛОВИНА РАЗДЕЛА (176-2, перестроен 183-1, 200-2).
 //
 // 🔒 ЗАЧЕМ ОН ЕСТЬ: ЧТОБЫ ИЗМЕРЯТЬ ПАМЯТЬ, А НЕ СУММУ «ПАМЯТЬ ПЛЮС АГЕНТ».
 // ✗ оплачено разбором 2026-09-10: на вопрос «что ты знаешь обо мне» от нажатия
 // «отправить» до ответа прошло 2 мин 13 с, и к самой памяти относились СЕКУНДЫ.
-// Остальное съели перезапуск агента и два его промаха с именами инструментов.
-// Пока в цепочке стоит агент, измеряется не память.
 //
-// 🔒 ОТВЕТ ПОКАЗЫВАЕТСЯ ДОСЛОВНО, А НЕ ПЕРЕСКАЗОМ. Сводка вместо тела ответа —
-// ровно та потеря, из-за которой цепочку пришлось восстанавливать по журналу
-// сессии: видимого следа не осталось нигде.
+// 🔒 С 200-1 КАЖДЫЙ ВЫЗОВ ИДЁТ В ПУБЛИЧНЫЙ API `/v1/*` — тем же путём, что у любой
+// программы. Панель «что уедет» показывает адрес, заголовки (ключ маской) и тело
+// ровно так, как их отправит дверь стенда.
 //
-// 🔒 ВРЕМЯ СТОИТ РЯДОМ С ОТВЕТОМ. Разбор фразы идёт 6–10 секунд, потому что
-// думает Opus; без числа это неотличимо от зависшей страницы.
+// 🔒 С 200-2 У СТЕНДА ЧЕТЫРЕ ВХОДА: «Сказать» и «Спросить» — быстрые входы в
+// `remember` и `recall`; «Метод договора» — любой метод и адрес каталога с формой,
+// порождённой из договора; «Сырой вызов» — любое имя и тело JSON как набрано.
 //
-// 🔒 ЧТО ДОБАВИЛ 183-1 И ПОЧЕМУ ЭТО НЕ УКРАШЕНИЕ: девять органов управления
-// раздела 13 паспорта плюс панель «что уедет». Стенд обязан уметь всё, что
-// умеет зовущая модель, — иначе он проверяет не тот путь. А панель отвечает на
-// вопрос, который до неё был неразрешим: память проигнорировала параметр или
-// стенд его не послал?
+// 🔒 ОТВЕТ ПОКАЗЫВАЕТСЯ ДОСЛОВНО, И ВРЕМЯ СТОИТ РЯДОМ С НИМ: разбор фразы идёт
+// секунды, потому что думает модель; без числа это неотличимо от зависшей страницы.
+
+type Mode = BenchMode | "method";
 
 type Words = {
   lead: string;
   say: string;
   ask: string;
   raw: string;
+  method: string;
   sayHint: string;
   askHint: string;
   rawHint: string;
+  methodHint: string;
   rawMethod: string;
   rawBody: string;
   send: string;
@@ -50,7 +52,12 @@ type Words = {
   /** Панель «что уедет»: заголовок и строка о непринятых параметрах (183-1). */
   whatGoes: string;
   droppedTitle: string;
+  /** Нет файла ключа — вызов уйдёт без ключа и получит отказ договора (200-2). */
+  keyMissing: string;
+  missingTitle: string;
+  badTitle: string;
   controls: BenchControlWords;
+  call: CallFormWords;
 };
 
 type Shot = {
@@ -64,6 +71,9 @@ type Shot = {
   ms: number;
   status: number;
   trouble: string | null;
+  /** Адрес, на который дверь стенда действительно ушла — из её ответа (200-1). */
+  url: string | null;
+  verb: string;
 };
 
 /** Показать тело ответа так, как оно пришло. Строку не трогаем вовсе. */
@@ -77,49 +87,49 @@ function show(body: unknown): string {
 }
 
 export function MemoryTest({
+  base,
+  keyMask,
   lang,
   onSent,
   supported,
+  targets,
   words,
 }: {
+  /** Публичный адрес памяти — из запроса страницы, как у вкладки API (185-2). */
+  base: string;
+  /** Маска ключа памяти; сам ключ в браузер не уезжает никогда (закон 185). */
+  keyMask: string | null;
   /**
-   * Язык, на котором память скажет слова человеку (181-10).
-   *
-   * 🔒 ЯЗЫК НАЗЫВАЕТ ЗОВУЩИЙ, А НЕ УГАДЫВАЕТ СЛУЖБА: память не знает, кто её
-   * позвал. Здесь это язык страницы — тот же, на котором человек читает всё
-   * остальное вокруг стенда.
+   * Язык, на котором память скажет слова человеку (181-10). Называет его
+   * зовущий: память не знает, кто её позвал.
    */
   lang: string;
   /** Стенд сообщает соседу внизу, что состав таблиц мог измениться (176-3). */
   onSent?: () => void;
-  /**
-   * Что договор принимает у каждого глагола — порождено из `contract.mjs`
-   * на сервере (183-1).
-   *
-   * 🔒 ОТСЮДА МЕТКИ У ОРГАНОВ И ОТСЮДА ЖЕ СПИСОК «НЕ ДОЕЗЖАЕТ». Рукописный
-   * список поддержанного разошёлся бы с договором молча.
-   */
+  /** Что договор принимает у `recall` и `remember` — для быстрых входов (183-1). */
   supported: { recall: readonly string[]; remember: readonly string[] };
+  /** Все методы и адреса каталога — порождены на сервере из `contract.mjs` (200-2). */
+  targets: CallTarget[];
   words: Words;
 }) {
-  const [mode, setMode] = useState<BenchMode>("say");
+  const [mode, setMode] = useState<Mode>("say");
   const [text, setText] = useState("");
   const [method, setMethod] = useState("recall");
   const [rawBody, setRawBody] = useState('{\n  "who": "bench-1"\n}');
   const [params, setParams] = useState<BenchParams>(EMPTY_PARAMS);
+  const [targetId, setTargetId] = useState(targets[0]?.id ?? "");
+  // 🔒 ЗНАЧЕНИЯ ФОРМЫ ЖИВУТ ПО ИМЕНИ ПАРАМЕТРА, А НЕ ПО МЕТОДУ: `who` и `lang`,
+  // выбранные у одного метода, остаются у соседнего — человек не набирает их заново.
+  const [callValues, setCallValues] = useState<Record<string, unknown>>({ lang, who: "bench-1" });
   const [people, setPeople] = useState<string[]>([]);
   const [peopleLoading, setPeopleLoading] = useState(true);
   const [shots, setShots] = useState<Shot[]>([]);
   const [busy, setBusy] = useState(false);
-  // 🔒 НИТЬ ИЗ ПОСЛЕДНЕГО ОТВЕТА ПАМЯТИ ЖИВЁТ ЗДЕСЬ (184-4). Человек не набирает
-  // руками 36 знаков идентификатора — он берёт их кнопкой. Стенд только помнит
-  // последнюю: выбор нити из истории — это уже реестр нитей, а его никто не
-  // заказывал.
+  // 🔒 НИТЬ ИЗ ПОСЛЕДНЕГО ОТВЕТА ПАМЯТИ ЖИВЁТ ЗДЕСЬ (184-4): 36 знаков руками не набирают.
   const [lastThread, setLastThread] = useState<string | null>(null);
   const nextId = useRef(1);
 
-  // 🔒 КОГО ПАМЯТЬ ЗНАЕТ — СПРАШИВАЕМ У НЕЁ ЖЕ, А НЕ ДЕРЖИМ СПИСОК НА ЭКРАНЕ.
-  // Метод `people` для того и заведён: наружу уходят ЛЮДИ, а не таблицы.
+  // 🔒 КОГО ПАМЯТЬ ЗНАЕТ — СПРАШИВАЕМ У НЕЁ ЖЕ, методом `people` через публичный API.
   useEffect(() => {
     let alive = true;
     void (async () => {
@@ -136,9 +146,8 @@ export function MemoryTest({
           .filter((p): p is string => typeof p === "string" && p.length > 0);
         if (alive) setPeople(list);
       } catch {
-        // 🛑 НЕ ОТВЕТИЛА — СПИСОК ОСТАЁТСЯ ПУСТЫМ, А СЛУЖЕБНОЕ ИМЯ СТЕНДА НА
-        // МЕСТЕ. Стенд обязан работать и тогда, когда память молчит: именно в
-        // этом состоянии его чаще всего и открывают.
+        // 🛑 НЕ ОТВЕТИЛА — СПИСОК ПУСТ, А СЛУЖЕБНОЕ ИМЯ СТЕНДА НА МЕСТЕ: стенд чаще
+        // всего открывают именно тогда, когда память молчит.
       } finally {
         if (alive) setPeopleLoading(false);
       }
@@ -152,21 +161,35 @@ export function MemoryTest({
     setParams((old: BenchParams) => ({ ...old, ...p }));
   }, []);
 
-  // 🔒 ТО, ЧТО ПОКАЗАНО, И ТО, ЧТО ОТПРАВЛЕНО, — ОДНА И ТА ЖЕ СБОРКА. Второй
-  // путь сборки тела разошёлся бы с первым, и панель начала бы врать первой.
+  const setCallValue = useCallback((name: string, value: unknown) => {
+    setCallValues((old) => ({ ...old, [name]: value }));
+  }, []);
+
+  // 🔒 ТО, ЧТО ПОКАЗАНО, И ТО, ЧТО ОТПРАВЛЕНО, — ОДНА И ТА ЖЕ СБОРКА. Второй путь
+  // сборки тела разошёлся бы с первым, и панель начала бы врать первой.
   const preview = buildCall({
     lang,
-    mode,
+    mode: mode === "method" ? "ask" : mode,
     params,
     supported: mode === "say" ? supported.remember : supported.recall,
     text,
   });
+  const target = targets.find((t) => t.id === targetId) ?? targets[0];
+  const contractCall = mode === "method" && target ? buildContractCall(target, callValues) : null;
+
+  // Что покажет панель «что уедет» — адрес и тело так, как их отправит дверь.
+  const shownVerb = contractCall ? contractCall.verb : "POST";
+  const shownPath = contractCall
+    ? contractCall.path
+    : `/v1/${mode === "raw" ? method.trim() || "…" : preview.method}`;
+  const shownBody = contractCall ? contractCall.body : mode === "raw" ? null : preview.body;
 
   const send = useCallback(async () => {
     if (busy) return;
 
     let sendMethod = preview.method;
-    let sendBody: unknown = preview.body;
+    let doorPayload: unknown = { body: preview.body, method: preview.method };
+    let verb = "POST";
     let asked = "";
 
     if (mode === "say") {
@@ -174,17 +197,22 @@ export function MemoryTest({
       asked = text.trim();
     } else if (mode === "ask") {
       asked = text.trim() || "(без вопроса — всё, что известно)";
+    } else if (mode === "method") {
+      if (!contractCall || !target) return;
+      verb = contractCall.verb;
+      sendMethod = target.id;
+      doorPayload = contractCall.door;
+      const bodyLine = contractCall.body ? ` ← ${JSON.stringify(contractCall.body).slice(0, 160)}` : "";
+      asked = `${contractCall.verb} ${contractCall.path}${bodyLine}`;
     } else {
       sendMethod = method;
+      let parsed: unknown;
       try {
         // 🔒 СЫРОЙ ВЫЗОВ УЕЗЖАЕТ РОВНО ТАКИМ, КАКИМ ЕГО НАБРАЛИ, — ни язык, ни
-        // органы управления сюда не дописываются. Это единственное место стенда,
-        // где человек говорит с договором напрямую; подставив своё, стенд
-        // перестал бы показывать то, что он отправляет.
-        sendBody = rawBody.trim() ? JSON.parse(rawBody) : {};
+        // органы управления сюда не дописываются.
+        parsed = rawBody.trim() ? JSON.parse(rawBody) : {};
       } catch {
-        // 🛑 КРИВОЙ JSON — ОТВЕТ СТЕНДА, А НЕ МОЛЧАНИЕ. Пропущенная отправка без
-        // следа читается как «служба не ответила», и виноватой выглядит память.
+        // 🛑 КРИВОЙ JSON — ОТВЕТ СТЕНДА, А НЕ МОЛЧАНИЕ.
         setShots((s) => [
           {
             asked: rawBody.slice(0, 200),
@@ -195,11 +223,14 @@ export function MemoryTest({
             ms: 0,
             status: 0,
             trouble: "тело запроса — не JSON, до памяти не отправляли",
+            url: null,
+            verb,
           },
           ...s,
         ]);
         return;
       }
+      doorPayload = { body: parsed, method: sendMethod };
       asked = `${sendMethod} ← ${rawBody.trim().replace(/\s+/g, " ").slice(0, 120)}`;
     }
 
@@ -207,13 +238,12 @@ export function MemoryTest({
     const started = Date.now();
     try {
       const r = await fetch("/api/fractera/memory-test", {
-        body: JSON.stringify({ body: sendBody, method: sendMethod }),
+        body: JSON.stringify(doorPayload),
         cache: "no-store",
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
-      // 🛑 ЧИТАЕМ ТЕЛО, А НЕ КОД: и наша дверь, и память отвечают `200` с
-      // `ok:false`. Довериться коду значило бы объявить успехом отказ.
+      // 🛑 ЧИТАЕМ ТЕЛО, А НЕ КОД: дверь отвечает `200`, а код `/v1` лежит внутри.
       const text_ = await r.text();
       let parsed: unknown;
       try {
@@ -224,11 +254,11 @@ export function MemoryTest({
       const answer = parsed as {
         body?: unknown;
         ms?: number;
+        request?: { method?: string; url?: string };
         status?: number;
         trouble?: string | null;
       };
-      // 🔒 ИМЯ НИТИ ВЫНИМАЕТСЯ ИЗ ОТВЕТА СРАЗУ: оно приходит только там, и
-      // упустив его, продолжить цепочку уже нечем.
+      // 🔒 ИМЯ НИТИ ВЫНИМАЕТСЯ ИЗ ОТВЕТА СРАЗУ: оно приходит только там.
       const gotThread = (answer?.body as { thread?: unknown } | undefined)?.thread;
       if (typeof gotThread === "string" && gotThread) setLastThread(gotThread);
       setShots((s) => [
@@ -241,10 +271,13 @@ export function MemoryTest({
           ms: typeof answer?.ms === "number" ? answer.ms : Date.now() - started,
           status: typeof answer?.status === "number" ? answer.status : r.status,
           trouble: answer?.trouble ?? null,
+          url: answer?.request?.url ?? null,
+          verb: answer?.request?.method ?? verb,
         },
         ...s,
       ]);
-      if (sendMethod !== "recall") onSent?.();
+      // 🔒 ЧТЕНИЕ ТАБЛИЦ НЕ МЕНЯЕТ, И ПОСЛЕ НЕГО ОНИ НЕ ПЕРЕЧИТЫВАЮТСЯ (176-3).
+      if (verb !== "GET" && sendMethod !== "recall") onSent?.();
     } catch (e) {
       setShots((s) => [
         {
@@ -256,15 +289,17 @@ export function MemoryTest({
           ms: Date.now() - started,
           status: 0,
           trouble: `${words.failed}: ${String((e as Error).message)}`,
+          url: null,
+          verb,
         },
         ...s,
       ]);
     } finally {
       setBusy(false);
     }
-  }, [busy, method, mode, onSent, preview, rawBody, text, words.failed]);
+  }, [busy, contractCall, method, mode, onSent, preview, rawBody, target, text, words.failed]);
 
-  const modeButton = (id: BenchMode, label: string) => (
+  const modeButton = (id: Mode, label: string) => (
     <button
       className={`rounded-md border px-3 py-1 text-[length:var(--fs-small)] transition-colors ${
         mode === id
@@ -279,35 +314,21 @@ export function MemoryTest({
   );
 
   const hint =
-    mode === "say" ? words.sayHint : mode === "ask" ? words.askHint : words.rawHint;
+    mode === "say"
+      ? words.sayHint
+      : mode === "ask"
+        ? words.askHint
+        : mode === "method"
+          ? words.methodHint
+          : words.rawHint;
 
   return (
     <section className="space-y-3">
       <p className="text-[length:var(--fs-small)] text-muted-foreground">{words.lead}</p>
 
-      {/* 🔒 ВЫСОТА ОГРАНИЧЕНА У СТЕНДА, А ПРОКРУТКА ЖИВЁТ ВНУТРИ КОЛОНОК.
-          Заказ владельца дословно: «максимальной высотой 600 пикселей и
-          внутренней прокруткой». Прокрути мы страницу целиком — ввод уезжал бы
-          за край ровно тогда, когда нужен: при чтении длинного ответа.
-
-          🛑 БЫЛО `style={{ maxHeight: 600 }}` — И ЭТО НЕ РАБОТАЛО (181-11, находка
-          владельца: «когда ответ в правой карточке достаточно большой она выходит
-          за габариты своего контейнера»). Механизм: у сетки строка высотой `auto`,
-          то есть ПО СОДЕРЖИМОМУ; `max-height` на самой сетке такую строку не
-          сжимает, и колонка вырастает наружу, а внутренняя прокрутка не
-          включается — ей нечего ограничивать.
-          🔒 ЛЕЧЕНИЕ — ОПРЕДЕЛЁННАЯ ВЫСОТА, А НЕ ПРЕДЕЛЬНАЯ: `md:h-[600px]` даёт
-          строке точный размер, колонки растягиваются на неё, и `min-h-0 flex-1
-          overflow-y-auto` внутри каждой начинает прокручивать. На узком экране
-          колонки идут одна под другой, и общая высота там была бы вредна —
-          поэтому предел ставится каждой колонке отдельно, `max-h-[70vh]`.
-          🔒 ОБЕ КОЛОНКИ ЛЕЧАТСЯ ОДИНАКОВО, хотя переполнение заметили в правой:
-          лента отправленного растёт так же, просто медленнее.
-          🔒 С 183-1 ВЫСОТА ОТДАНА ТОЛЬКО ДВУМ КОЛОНКАМ, а органы управления и
-          панель «что уедет» стоят НАД ними: втиснутые внутрь, они съели бы то
-          самое место, ради которого предел и ставился. */}
-
-      {mode === "raw" ? null : (
+      {/* 🔒 ОРГАНЫ УПРАВЛЕНИЯ — У БЫСТРЫХ ВХОДОВ. У «Метода договора» свои поля в
+          самой форме, у «Сырого вызова» — тело как набрано. */}
+      {mode === "say" || mode === "ask" ? (
         <BenchControls
           lastThread={lastThread}
           onChange={patch}
@@ -317,8 +338,10 @@ export function MemoryTest({
           supported={mode === "say" ? supported.remember : supported.recall}
           words={words.controls}
         />
-      )}
+      ) : null}
 
+      {/* 🔒 ВЫСОТА — ОПРЕДЕЛЁННАЯ У СЕТКИ И ПРЕДЕЛЬНАЯ У КОЛОНОК (181-11): `max-height`
+          на сетке строку `auto` не сжимает, и колонка вырастает наружу. */}
       <div className="grid gap-3 md:h-[600px] md:grid-cols-2">
         {/* ЛЕВАЯ КОЛОНКА — ВВОД И ЛЕНТА ОТПРАВЛЕННОГО */}
         <div className="flex max-h-[70vh] min-h-0 flex-col overflow-hidden rounded-md border border-muted-foreground/30 md:max-h-none">
@@ -326,10 +349,13 @@ export function MemoryTest({
             {words.inputTitle}
           </div>
 
-          <div className="space-y-2 border-b border-muted-foreground/20 p-3">
+          {/* 🔒 ВВОД ПРОКРУЧИВАЕТСЯ ВНУТРИ СЕБЯ: у `keep_object` одиннадцать полей, и
+              без предела форма вытолкнула бы ленту отправленного за край колонки. */}
+          <div className="max-h-[70%] shrink-0 space-y-2 overflow-y-auto border-b border-muted-foreground/20 p-3">
             <div className="flex flex-wrap gap-2">
               {modeButton("say", words.say)}
               {modeButton("ask", words.ask)}
+              {modeButton("method", words.method)}
               {modeButton("raw", words.raw)}
             </div>
             <p className="text-[length:var(--fs-small)] text-muted-foreground">{hint}</p>
@@ -351,6 +377,19 @@ export function MemoryTest({
                   value={rawBody}
                 />
               </div>
+            ) : mode === "method" ? (
+              <CallForm
+                bad={contractCall?.bad ?? []}
+                controls={words.controls}
+                lastThread={lastThread}
+                onTarget={setTargetId}
+                onValue={setCallValue}
+                people={people}
+                targetId={targetId}
+                targets={targets}
+                values={callValues}
+                words={words.call}
+              />
             ) : (
               <textarea
                 aria-label={words.inputTitle}
@@ -363,22 +402,34 @@ export function MemoryTest({
               />
             )}
 
-            {/* 🔒 ПАНЕЛЬ «ЧТО УЕДЕТ» — НЕ ОРГАН, А ПРИБОР ЧЕСТНОСТИ (183-1).
-                Без неё «память проигнорировала параметр» неотличимо от «стенд
-                его не послал», и виноватой всегда выглядит память. */}
-            {mode === "raw" ? null : (
-              <div className="space-y-1">
-                <div className="text-[length:var(--fs-small)] font-medium">{words.whatGoes}</div>
-                <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-md bg-muted px-2 py-1 font-mono text-[length:var(--fs-small)]">
-                  {JSON.stringify({ body: preview.body, method: preview.method }, null, 2)}
-                </pre>
-                {preview.dropped.length ? (
-                  <p className="text-[length:var(--fs-small)] text-muted-foreground">
-                    {words.droppedTitle}: {preview.dropped.join(", ")}
-                  </p>
-                ) : null}
-              </div>
-            )}
+            {/* 🔒 ПАНЕЛЬ «ЧТО УЕДЕТ» — ПРИБОР ЧЕСТНОСТИ (183-1): адрес, заголовки и
+                тело публичного API, как их отправит дверь стенда (200-1). */}
+            <div className="space-y-1" data-testid="what-goes">
+              <div className="text-[length:var(--fs-small)] font-medium">{words.whatGoes}</div>
+              <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-md bg-muted px-2 py-1 font-mono text-[length:var(--fs-small)]">
+                {[
+                  `${shownVerb} ${base}${shownPath}`,
+                  ...(shownVerb === "POST" ? ["content-type: application/json"] : []),
+                  `x-memory-key: ${keyMask ?? words.keyMissing}`,
+                  ...(shownBody ? ["", JSON.stringify(shownBody, null, 2)] : []),
+                ].join("\n")}
+              </pre>
+              {(mode === "say" || mode === "ask") && preview.dropped.length ? (
+                <p className="text-[length:var(--fs-small)] text-muted-foreground">
+                  {words.droppedTitle}: {preview.dropped.join(", ")}
+                </p>
+              ) : null}
+              {contractCall?.missing.length ? (
+                <p className="text-[length:var(--fs-small)] text-muted-foreground">
+                  {words.missingTitle}: {contractCall.missing.join(", ")}
+                </p>
+              ) : null}
+              {contractCall?.bad.length ? (
+                <p className="text-[length:var(--fs-small)] text-destructive">
+                  {words.badTitle}: {contractCall.bad.join(", ")}
+                </p>
+              ) : null}
+            </div>
 
             <div className="flex items-center gap-2">
               <Button disabled={busy} onClick={() => void send()} size="sm" type="button">
@@ -390,8 +441,7 @@ export function MemoryTest({
             </div>
           </div>
 
-          {/* 🔒 ЛЕНТА ЖИВЁТ В БРАУЗЕРЕ, И ЭТО СКАЗАНО СЛОВАМИ. Молчаливая
-              пропажа проб после перезагрузки читается как дефект. */}
+          {/* 🔒 ЛЕНТА ЖИВЁТ В БРАУЗЕРЕ, И ЭТО СКАЗАНО СЛОВАМИ. */}
           <div className="min-h-0 flex-1 overflow-y-auto p-3">
             {shots.length === 0 ? (
               <p className="text-[length:var(--fs-small)] text-muted-foreground">
@@ -449,6 +499,11 @@ export function MemoryTest({
                       </span>
                       <span>{s.at}</span>
                     </div>
+                    {s.url ? (
+                      <div className="mb-1 break-all font-mono text-[length:var(--fs-small)] text-muted-foreground">
+                        {s.verb} {s.url}
+                      </div>
+                    ) : null}
                     {s.trouble ? (
                       <p className="rounded-md border border-destructive/40 px-2 py-1 text-[length:var(--fs-small)] text-destructive">
                         {s.trouble}

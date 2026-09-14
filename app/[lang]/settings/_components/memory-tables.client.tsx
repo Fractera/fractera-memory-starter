@@ -3,19 +3,18 @@
 import { useCallback, useEffect, useImperativeHandle, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-// НИЖНЯЯ ПОЛОВИНА РАЗДЕЛА — ЧТО ПАМЯТЬ ПОСТРОИЛА (176-3).
+// НИЖНЯЯ ПОЛОВИНА РАЗДЕЛА — ЧТО ПАМЯТЬ ПОСТРОИЛА (176-3, переписана 200-2).
 //
-// 🔒 ТАБЛИЦЫ БЕРУТСЯ У САМОЙ ПАМЯТИ (`GET /v1/tables`), А НЕ ОБХОДОМ БАЗЫ.
-// Способность у неё уже есть; свой обход завёл бы второго читателя её
+// 🔒 ТАБЛИЦЫ БЕРУТСЯ У САМОЙ ПАМЯТИ ЧЕРЕЗ ПУБЛИЧНЫЙ API: `GET /v1/tables` — имена,
+// `GET /v1/tables/{имя}` — описание. Свой обход базы завёл бы второго читателя её
 // внутренностей — ровно то, от чего защищает закон о чёрном ящике.
 //
-// 🔒 «ТАБЛИЦ НЕТ» И «СЛУЖБА НЕ ОТВЕТИЛА» — РАЗНЫЕ СОСТОЯНИЯ, И ОБА НАЗЫВАЮТСЯ.
-// Пустой список человек читает как «память ничего не построила»; отказ службы —
-// совсем другое, и путать их значит показывать уверенную ложь. Тот же закон уже
-// оплачен на соседнем экране этого раздела.
+// ✗ ДО 200-2 ЭКРАН ЖДАЛ ОТ ОПИСАНИЯ `columns` И `rows` — А ДОГОВОР ИХ НЕ ОТДАЁТ.
+// Описание таблицы есть `reads_as`, `parent`, `records` и `kinds` (роды значений);
+// строк чёрный ящик наружу не выдаёт по замыслу. Вдобавок дверь стенда не держала
+// `GET` вовсе: журнал nginx — 14 × `405`. Раздел был пуст с 178-1 по двум причинам.
 //
-// 🛑 СМОТРИМ ТОЛЬКО НА `:3700`. Таблицы старой памяти сюда не попадают: смешав
-// их, мы получили бы экран, по которому нельзя сказать, что помнит НОВАЯ память.
+// 🔒 «ТАБЛИЦ НЕТ» И «СЛУЖБА НЕ ОТВЕТИЛА» — РАЗНЫЕ СОСТОЯНИЯ, И ОБА НАЗЫВАЮТСЯ.
 
 type Words = {
   title: string;
@@ -24,26 +23,22 @@ type Words = {
   loading: string;
   empty: string;
   down: string;
-  rows: string;
-  columns: string;
-  noRows: string;
-  shown: string;
+  records: string;
+  kinds: string;
+  noKinds: string;
+  parent: string;
 };
 
-type TableInfo = {
-  name: string;
-  rows?: number;
-};
+type Kind = { explained: string | null; name: string; reads_as: string };
 
-type Loaded = {
-  columns: string[];
+type Described = {
+  kinds: Kind[];
   name: string;
-  rows: Record<string, unknown>[];
+  parent: string | null;
+  readsAs: string;
+  records: number | null;
   trouble: string | null;
 };
-
-/** Сколько строк одной таблицы показываем. Ограничение НАЗЫВАЕТСЯ, а не молчит. */
-const LIMIT = 50;
 
 export type MemoryTablesHandle = { reload: () => void };
 
@@ -54,8 +49,8 @@ export function MemoryTables({
   ref?: React.Ref<MemoryTablesHandle>;
   words: Words;
 }) {
-  const [names, setNames] = useState<TableInfo[] | null>(null);
-  const [tables, setTables] = useState<Loaded[]>([]);
+  const [names, setNames] = useState<string[] | null>(null);
+  const [tables, setTables] = useState<Described[]>([]);
   const [busy, setBusy] = useState(false);
   const [trouble, setTrouble] = useState<string | null>(null);
 
@@ -65,67 +60,68 @@ export function MemoryTables({
     try {
       const r = await fetch("/api/fractera/memory-test?what=tables", { cache: "no-store" });
       const answer = (await r.json()) as {
-        body?: { ok?: boolean; tables?: unknown };
+        body?: { ok?: boolean; tables?: unknown; what_happened?: string };
+        status?: number;
         trouble?: string | null;
       };
-      if (answer?.trouble) {
-        setTrouble(answer.trouble);
+      if (answer?.trouble || answer?.body?.ok === false) {
+        setTrouble(answer?.trouble ?? answer?.body?.what_happened ?? `${words.down} (${answer?.status ?? r.status})`);
         setNames(null);
         setTables([]);
         return;
       }
       const raw = answer?.body?.tables;
-      const list: TableInfo[] = Array.isArray(raw)
-        ? raw.map((t) =>
-            typeof t === "string"
-              ? { name: t }
-              : { name: String((t as { name?: unknown }).name ?? ""), rows: (t as { rows?: number }).rows }
-          )
+      const list = Array.isArray(raw)
+        ? raw
+            .map((t) => (typeof t === "string" ? t : String((t as { name?: unknown })?.name ?? "")))
+            .filter(Boolean)
         : [];
-      setNames(list.filter((t) => t.name));
+      setNames(list);
 
-      // 🔒 СОДЕРЖИМОЕ КАЖДОЙ ТАБЛИЦЫ ТЯНЕМ ОТДЕЛЬНО, ПОТОМУ ЧТО ТАК УСТРОЕН
-      // ДОГОВОР ПАМЯТИ: имена — одним запросом, строки — по имени.
-      const loaded: Loaded[] = [];
-      for (const t of list) {
-        if (!t.name) continue;
+      // 🔒 ОПИСАНИЕ КАЖДОЙ ТАБЛИЦЫ ТЯНЕМ ОТДЕЛЬНО, ПОТОМУ ЧТО ТАК УСТРОЕН ДОГОВОР:
+      // имена — одним запросом, описание — по имени.
+      const described: Described[] = [];
+      for (const name of list) {
         try {
-          const one = await fetch(
-            `/api/fractera/memory-test?what=table&name=${encodeURIComponent(t.name)}`,
-            { cache: "no-store" }
-          );
+          const one = await fetch(`/api/fractera/memory-test?what=table&name=${encodeURIComponent(name)}`, {
+            cache: "no-store",
+          });
           const got = (await one.json()) as {
-            body?: { columns?: unknown; ok?: boolean; rows?: unknown };
+            body?: {
+              hint?: string;
+              kinds?: unknown;
+              ok?: boolean;
+              parent?: string | null;
+              reads_as?: string;
+              records?: number | null;
+            };
             trouble?: string | null;
           };
           if (got?.trouble || got?.body?.ok === false) {
-            loaded.push({
-              columns: [],
-              name: t.name,
-              rows: [],
-              trouble: got?.trouble ?? words.down,
+            described.push({
+              kinds: [],
+              name,
+              parent: null,
+              readsAs: "",
+              records: null,
+              trouble: got?.trouble ?? got?.body?.hint ?? words.down,
             });
             continue;
           }
-          const cols = Array.isArray(got?.body?.columns)
-            ? (got.body.columns as unknown[]).map((c) =>
-                typeof c === "string" ? c : String((c as { name?: unknown })?.name ?? "")
-              )
-            : [];
-          const rows = Array.isArray(got?.body?.rows)
-            ? (got.body.rows as Record<string, unknown>[])
-            : [];
-          loaded.push({ columns: cols, name: t.name, rows, trouble: null });
-        } catch (e) {
-          loaded.push({
-            columns: [],
-            name: t.name,
-            rows: [],
-            trouble: String((e as Error).message),
+          const b = got.body ?? {};
+          described.push({
+            kinds: Array.isArray(b.kinds) ? (b.kinds as Kind[]) : [],
+            name,
+            parent: b.parent ?? null,
+            readsAs: b.reads_as ?? "",
+            records: typeof b.records === "number" ? b.records : null,
+            trouble: null,
           });
+        } catch (e) {
+          described.push({ kinds: [], name, parent: null, readsAs: "", records: null, trouble: String((e as Error).message) });
         }
       }
-      setTables(loaded);
+      setTables(described);
     } catch (e) {
       setTrouble(`${words.down}: ${String((e as Error).message)}`);
       setNames(null);
@@ -162,63 +158,42 @@ export function MemoryTables({
           {words.empty}
         </p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {tables.map((t) => (
-            <div className="rounded-md border border-muted-foreground/30" key={t.name}>
+            <div className="rounded-md border border-muted-foreground/30" data-table={t.name} key={t.name}>
               <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-muted-foreground/20 px-3 py-2">
-                <span className="font-mono text-[length:var(--fs-small)]">{t.name}</span>
+                <span className="break-all font-mono text-[length:var(--fs-small)]">{t.name}</span>
                 <span className="text-[length:var(--fs-small)] text-muted-foreground">
-                  {t.columns.length} {words.columns} · {t.rows.length} {words.rows}
+                  {words.records}: {t.records ?? "—"}
                 </span>
               </div>
-
               {t.trouble ? (
                 <p className="px-3 py-2 text-[length:var(--fs-small)] text-destructive">{t.trouble}</p>
-              ) : t.rows.length === 0 ? (
-                <p className="px-3 py-2 text-[length:var(--fs-small)] text-muted-foreground">
-                  {words.noRows}
-                </p>
               ) : (
-                <>
-                  {/* 🔒 ШИРОКАЯ ТАБЛИЦА ПРОКРУЧИВАЕТСЯ ВНУТРИ СЕБЯ, А НЕ ТЯНЕТ
-                      СТРАНИЦУ ВБОК: колонок у памяти становится больше с каждым
-                      новым родом значения, и это её нормальная жизнь. */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-[length:var(--fs-small)]">
-                      <thead>
-                        <tr className="border-b border-muted-foreground/20">
-                          {t.columns.map((c) => (
-                            <th className="whitespace-nowrap px-3 py-1 font-mono font-medium" key={c}>
-                              {c}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {t.rows.slice(0, LIMIT).map((row, i) => (
-                          <tr className="border-b border-muted-foreground/10" key={i}>
-                            {t.columns.map((c) => (
-                              <td className="max-w-[24ch] truncate px-3 py-1" key={c} title={String(row[c] ?? "")}>
-                                {row[c] === null || row[c] === undefined ? (
-                                  <span className="text-muted-foreground">—</span>
-                                ) : (
-                                  String(row[c])
-                                )}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {t.rows.length > LIMIT && (
-                    // 🛑 ОБРЕЗКА НАЗЫВАЕТСЯ, А НЕ ПРОИСХОДИТ МОЛЧА: невидимая
-                    // потеря строк читается как «память их не сохранила».
-                    <p className="px-3 py-1 text-[length:var(--fs-small)] text-muted-foreground">
-                      {words.shown} {LIMIT} / {t.rows.length}
+                <div className="space-y-2 px-3 py-2">
+                  {t.readsAs ? <p className="text-[length:var(--fs-small)]">{t.readsAs}</p> : null}
+                  {t.parent ? (
+                    <p className="text-[length:var(--fs-small)] text-muted-foreground">
+                      {words.parent}: <span className="font-mono">{t.parent}</span>
                     </p>
+                  ) : null}
+                  {t.kinds.length === 0 ? (
+                    <p className="text-[length:var(--fs-small)] text-muted-foreground">{words.noKinds}</p>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[length:var(--fs-small)] text-muted-foreground">{words.kinds}:</span>
+                      {t.kinds.map((k) => (
+                        <span
+                          className="rounded bg-muted px-1.5 py-0.5 font-mono text-[length:var(--fs-small)]"
+                          key={k.name}
+                          title={k.explained ?? k.reads_as}
+                        >
+                          {k.name}
+                        </span>
+                      ))}
+                    </div>
                   )}
-                </>
+                </div>
               )}
             </div>
           ))}

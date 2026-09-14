@@ -16,6 +16,7 @@ import type { TestTab } from "../_lib/test-tabs";
 import type { OpenAiKeyWords } from "../_components/openai-key";
 import type { OpenAiTabWords } from "../_components/openai-tab";
 import type { BenchControlWords } from "../_components/memory-test-controls.client";
+import type { CallFormWords } from "../_components/memory-call-form.client";
 import type { ApiKeyWords } from "../_components/api-key.client";
 import type { LinkBenchWords } from "../_components/link-bench.client";
 import type { YoutubeKeyCardWords } from "../_components/youtube-key";
@@ -312,6 +313,13 @@ export type MemoryUi = {
     droppedTitle: string;
     /** Слова девяти органов управления — форму задаёт сам компонент (183-1). */
     controls: BenchControlWords;
+    /** Вход «Метод договора» и форма, порождённая из договора (200-2). */
+    method: string;
+    methodHint: string;
+    keyMissing: string;
+    missingTitle: string;
+    badTitle: string;
+    call: CallFormWords;
   };
   memoryTables: {
     title: string;
@@ -320,10 +328,11 @@ export type MemoryUi = {
     loading: string;
     empty: string;
     down: string;
-    rows: string;
-    columns: string;
-    noRows: string;
-    shown: string;
+    /** Описание таблицы по договору: записи, роды значений, родитель (200-2). */
+    records: string;
+    kinds: string;
+    noKinds: string;
+    parent: string;
   };
   journal: {
     entries: string;
@@ -384,16 +393,16 @@ const EN: MemoryUi = {
   },
   layer: "Memory service",
   memoryTables: {
-    columns: "columns",
     down: "The memory service did not answer",
     empty:
       "Memory has not built a single table yet. Say something to it above — the tables appear on their own, and nobody declares them in advance.",
-    lead: "Everything memory built out of what it was told. Tables and columns are created by memory itself, at the moment it needs them.",
+    kinds: "kinds of values",
+    lead: "Everything memory built out of what it was told, read through the public API: names from GET /v1/tables, the description of each from GET /v1/tables/{name}. Rows stay inside memory — the contract gives descriptions, not contents.",
     loading: "reading…",
-    noRows: "the table exists, no rows in it yet",
+    noKinds: "no kinds of values described yet",
+    parent: "grows from",
+    records: "records",
     refresh: "Refresh",
-    rows: "rows",
-    shown: "shown",
     title: "What memory built",
   },
   memoryTest: {
@@ -477,10 +486,28 @@ const EN: MemoryUi = {
         loading: "asking memory who it knows…",
       },
     },
+    badTitle: "Filled in the wrong form — not sent",
+    call: {
+      arrayHint: 'JSON array, e.g. [{"url": "https://…"}]',
+      badForm: "not valid for this type — this field is not sent",
+      catalogueGroup: "Catalogue — reading",
+      fileNext: "A file travels as multipart/form-data; that arrives in sub-step 200-3, and until then a file is not sent.",
+      methodsGroup: "Methods",
+      noParams: "This address takes no parameters.",
+      notSet: "— not set —",
+      optional: "optional",
+      required: "required",
+      target: "Method or address",
+    },
     droppedTitle: "Set here, but this method does not accept it yet",
     failed: "The bench could not reach the door",
     inputTitle: "What we send",
-    lead: "Phrases go straight to the memory service — this page runs on the service itself, so there is nothing in between at all.",
+    keyMissing: "no memory key yet — the call goes without it and gets 401 no-access (the key is created on the API tab)",
+    lead: "Every call goes to the public memory API /v1/* — the same way any program calls it. The address, headers and body below are exactly what is sent.",
+    method: "Contract method",
+    methodHint:
+      "Any method or catalogue address of the contract. The form is built from the contract itself: each parameter with its type, whether it is required, and its description. Only what you fill in is sent.",
+    missingTitle: "Required but empty — the call goes without it, and the contract will refuse",
     nothingSent: "Nothing sent yet.",
     nothingYet: "Memory has not answered yet — send a phrase on the left.",
     raw: "Raw call",
@@ -984,16 +1011,16 @@ const RU: MemoryUi = {
   },
   layer: "Служба памяти",
   memoryTables: {
-    columns: "колонок",
     down: "Служба памяти не ответила",
     empty:
       "Память пока не построила ни одной таблицы. Скажите ей что-нибудь выше — таблицы появляются сами, заранее их никто не объявляет.",
-    lead: "Всё, что память построила из сказанного. Таблицы и колонки она заводит сама, в тот момент, когда они ей нужны.",
+    kinds: "роды значений",
+    lead: "Всё, что память построила из сказанного, — через публичный API: имена из GET /v1/tables, описание каждой из GET /v1/tables/{имя}. Строки остаются внутри памяти: договор отдаёт описание, а не содержимое.",
     loading: "читаем…",
-    noRows: "таблица есть, строк в ней пока нет",
+    noKinds: "родов значений пока не описано",
+    parent: "растёт из",
+    records: "записей",
     refresh: "Обновить",
-    rows: "строк",
-    shown: "показано",
     title: "Что память построила",
   },
   memoryTest: {
@@ -1077,10 +1104,28 @@ const RU: MemoryUi = {
         loading: "спрашиваем память, кого она знает…",
       },
     },
+    badTitle: "Заполнено не той формы — не уедет",
+    call: {
+      arrayHint: 'JSON-массив, например [{"url": "https://…"}]',
+      badForm: "не подходит под тип — это поле не уедет",
+      catalogueGroup: "Каталог — чтение",
+      fileNext: "Файл уезжает как multipart/form-data; это подшаг 200-3, и до него файл не отправляется.",
+      methodsGroup: "Методы",
+      noParams: "У этого адреса параметров нет.",
+      notSet: "— не выставлено —",
+      optional: "необязательный",
+      required: "обязательный",
+      target: "Метод или адрес",
+    },
     droppedTitle: "Выставлено здесь, но этот метод пока такого не принимает",
     failed: "Стенд не достучался до двери",
     inputTitle: "Что отправляем",
-    lead: "Фразы уходят прямо в службу памяти — эта страница работает на самой службе, значит между вами и памятью нет вообще ничего.",
+    keyMissing: "ключа памяти пока нет — вызов уйдёт без него и получит 401 no-access (ключ создаётся на вкладке API)",
+    lead: "Каждый вызов идёт в публичный API памяти /v1/* — тем же путём, что у любой программы. Адрес, заголовки и тело ниже — ровно то, что уходит.",
+    method: "Метод договора",
+    methodHint:
+      "Любой метод и адрес каталога из договора. Форма построена по самому договору: у каждого параметра тип, обязательность и описание. Уезжает только заполненное.",
+    missingTitle: "Обязательное не заполнено — вызов уйдёт без него, и откажет договор",
     nothingSent: "Пока ничего не отправляли.",
     nothingYet: "Память ещё не отвечала — отправьте фразу слева.",
     raw: "Сырой вызов",

@@ -3,8 +3,11 @@ import { join } from "node:path";
 import { Suspense } from "react";
 import { headers } from "next/headers";
 import { Layers } from "lucide-react";
-import { METHODS } from "@/contract.mjs";
+import { CATALOGUE, METHODS } from "@/contract.mjs";
+import { maskKey, readKey } from "@/lib/api-key.mjs";
+import { placeholdersOf, type CallTarget } from "@/lib/contract-call.mjs";
 import { publicMemoryUrl, publicSiteUrl } from "@/lib/fractera/auth-url";
+import { apiDocWords } from "./_i18n/api.i18n";
 import { PageCrumbs } from "@/components/nav/page-crumbs.server";
 import { Eyebrow, H1, Lead } from "@/components/ui/typography";
 import { WorkspaceShell } from "@/components/workspace/workspace-shell";
@@ -84,6 +87,48 @@ function supportedParams(): { recall: string[]; remember: string[] } {
   const of = (name: string) =>
     (METHODS.find((m) => m.name === name)?.params ?? []).map((p) => p.name);
   return { recall: of("recall"), remember: of("remember") };
+}
+
+/**
+ * Все цели стенда — методы договора и адреса каталога (200-2).
+ *
+ * 🔒 ПОРОЖДАЮТСЯ ИЗ `contract.mjs`, А НЕ ПЕРЕЧИСЛЯЮТСЯ: метод, добавленный в
+ * договор, появляется на стенде без правки экрана. Подсказки — те же переводы,
+ * что у вкладки API; нет перевода — текст договора, а не пустота.
+ * 🛑 `health` И `contract` НЕ ЛЕЖАТ В `CATALOGUE`: это служебные адреса, и
+ * договор описывает их словами вкладки API. Две строки ниже — единственное
+ * рукописное место стенда, и причина названа.
+ */
+function callTargets(lang: string): CallTarget[] {
+  const w = apiDocWords(lang);
+  const methods: CallTarget[] = METHODS.map((m) => ({
+    hint: w.method[m.name]?.about ?? m.about,
+    id: m.name,
+    kind: "method" as const,
+    path: `/v1/${m.name}`,
+    params: m.params.map((p) => ({
+      format: (p as { format?: string }).format,
+      hint: w.param[p.name] ?? p.about,
+      name: p.name,
+      required: p.required,
+      type: p.type,
+    })),
+  }));
+  const reads: CallTarget[] = CATALOGUE.map((c) => {
+    const path = c.path.replace(/^GET\s+/, "");
+    return {
+      hint: w.catalogueItem[c.path] ?? c.about,
+      id: path,
+      kind: "get" as const,
+      path,
+      params: placeholdersOf(path).map((name) => ({ hint: c.about, name, required: true, type: "string" })),
+    };
+  });
+  reads.push(
+    { hint: w.catalogue.health, id: "/v1/health", kind: "get", params: [], path: "/v1/health" },
+    { hint: w.catalogue.contract, id: "/v1/contract", kind: "get", params: [], path: "/v1/contract" }
+  );
+  return [...methods, ...reads];
 }
 
 // ✗ СТРАНИЦА ЖИВЁТ ПОД `<Suspense>`, И ЭТО ОПЛАЧЕНО СБОРКОЙ, А НЕ ВЫВЕДЕНО.
@@ -264,9 +309,12 @@ async function MemoryPageBody({
 
             {active === "memory-test" && openTab !== "skill" && (
               <MemoryBench
+                base={publicMemoryUrl(host, proto)}
+                keyMask={maskKey(readKey())}
                 lang={lang}
                 supported={supportedParams()}
                 tablesWords={ui.memoryTables}
+                targets={callTargets(lang)}
                 testWords={ui.memoryTest}
               />
             )}
