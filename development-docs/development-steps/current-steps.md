@@ -119,6 +119,8 @@ you must to do test for all ui items for all existing api with report /plan». �
 
 🔎 **Квота сервера вернулась в 21:50:32 CEST** (`claude -p` из `/tmp` → `OK`); владелец: «check now all ok». **Идёт прогон `remember-attachments` на сервере.**
 
+✅ **200-5, положительный путь API ДОКАЗАН (прибор `remember-attachments`, сервер, ~21:52 CEST): ВСЁ ЗЕЛЁНОЕ, RC=0.** Полная форма `POST https://memory.aifa.dev/v1/remember` → 200 за 75,5 с; `objects`: файл `markdown` messageId 39 · страница MDN (`links`) messageId 40 · ролик «Me at the zoo» (`youtube`) messageId 41 · `link-is-youtube` · `youtube-not-youtube`; JSON-путь тоже отвергает ролик в `links`. Уборка сняла 3 объекта из 3. 🛑 **Долг уборки:** строки 39–41 таблицы сообщений и документы графа остались → `getSavedByUrl` для MDN и ролика теперь отвечает `existing` при удалённых объектах. **Идёт отправка со стенда в Chrome владельца.**
+
 ## ⏸ (ИСТОРИЯ) 2026-09-14, вечер
 
 **Открытых шагов в работе нет.** Шаг 195 «ссылки в памяти» закрыт по слову владельца: «195-13 и навык, потом закрыть».
