@@ -88,8 +88,14 @@ const withGiven = await remember({
   text: "я живу в Порту",
   who: WHO3,
 })
-const vOf = (r) => (r.noted ?? []).map((n) => `${n.what}=${n.added ?? n.became ?? n.value}`).sort().join(",")
-say(vOf(without) === vOf(withGiven) && vOf(without) !== "", `паритет: без признаков «${vOf(without)}» = с признаками «${vOf(withGiven)}»`)
+// 🔒 ПАРИТЕТ СЧИТАЕТСЯ ПО ТОМУ ПРИЗНАКУ, О КОТОРОМ ШЛА РЕЧЬ, А НЕ ПО ВСЕМУ УЛОВУ. Закон шестой
+// защищает путь БЕЗ признаков: он обязан дать то же качество. Обратное неверно и не обещано —
+// модель разбора попутно замечает и другое (например, язык фразы), а путь с присланными признаками
+// пишет ровно то, что прислали. Разница названа здесь, а не спрятана за красивым равенством.
+const cityOf = (r) => (r.noted ?? []).filter((n) => n.what === "city_where_he_lives_now").map((n) => n.added ?? n.became ?? n.value).join(",")
+const allOf = (r) => (r.noted ?? []).map((n) => `${n.what}=${n.added ?? n.became ?? n.value}`).sort().join(",")
+say(cityOf(without) === cityOf(withGiven) && cityOf(without) !== "", `паритет по названному признаку: без «${cityOf(without)}» = с «${cityOf(withGiven)}»`)
+console.log(`   улов целиком: без признаков «${allOf(without)}» · с признаками «${allOf(withGiven)}» (разница — попутные находки модели)`)
 say(without.used_model === true && withGiven.used_model === false, `   разница только в ходе модели: без — ${without.used_model}, с — ${withGiven.used_model}`)
 
 // ── уборка ───────────────────────────────────────────────────────────────────
