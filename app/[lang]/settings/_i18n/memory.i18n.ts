@@ -613,6 +613,7 @@ const EN: MemoryUi = {
       htmlWhole: "Keep the whole final HTML in the snapshot (for a close copy of the site)",
       stored: "Saved to the four stores in {ms} ms.",
       viewFailed: "Saved, but what landed could not be read back.",
+      pageRefused: "The site did not give this page (code {status}) — most often a bot check on the server's address. There is nothing to describe or save.",
     },
   },
   graphUpload: {
@@ -1163,6 +1164,7 @@ const RU: MemoryUi = {
       htmlWhole: "Сохранить в снимке весь итоговый HTML (для близкой копии сайта)",
       stored: "Сохранено в четыре хранилища за {ms} мс.",
       viewFailed: "Сохранено, но легшее не удалось прочитать обратно.",
+      pageRefused: "Сайт не отдал эту страницу (код {status}) — чаще всего это проверка на ботов по адресу сервера. Описывать и сохранять нечего.",
     },
   },
   subtitle:

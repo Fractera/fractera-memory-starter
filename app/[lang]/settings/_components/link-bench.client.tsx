@@ -54,6 +54,8 @@ export type LinkBenchWords = {
     htmlWhole: string;
     stored: string;
     viewFailed: string;
+    /** 195-9: сайт не отдал страницу — код 400 и выше. */
+    pageRefused: string;
   };
   /** 195-8: подписи вкладки «Поиск» — поверх слов поиска объектов, вёрстка у них одна (`ObjectSearch`). */
   search: {
@@ -378,7 +380,18 @@ function ResultCard({ r, savedWords, words }: { r: Result; savedWords: SavedView
         ) : null,
       )}
 
-      {!r.error && <LinkSave savedWords={savedWords} url={r.url} words={words} />}
+      {/* 🔒 СТРАНИЦА, КОТОРУЮ САЙТ НЕ ОТДАЛ (код ≥ 400), НЕ ПРЕДЛАГАЕТСЯ К ОПИСАНИЮ (195-9): вместо кнопок — причина словами. Двери
+          отказывают и сами; здесь — чтобы человек не тратил ход модели на заглушку и видел, почему сохранить нечего. */}
+      {!r.error && (r.status ?? 0) >= 400 ? (
+        <p
+          className="rounded-md border border-border border-dashed p-3 text-[length:var(--fs-small)]"
+          data-link-refused={r.status ?? ""}
+        >
+          {fill(words.save.pageRefused, { status: r.status ?? "—" })}
+        </p>
+      ) : !r.error ? (
+        <LinkSave savedWords={savedWords} url={r.url} words={words} />
+      ) : null}
     </section>
   );
 }

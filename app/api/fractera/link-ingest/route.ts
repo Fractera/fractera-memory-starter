@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { benchGuard } from "@/lib/bench-guard"
 import { getSavedByUrl } from "@/lib/messages.mjs"
 import { keep } from "@/lib/fractera/objects"
+import { pageRefusal, statusOfSnapshot } from "@/lib/fractera/web"
 
 // ДВЕРЬ «СОХРАНИТЬ В ПАМЯТЬ» СТЕНДА ССЫЛОК (195-2).
 //
@@ -12,9 +13,12 @@ import { keep } from "@/lib/fractera/objects"
 // 🪦 ФОРМА ДВЕРИ `object-test` POST (194-4): поля формы, автор из замка. Отличия: род `web`, адрес обязателен, повтор проверяется.
 // 🔒 ПОВТОР ПРОВЕРЯЕТСЯ И ЗДЕСЬ, А НЕ ТОЛЬКО ПРИ ОПИСАНИИ: между «Получить описание» и «Сохранить» ту же ссылку мог сохранить
 // кто-то другой. По умолчанию — «ничего не делаем, возвращаем то, что уже есть» (паспорт §20.6 ②).
+// 🔒 СНИМОК СТРАНИЦЫ, КОТОРУЮ САЙТ НЕ ОТДАЛ, НЕ СОХРАНЯЕТСЯ (195-9): код читается из самого снимка — ворота стоят и здесь, иначе
+// прямой вызов двери положил бы заглушку в память мимо двери описания.
 // 🛑 `runtime` И `dynamic` НЕ ОБЪЯВЛЯЮТСЯ: `cacheComponents` их отвергает.
 
-const deny = (error: string, status: number) => NextResponse.json({ error, ok: false }, { status })
+const deny = (error: string, status: number, why?: string) =>
+  NextResponse.json({ error, ok: false, ...(why ? { why } : {}) }, { status })
 
 export async function POST(request: Request) {
   const gate = await benchGuard(request)
@@ -46,6 +50,11 @@ export async function POST(request: Request) {
 
   const url = text("url")
   if (!url) return deny("empty-url", 400)
+
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  const refused = pageRefusal(statusOfSnapshot(new TextDecoder("utf-8").decode(bytes)), null)
+  if (refused) return deny(refused.error, 422, refused.why)
+
   const existing = (await getSavedByUrl(url)) as { id?: number } | null
   if (existing?.id) return NextResponse.json({ existing: Number(existing.id), ok: true })
 
@@ -56,7 +65,7 @@ export async function POST(request: Request) {
     about: String(form.get("about") ?? "").trim(),
     anchors: list("anchors"),
     author,
-    bytes: new Uint8Array(await file.arrayBuffer()),
+    bytes,
     described_by: text("described_by"),
     describe_ms: Number.isFinite(ms) ? ms : undefined,
     full: text("full"),

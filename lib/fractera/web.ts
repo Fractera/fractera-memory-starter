@@ -103,6 +103,27 @@ export function snapshotOf(page: Record<string, unknown>, opts: { html?: boolean
   return `${lines.join("\n")}\n`
 }
 
+/**
+ * Страница, которую сайт не отдал (195-9): код ответа 400 и выше — не страница, а отказ сайта.
+ *
+ * 🎯 СЛОВО ВЛАДЕЛЬЦА 2026-09-14: «да, делай защиту от 403». ✗ Найдено на его экране: neon.com с адреса сервера отдал «Vercel Security
+ * Checkpoint» (403), и описание легло бы в память под адресом статьи — а повтор ссылки потом возвращал бы эту заглушку как сохранённое.
+ * 🔒 ОДНО ПРАВИЛО НА ОБЕ ДВЕРИ И НА ЭКРАН: описание, сохранение и карточка спрашивают его, а не сравнивают код каждый по-своему.
+ * 🛑 ПРОВЕРКУ НА БОТОВ С КОДОМ 200 ЭТО НЕ ЛОВИТ (страница «Just a moment…» бывает и такой) — названо в ТЗ 195-9.
+ */
+export function pageRefusal(status: unknown, title: unknown): { error: "page-refused"; why: string } | null {
+  const code = Number(status)
+  if (!Number.isFinite(code) || code < 400) return null
+  const name = typeof title === "string" && title.trim() ? ` · ${title.trim().slice(0, 120)}` : ""
+  return { error: "page-refused", why: `${code}${name}` }
+}
+
+/** Код ответа из снимка — строка `- Код ответа: NNN`, которую печатает `snapshotOf`. Нет строки — `null`. */
+export function statusOfSnapshot(snapshot: string): number | null {
+  const m = /^- Код ответа: (\d{3})$/m.exec(snapshot)
+  return m ? Number(m[1]) : null
+}
+
 /** Имя файла снимка: `web-<хост-и-путь>.md` — латиница, цифры и дефисы, до 80 знаков. */
 export function snapshotName(url: string): string {
   let slug = ""
