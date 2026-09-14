@@ -54,7 +54,8 @@ export type VideoRead =
       regionRestricted: boolean;
       chapters: Chapter[];
       chapterOfAsked: Chapter | null;
-      thumbnail: { url: string; width: number; height: number } | null;
+      /** Самая крупная обложка, которая ОТВЕТИЛА: имя размера у API есть и у тех, которых на складе нет. */
+      thumbnail: { height: number; name: string; url: string; width: number } | null;
       snapshot: string;
     }
   | { ok: false; error: string; why?: string };
@@ -66,16 +67,34 @@ function secondsOfIso(iso: string): number {
   return Number(m[1] ?? 0) * 3600 + Number(m[2] ?? 0) * 60 + Number(m[3] ?? 0);
 }
 
-/**
- * Лучшая доступная обложка.
- * 🔒 ВЫБИРАЕТСЯ ПО ФАКТУ, А НЕ ПО ШАБЛОНУ АДРЕСА: первоисточник говорит про большие размеры «This image size is available for some videos»,
- * и собранный руками адрес `maxresdefault.jpg` у части роликов отдал бы заглушку. Берём то, что назвал сам API, самое крупное.
- */
-function bestThumbnail(thumbs: Record<string, { url?: string; width?: number; height?: number }> | undefined) {
+/** Обложки, названные API, от крупной к мелкой. */
+function orderedThumbnails(thumbs: Record<string, { url?: string; width?: number; height?: number }> | undefined) {
   const order = ["uhd", "qhd", "fhd", "maxres", "standard", "high", "medium", "default"];
+  const out: { height: number; name: string; url: string; width: number }[] = [];
   for (const name of order) {
     const t = thumbs?.[name];
-    if (t?.url) return { height: Number(t.height ?? 0), url: t.url, width: Number(t.width ?? 0) };
+    if (t?.url) out.push({ height: Number(t.height ?? 0), name, url: t.url, width: Number(t.width ?? 0) });
+  }
+  return out;
+}
+
+/**
+ * Первая обложка, которая РЕАЛЬНО отвечает.
+ *
+ * ✗ ОПЛАЧЕНО ПЕРВЫМ ЖЕ ПРОГОНОМ С КЛЮЧОМ (195-4): API назвал `fhd` 1920×1080, а `fhddefault.jpg` отдал `404` — причём телом в 1097 байт с
+ * типом `image/jpeg`, то есть по содержимому это выглядит как картинка. Сохранив названное на слово, память положила бы заглушку вместо обложки.
+ * 🔒 ЗАКОН ШИРЕ СЛУЧАЯ: АДРЕС, НАЗВАННЫЙ ЧУЖИМ API, ПРОВЕРЯЕТСЯ ФАКТОМ — так же, как адрес ресурса берётся из страницы, а не собирается по
+ * шаблону. Первоисточник предупреждал словами «This image size is available for some videos», и проверка кода ответа стоит один запрос.
+ * 🛑 ПРАВДУ ГОВОРИТ КОД ОТВЕТА, А НЕ ТЕЛО: тело у отказа — картинка.
+ */
+async function firstAvailableThumbnail(list: ReturnType<typeof orderedThumbnails>) {
+  for (const t of list) {
+    try {
+      const r = await fetch(t.url, { cache: "no-store", method: "HEAD" });
+      if (r.ok) return t;
+    } catch {
+      // Сеть до обложки не дошла — пробуем следующий размер.
+    }
   }
   return null;
 }
@@ -96,7 +115,11 @@ function snapshotOfVideo(v: Extract<VideoRead, { ok: true }>): string {
     `- Снимок снят: ${new Date().toISOString()}`,
     `- Источник данных: YouTube Data API v3, videos.list`,
   ];
-  if (v.thumbnail) lines.push(`- Обложка: ${v.thumbnail.url} (${v.thumbnail.width}×${v.thumbnail.height})`);
+  if (v.thumbnail) {
+    lines.push(`- Обложка: ${v.thumbnail.url} (${v.thumbnail.width}×${v.thumbnail.height}, размер «${v.thumbnail.name}», проверена ответом)`);
+  } else {
+    lines.push("- Обложка: ни один из названных API размеров не ответил");
+  }
   if (v.askedSeconds !== null) {
     const c = v.chapterOfAsked;
     lines.push(
@@ -194,7 +217,7 @@ export async function readVideo(rawUrl: string): Promise<VideoRead> {
     regionRestricted: Boolean(item.contentDetails?.regionRestriction),
     snapshot: "",
     tags: Array.isArray(item.snippet?.tags) ? item.snippet.tags.map(String) : [],
-    thumbnail: bestThumbnail(item.snippet?.thumbnails),
+    thumbnail: await firstAvailableThumbnail(orderedThumbnails(item.snippet?.thumbnails)),
     title: String(item.snippet?.title ?? ""),
     views: item.statistics?.viewCount ? Number(item.statistics.viewCount) : null,
     // 🔒 АДРЕС СОХРАНЯЕТСЯ КАНОНИЧЕСКИМ: `youtu.be/…`, `/shorts/…` и ссылка с меткой времени — один и тот же ролик, и повтор обязан это видеть.
