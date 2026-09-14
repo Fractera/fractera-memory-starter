@@ -99,6 +99,8 @@ you must to do test for all ui items for all existing api with report /plan». �
 
 🚚 **200-5 порция А: переводы `files`/`links`/`youtube` и исправленный `media` в `api.i18n.ts` en/ru; прибор `scripts/probe/remember-attachments.mjs` написан (цена до 5 ходов модели + 1 ед. YouTube + 1 страница браузером; уборка своих id). Идёт коммит и доставка от `9330b09`, затем прогон прибора на сервере.**
 
+🔎 **200-5 порция А доставлена `8480601`, прибор `remember-attachments` на сервере (21:30 CEST):** сервер отдаёт договор 2.6.0. ✓ форма без text → `400 missing-params`, файл не лёг · ✓ 5 судеб в `objects` · ✓ НЕГАТИВ ролик в `links` → `link-is-youtube` · ✓ НЕГАТИВ страница в `youtube` → `youtube-not-youtube` · ✓ `params` links/youtube accepted · ✓ JSON: ролик в `links` → `link-is-youtube`. 🛑 **3 провала — ПОЛОЖИТЕЛЬНЫЙ ПУТЬ НЕ ДОКАЗАН:** файл, страница и ролик — `think-quota-exhausted` «You've hit your session limit · resets 10:10pm (Europe/Berlin)». Квота подписки Claude на сервере исчерпана — **общая с ботом**, бот тоже без модели до 22:10. Уборка: новых id 0. **Дальше:** порция Б (стенд) без модели; прибор повторить после 22:10 CEST.
+
 ## ⏸ (ИСТОРИЯ) 2026-09-14, вечер
 
 **Открытых шагов в работе нет.** Шаг 195 «ссылки в памяти» закрыт по слову владельца: «195-13 и навык, потом закрыть».
