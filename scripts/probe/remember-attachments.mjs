@@ -58,7 +58,8 @@ console.log("=".repeat(72))
 const noText = await formCall({ lang: "ru", who: "bench-1" }, [[`${MARK}-no-text.md`, `# ${MARK}\nне должен лечь`]])
 check(noText.status === 400, "форма без text → 400", `код ${noText.status}`)
 check(noText.json?.error === "missing-params" && noText.json?.missing?.includes("text"), "отказ — missing-params договора", JSON.stringify(noText.json).slice(0, 160))
-check(!("objects" in (noText.json ?? {})), "файл при отказе не лёг: objects нет")
+// 🔒 С 200-6 ОТКАЗ НЕСЁТ `objects` ВСЕГДА — пустым: «файл не лёг» проверяется пустым списком, а не отсутствием поля.
+check(Array.isArray(noText.json?.objects) && noText.json.objects.length === 0, "файл при отказе не лёг: objects пуст")
 
 // ── 2. ПОЛНАЯ ФОРМА: файл, ссылки двух родов, по одной подмене рода в каждом поле ───
 const full = await formCall(

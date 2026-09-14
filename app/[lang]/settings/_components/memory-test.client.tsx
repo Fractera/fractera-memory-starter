@@ -385,16 +385,25 @@ export function MemoryTest({
                         POST {s.url}
                       </div>
                     ) : null}
-                    {Array.isArray((s.body as { objects?: unknown } | null)?.objects) ? (
+                    {/* 🔒 ТЕКСТ ОТВЕТА — ПЕРЕЧИСЛЕНИЕ ФАКТОВ И ОБЪЕКТОВ (200-6) — СТОИТ НАД СЫРЫМ JSON: его и читает зовущая модель. */}
+                    {typeof (s.body as { text?: unknown } | null)?.text === "string" ? (
+                      <p
+                        className="mb-1 whitespace-pre-wrap break-words rounded-md border border-muted-foreground/20 px-2 py-1 text-[length:var(--fs-small)]"
+                        data-testid="answer-text"
+                      >
+                        {(s.body as { text: string }).text}
+                      </p>
+                    ) : null}
+                    {((s.body as { objects?: unknown[] } | null)?.objects ?? []).length > 0 ? (
                       <ul className="mb-1 space-y-0.5" data-testid="attachment-fates">
                         {(s.body as { objects: Array<Record<string, unknown>> }).objects.map((o, k) => (
                           <li
                             className={`font-mono text-[length:var(--fs-small)] ${o.ok ? "" : "text-destructive"}`}
                             key={k}
                           >
-                            {o.ok ? "✓" : "✗"} {String(o.name ?? o.url ?? "")} —{" "}
+                            {o.ok ? "✓" : "✗"} {String(o.title ?? o.name ?? o.url ?? "")} —{" "}
                             {o.ok
-                              ? `${String(o.kind ?? "")} · messageId ${String(o.messageId ?? "—")}${o.existing ? " · existing" : ""}`
+                              ? `${String(o.kind ?? "")} · messageId ${String(o.messageId ?? "—")}${o.id ? ` · id ${String(o.id)}` : ""}${o.existing ? " · existing" : ""}`
                               : String(o.error ?? "")}
                           </li>
                         ))}

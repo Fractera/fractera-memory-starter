@@ -27,6 +27,8 @@ type Method = {
   body?: string;
   name: string;
   onMiss: string;
+  /** Схема ответа (200-6): есть у двух глаголов, порождена из `lib/output-schema.mjs`. */
+  output?: unknown;
   params: Array<{ about: string; name: string; required: boolean; type: string }>;
   returns: string;
 };
@@ -170,6 +172,15 @@ Authorization: Bearer fmk_…`}</Code>
                 <strong>{w.methods.onMiss}</strong>{" "}
                 {mw ? mw.onMiss : `${m.onMiss} ${w.methods.untranslated}`}
               </P>
+              {/* 🔒 СХЕМА ОТВЕТА ПОКАЗЫВАЕТСЯ ТАКОЙ, КАКОЙ ЕЁ ОТДАЁТ ДОГОВОР (200-6): пересказ схемы словами разошёлся бы с ней молча. */}
+              {m.output ? (
+                <details className="rounded-md border border-muted-foreground/20" data-output={m.name}>
+                  <summary className="cursor-pointer px-3 py-2 text-[length:var(--fs-small)]">
+                    <strong>{w.methods.output}</strong>
+                  </summary>
+                  <Code>{JSON.stringify(m.output, null, 2)}</Code>
+                </details>
+              ) : null}
             </div>
           );
         })}

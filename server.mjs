@@ -417,18 +417,22 @@ const server = createServer(async (req, res) => {
     const name = path.slice(4)
     const declared = METHODS.find((m) => m.name === name)
     if (declared) {
+      // 🔒 У МЕТОДА СО СХЕМОЙ ОТВЕТА ОТКАЗ НЕСЁТ ТЕ ЖЕ `text` И `objects` (200-6): отказ, не прошедший схему, зовущий разбирал бы отдельно.
+      const shaped = (what) => (declared.output ? { objects: [], text: what } : {})
       const body = await readBody(req)
       if (!body) {
-        return send(res, 400, { error: "bad-json", ok: false, what_happened: say("bad-json") })
+        return send(res, 400, { error: "bad-json", ok: false, what_happened: say("bad-json"), ...shaped(say("bad-json")) })
       }
       // 🔒 ОБЯЗАТЕЛЬНОЕ ПРОВЕРЯЕТСЯ ПО ДОГОВОРУ, А НЕ ПО ПАМЯТИ АВТОРА.
       const missing = declared.params.filter((p) => p.required && !body[p.name]).map((p) => p.name)
       if (missing.length) {
+        const what = say("missing-params", body.lang, { names: missing.join(", ") })
         return send(res, 400, {
           error: "missing-params",
           missing,
           ok: false,
-          what_happened: say("missing-params", body.lang, { names: missing.join(", ") }),
+          what_happened: what,
+          ...shaped(what),
         })
       }
       try {
@@ -441,6 +445,7 @@ const server = createServer(async (req, res) => {
           ok: false,
           what_happened: say("inside-memory", body.lang),
           why: String(e.message).slice(0, 200),
+          ...shaped(say("inside-memory", body.lang)),
         })
       }
     }

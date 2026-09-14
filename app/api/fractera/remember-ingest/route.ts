@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { METHODS } from "@/contract.mjs"
 import { benchGuard } from "@/lib/bench-guard"
 import { ingest } from "@/lib/fractera/objects"
+import { rememberText } from "@/lib/answer-text.mjs"
 import { remember } from "@/lib/verbs.mjs"
 import { say } from "@/lib/words.mjs"
 
@@ -37,8 +38,9 @@ type Fate = {
   why?: string
 }
 
+// 🔒 ОТКАЗ НЕСЁТ `text` И `objects`, КАК ЛЮБОЙ ОТВЕТ «СКАЗАТЬ» (200-6): схема `output` договора требует их всегда.
 const refuse = (status: number, body: Record<string, unknown>) =>
-  NextResponse.json({ ok: false, ...body }, { status })
+  NextResponse.json({ ok: false, ...body, objects: [], text: String(body.what_happened ?? "") }, { status })
 
 export async function POST(request: Request) {
   const gate = await benchGuard(request)
@@ -96,5 +98,11 @@ export async function POST(request: Request) {
 
   const answer = (await remember(payload as never)) as Record<string, unknown>
   const objects = [...fates, ...(Array.isArray(answer.objects) ? answer.objects : [])]
-  return NextResponse.json({ ...answer, ...(objects.length ? { objects } : {}) })
+  // 🔒 ФАЙЛЫ ЛЕГЛИ ДО `remember()` И В ЕГО ТЕКСТЕ ИХ НЕТ — текст пересобирается тем же помощником по всем объектам (200-6).
+  const text = rememberText({
+    noted: answer.noted as never,
+    objects: objects as never,
+    what_happened: answer.what_happened as string | undefined,
+  })
+  return NextResponse.json({ ...answer, objects, text })
 }

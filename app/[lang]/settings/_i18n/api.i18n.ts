@@ -43,7 +43,7 @@ export type ApiDocWords = {
   overview: { lead: string; audience: string; twoVerbs: string };
   baseUrl: { lead: string; readBody: string };
   auth: { lead: string; headers: string; denied: string };
-  methods: { lead: string; body: string; parameter: string; type: string; required: string; meaning: string; yes: string; no: string; returns: string; onMiss: string; untranslated: string };
+  methods: { lead: string; body: string; parameter: string; type: string; required: string; meaning: string; yes: string; no: string; returns: string; onMiss: string; untranslated: string; output: string };
   catalogue: { lead: string; law: string; health: string; contract: string };
   threads: { lead: string; measured: string; deny: string; unknown: string };
   paramsReport: { lead: string; accepted: string; notSupported: string; badForm: string; never: string };
@@ -189,6 +189,8 @@ const EN: ApiDocWords = {
     meaning: "meaning",
     no: "no",
     onMiss: "When nothing is found.",
+    output:
+      "Answer schema (JSON Schema, from GET /v1/contract). Every answer — refusals included — carries text (every fact and object, a line each) and objects (ids any tool can fetch by itself).",
     parameter: "parameter",
     required: "required",
     returns: "Returns.",
@@ -407,6 +409,8 @@ const RU: ApiDocWords = {
     meaning: "что значит",
     no: "нет",
     onMiss: "Когда ничего не нашлось.",
+    output:
+      "Схема ответа (JSON Schema, из GET /v1/contract). Каждый ответ — и отказ тоже — несёт text (все факты и объекты, строка на каждый) и objects (идентификаторы, по которым любой инструмент достаёт объект сам).",
     parameter: "параметр",
     required: "обязателен",
     returns: "Что возвращает.",
