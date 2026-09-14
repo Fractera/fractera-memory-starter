@@ -306,7 +306,7 @@ export type MemoryUi = {
     /** Панель «что уедет» и строка о непринятых параметрах (183-1). */
     whatGoes: string;
     droppedTitle: string;
-    /** Слова восьми органов управления — форму задаёт сам компонент (183-1, 200-4). */
+    /** Слова девяти органов управления — форму задаёт сам компонент (183-1, 200-4, 200-5). */
     controls: BenchControlWords;
     /** Нет файла ключа памяти — вызов уйдёт без ключа (200-1). */
     keyMissing: string;
@@ -434,6 +434,27 @@ const EN: MemoryUi = {
       needTable: {
         hint: "An input parameter: the caller may state that the answer has to become a table. Whether it does is still memory's decision.",
         label: "A table is required",
+      },
+      attach: {
+        add: "Add a link",
+        blocked: "Fix the links placed in the wrong field — nothing is sent until then",
+        hint: "Files, pages and YouTube videos go inside Say: each one is kept the same way memory keeps objects and links, and the answer names the fate of every attachment.",
+        kinds: {
+          audio: "Upload audio",
+          code: "Upload code",
+          image: "Upload image",
+          pdf: "Upload PDF",
+          text: "Upload document",
+          video: "Upload video",
+        },
+        label: "Attachments",
+        linkIsYoutube: "This is a YouTube video — it belongs in the YouTube link field",
+        links: "Ordinary link",
+        linksPlaceholder: "https://… page address",
+        notYoutube: "This is not a YouTube video — an ordinary page belongs in the ordinary link field",
+        remove: "Remove",
+        youtube: "YouTube link",
+        youtubePlaceholder: "https://www.youtube.com/watch?v=…",
       },
       prior: {
         hint: "What has already been found before this question — the caller may send it along with the question.",
@@ -1021,6 +1042,27 @@ const RU: MemoryUi = {
       needTable: {
         hint: "Входной параметр: зовущий вправе сказать, что ответ должен стать таблицей. Заводить ли её — по-прежнему решение памяти.",
         label: "Требуется создать таблицу",
+      },
+      attach: {
+        add: "Добавить ссылку",
+        blocked: "Исправьте ссылки не в своём поле — до этого ничего не отправляется",
+        hint: "Файлы, страницы и ролики YouTube едут внутри «Сказать»: каждое вложение ложится тем же путём, что объекты и ссылки памяти, а ответ называет судьбу каждого.",
+        kinds: {
+          audio: "Загрузить аудио",
+          code: "Загрузить код",
+          image: "Загрузить изображение",
+          pdf: "Загрузить PDF",
+          text: "Загрузить документ",
+          video: "Загрузить видео",
+        },
+        label: "Вложения",
+        linkIsYoutube: "Это ролик YouTube — ему место в поле «Ссылка YouTube»",
+        links: "Обычная ссылка",
+        linksPlaceholder: "https://… адрес страницы",
+        notYoutube: "Это не ролик YouTube — обычной странице место в поле «Обычная ссылка»",
+        remove: "Убрать",
+        youtube: "Ссылка YouTube",
+        youtubePlaceholder: "https://www.youtube.com/watch?v=…",
       },
       prior: {
         hint: "Что уже нашли до этого вопроса — зовущий вправе прислать это вместе с вопросом.",

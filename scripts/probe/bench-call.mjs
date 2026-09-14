@@ -143,6 +143,24 @@ for (const [mode, verb] of [["say", "remember"], ["ask", "recall"]]) {
   )
 }
 
+// ── 7. ВЛОЖЕНИЯ «СКАЗАТЬ» (200-5): ССЫЛКИ ДВУХ РОДОВ, ФАЙЛЫ, НЕВЕРНЫЙ РОД ─────
+const VIDEO = "https://www.youtube.com/watch?v=jNQXAC9IVRw"
+const PAGE = "https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/200"
+const withAttach = { ...EMPTY_PARAMS, files: [{ name: "a.md", size: 3 }], links: [PAGE, ""], youtube: [VIDEO] }
+const sayAttach = buildCall({ lang: "ru", mode: "say", params: withAttach, supported: paramsOf("remember"), text: "фраза" })
+say(JSON.stringify(sayAttach.body.links) === JSON.stringify([PAGE]), "«Сказать»: страница уехала в links, пустая строка отсеяна", JSON.stringify(sayAttach.body.links))
+say(JSON.stringify(sayAttach.body.youtube) === JSON.stringify([VIDEO]), "«Сказать»: ролик уехал в youtube", JSON.stringify(sayAttach.body.youtube))
+say(sayAttach.files.length === 1 && !("files" in sayAttach.body), "«Сказать»: файл едет частью формы, а не телом JSON")
+say(sayAttach.invalid.length === 0, "«Сказать»: у ссылок своего рода отказа нет")
+const swapped = buildCall({ lang: "ru", mode: "say", params: { ...EMPTY_PARAMS, links: [VIDEO], youtube: [PAGE] }, supported: paramsOf("remember"), text: "фраза" })
+say(swapped.invalid.length === 2, "НЕГАТИВНЫЙ: ролик в links и страница в youtube названы неверными", JSON.stringify(swapped.invalid))
+const askAttach = buildCall({ lang: "ru", mode: "ask", params: withAttach, supported: paramsOf("recall"), text: "вопрос" })
+say(
+  !("links" in askAttach.body) && askAttach.dropped.includes("links") && askAttach.dropped.includes("files") && askAttach.files.length === 0,
+  "«Спросить»: вложения не уезжают и названы «не доезжает»",
+  askAttach.dropped.join(", "),
+)
+
 console.log("")
 console.log("-".repeat(72))
 if (bad === 0) {

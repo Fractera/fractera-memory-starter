@@ -42,6 +42,11 @@ export function langOf(filename) {
  */
 const NOT_CODE = new Set(["md", "mdx", "html", "htm", "txt"]);
 
+/** Расширения исходного кода без точки — для кнопки «Код» стенда памяти (200-5), из того же списка, что `isCodeName`. */
+export function codeExtensions() {
+  return Object.keys(BY_EXT).filter((ext) => !NOT_CODE.has(ext));
+}
+
 export function isCodeName(filename) {
   const name = String(filename ?? "");
   const dot = name.lastIndexOf(".");

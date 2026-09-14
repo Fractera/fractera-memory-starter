@@ -7,7 +7,7 @@ import { publicMemoryUrl } from "@/lib/fractera/auth-url"
 // 🔒 СЕССИЯ СПРАШИВАЕТСЯ ТЕМ ЖЕ ПОМОЩНИКОМ, ЧТО У ЧАТА, — СКОПИРОВАННЫМ ДОСЛОВНО.
 import { fracteraSession } from "@/lib/fractera/session"
 
-// ДВЕРЬ СТЕНДА — ПРОВОДНИК В ПУБЛИЧНЫЙ `/v1/*` (200-1).
+// ДВЕРЬ СТЕНДА — ПРОВОДНИК В ПУБЛИЧНЫЙ `/v1/*` (200-1, форма с файлами — 200-5).
 //
 // 🔒 СТЕНД ЗОВЁТ ПАМЯТЬ ТЕМ ЖЕ ПУТЁМ, ЧТО ЛЮБАЯ ПРОГРАММА: nginx → `server.mjs` →
 // замок ключа → проверка обязательных по договору → исполнитель. Слово владельца
@@ -24,6 +24,9 @@ import { fracteraSession } from "@/lib/fractera/session"
 // (измерено 2026-09-14: публичный IP стоит на `eth0`); перенаправления не
 // выполняются — ключ не едет следом за `Location`.
 //
+// 🔒 ФОРМА С ФАЙЛАМИ (200-5) ИДЁТ ПОТОКОМ И ТОЛЬКО В `remember`: у стенда два глагола, и вложения — включение в «Сказать».
+// Тело не разбирается и не собирается в память двери — оно течёт в `/v1/remember` как пришло, с той же границей частей.
+//
 // 🔒 ЗАМОК ДВЕРИ — СЕССИЯ ЧЕЛОВЕКА, РОЛЬ `architect`, конвейером панели и сайта.
 // 🛑 `runtime` И `dynamic` НЕ ОБЪЯВЛЯЮТСЯ: `cacheComponents` их отвергает.
 
@@ -35,7 +38,8 @@ const NO_STORE = { "Cache-Control": "no-store" }
 /** Ход модели на глубине идёт минутами; nginx держит `proxy_read_timeout 86400`. */
 const LONG_MS = 600_000
 
-type Call = { json?: unknown; path: string; verb: "GET" | "POST" }
+type Stream = { body: ReadableStream<Uint8Array>; contentType: string; length: string | null }
+type Call = { json?: unknown; path: string; stream?: Stream; verb: "GET" | "POST" }
 
 function thisMachine(): Set<string> {
   const out = new Set<string>(["127.0.0.1", "::1"])
@@ -85,13 +89,15 @@ async function callPublic(request: Request, call: Call) {
   const key = readKey()
   const url = `${base}${call.path}`
   const payload = call.json === undefined ? undefined : JSON.stringify(call.json)
+  const contentType = call.stream ? call.stream.contentType : payload !== undefined ? "application/json" : null
 
   // 🔒 ЭКРАН ВИДИТ РОВНО ОТПРАВЛЕННОЕ: адрес, заголовки (ключ маской), тело.
   const shown: Record<string, string> = {}
-  if (payload !== undefined) shown["content-type"] = "application/json"
+  if (contentType) shown["content-type"] = contentType
   if (key) shown["x-memory-key"] = maskKey(key) ?? "fmk_…"
-  const sentRequest = { body: call.json ?? null, headers: shown, method: call.verb, url }
-  const sent = { body: call.json ?? null, method: call.path.replace(/^\/v1\//, "") }
+  const shownBody = call.stream ? { multipart: true, bytes: call.stream.length } : (call.json ?? null)
+  const sentRequest = { body: shownBody, headers: shown, method: call.verb, url }
+  const sent = { body: shownBody, method: call.path.replace(/^\/v1\//, "") }
 
   if (refused) {
     return NextResponse.json(
@@ -110,19 +116,23 @@ async function callPublic(request: Request, call: Call) {
   // 🛑 НЕТ КЛЮЧА — ЗОВЁМ БЕЗ НЕГО: отказ `no-access` есть ответ договора, и стенд
   // обязан его показать, а не подменить своей ошибкой.
   const headers: Record<string, string> = {}
-  if (payload !== undefined) headers["content-type"] = "application/json"
+  if (contentType) headers["content-type"] = contentType
+  if (call.stream?.length) headers["content-length"] = call.stream.length
   if (key) headers["x-memory-key"] = key
 
   const started = Date.now()
   try {
-    const r = await fetch(url, {
-      body: payload,
+    // 🔒 ПОТОК ТЕЛА ТРЕБУЕТ `duplex: "half"` — без него `fetch` узла отказывается слать `ReadableStream`.
+    const init: RequestInit & { duplex?: "half" } = {
+      body: call.stream ? call.stream.body : payload,
       cache: "no-store",
       headers,
       method: call.verb,
       redirect: "manual",
       signal: AbortSignal.timeout(LONG_MS),
-    })
+      ...(call.stream ? { duplex: "half" as const } : {}),
+    }
+    const r = await fetch(url, init)
     const type = r.headers.get("content-type") ?? ""
     let body: unknown
     if (type.includes("application/json")) {
@@ -182,10 +192,24 @@ function catalogPath(get: string): string | null {
 /**
  * `{ method, body }` — метод договора, тело уезжает КАК НАБРАНО.
  * `{ get }` — строка каталога: `tables` · `tables/<имя>` · `health` · `contract` · `objects/<id>/file`.
+ * `multipart/form-data` с `?method=remember` — «Сказать» с файлами, потоком (200-5).
  */
 export async function POST(request: Request) {
   const refused = await gate()
   if (refused) return refused
+
+  const type = request.headers.get("content-type") ?? ""
+  if (type.toLowerCase().startsWith("multipart/form-data")) {
+    const method = new URL(request.url).searchParams.get("method")
+    if (method !== "remember" || !request.body) {
+      return NextResponse.json({ error: "bad-method", ok: false }, { status: 400 })
+    }
+    return callPublic(request, {
+      path: "/v1/remember",
+      stream: { body: request.body, contentType: type, length: request.headers.get("content-length") },
+      verb: "POST",
+    })
+  }
 
   let body: Record<string, unknown>
   try {

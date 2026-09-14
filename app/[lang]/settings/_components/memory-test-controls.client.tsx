@@ -1,6 +1,6 @@
 "use client";
 
-// ОРГАНЫ УПРАВЛЕНИЯ СТЕНДА ПАМЯТИ — ВОСЕМЬ ШТУК (183-1; девятый, «Загрузка», снят 200-4).
+// ОРГАНЫ УПРАВЛЕНИЯ СТЕНДА ПАМЯТИ — ДЕВЯТЬ ШТУК (183-1; мёртвая «Загрузка» снята 200-4, девятый — «Вложения», 200-5).
 //
 // 🔒 ЗАЧЕМ ОНИ ЗДЕСЬ ВООБЩЕ. Стенд — прибор, а не витрина: человек говорит со
 // службой напрямую и видит сырой ответ. Значит стенд обязан уметь всё, что
@@ -18,6 +18,8 @@
 
 import { useState } from "react";
 import type { BenchParams } from "@/lib/bench-call.mjs";
+import { acceptOf, UPLOAD_KINDS } from "@/lib/kinds.mjs";
+import { youtubeId } from "@/lib/youtube-chapters.mjs";
 
 export type BenchControlWords = {
   title: string;
@@ -57,6 +59,21 @@ export type BenchControlWords = {
   };
   deny: { label: string; hint: string; placeholder: string };
   needTable: { label: string; hint: string };
+  /** Вложения «Сказать» (200-5): кнопки родов, две ссылки, слова проверки рода. */
+  attach: {
+    label: string;
+    hint: string;
+    kinds: Record<string, string>;
+    remove: string;
+    add: string;
+    links: string;
+    linksPlaceholder: string;
+    youtube: string;
+    youtubePlaceholder: string;
+    linkIsYoutube: string;
+    notYoutube: string;
+    blocked: string;
+  };
 };
 
 /** Метка у органа: доезжает ли параметр до договора сегодня. */
@@ -156,6 +173,56 @@ export function BenchControls({
     });
   };
 
+  /**
+   * Список ссылок одного рода (200-5).
+   * 🔒 РОД ПРОВЕРЯЕТСЯ НА ЭКРАНЕ ТЕМ ЖЕ `youtubeId()`, ЧТО В ПАМЯТИ: ролик в обычной ссылке и страница в поле YouTube
+   * подсвечиваются сразу, а отправка запирается стендом до исправления (слово владельца: «чтобы ты не проходила»).
+   */
+  const linkList = (field: "links" | "youtube") => {
+    const rows = params[field].length ? params[field] : [""];
+    const title = field === "links" ? words.attach.links : words.attach.youtube;
+    const wrong = (u: string) => u.trim() !== "" && (field === "links" ? youtubeId(u) !== null : youtubeId(u) === null);
+    const put = (next: string[]) => onChange({ [field]: next } as Partial<BenchParams>);
+    return (
+      <div className="space-y-1" data-links={field}>
+        <div className="text-[length:var(--fs-small)] font-medium">{title}</div>
+        {rows.map((u, i) => (
+          <div className="space-y-0.5" key={i}>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                aria-label={`${title} ${i + 1}`}
+                className={`${boxClass} max-w-[32rem] font-mono ${wrong(u) ? "border-destructive" : ""}`}
+                onChange={(e) => put(rows.map((x, k) => (k === i ? e.target.value : x)))}
+                placeholder={field === "links" ? words.attach.linksPlaceholder : words.attach.youtubePlaceholder}
+                type="url"
+                value={u}
+              />
+              <button
+                className="rounded-md border border-muted-foreground/30 px-2 py-1 text-[length:var(--fs-small)] hover:bg-muted"
+                onClick={() => put(rows.length > 1 ? rows.filter((_, k) => k !== i) : [""])}
+                type="button"
+              >
+                {words.attach.remove}
+              </button>
+            </div>
+            {wrong(u) ? (
+              <p className="text-[length:var(--fs-small)] text-destructive">
+                {field === "links" ? words.attach.linkIsYoutube : words.attach.notYoutube}
+              </p>
+            ) : null}
+          </div>
+        ))}
+        <button
+          className="rounded-md border border-muted-foreground/30 px-3 py-1 text-[length:var(--fs-small)] hover:bg-muted"
+          onClick={() => put([...rows, ""])}
+          type="button"
+        >
+          {words.attach.add}
+        </button>
+      </div>
+    );
+  };
+
   const depthHint =
     params.depth === "standard"
       ? words.depth.standardHint
@@ -196,6 +263,8 @@ export function BenchControls({
     params.scope.some((e) => e.at || e.place) && words.scope.label,
     params.deny.trim() && words.deny.label,
     params.needTable && words.needTable.label,
+    (params.files.length > 0 || params.links.some((u) => u.trim()) || params.youtube.some((u) => u.trim())) &&
+      words.attach.label,
   ].filter(Boolean) as string[];
 
   return (
@@ -433,6 +502,63 @@ export function BenchControls({
           />
           {words.needTable.label}
         </label>
+      </Row>
+
+      {/* ⑨ ВЛОЖЕНИЯ — ВКЛЮЧЕНИЕ В «СКАЗАТЬ», А НЕ ОТДЕЛЬНАЯ ДВЕРЬ (200-5).
+          🔒 Слово владельца 2026-09-14: «кнопку загрузить аудио кнопку загрузить видео кнопка загрузить и так далее и
+          отдельно … обычная ссылка YouTube ссылка». Кнопки порождены из родов, которые память описывает (`kinds.mjs`),
+          а не перечислены здесь: род, добавленный в память, получает кнопку без правки экрана.
+          🪦 До 200-4 здесь стояли пять выключенных кнопок «Загрузка» с неправдой «память понимает только текст». */}
+      <Row
+        hint={words.attach.hint}
+        label={words.attach.label}
+        ok={has("files") || has("links") || has("youtube")}
+        words={words}
+      >
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {UPLOAD_KINDS.map((kind) => (
+              <label
+                className="cursor-pointer rounded-md border border-muted-foreground/30 px-3 py-1 text-[length:var(--fs-small)] hover:bg-muted"
+                key={kind}
+              >
+                {words.attach.kinds[kind] ?? kind}
+                <input
+                  accept={acceptOf(kind)}
+                  className="hidden"
+                  data-kind={kind}
+                  multiple
+                  onChange={(e) => {
+                    const picked = Array.from(e.target.files ?? []);
+                    e.target.value = "";
+                    if (picked.length) onChange({ files: [...params.files, ...picked] });
+                  }}
+                  type="file"
+                />
+              </label>
+            ))}
+          </div>
+          {params.files.length ? (
+            <ul className="space-y-1" data-testid="chosen-files">
+              {params.files.map((f, i) => (
+                <li className="flex flex-wrap items-center gap-2 text-[length:var(--fs-small)]" key={`${f.name}-${i}`}>
+                  <span className="font-mono">
+                    {f.name} · {f.size} B
+                  </span>
+                  <button
+                    className="rounded-md border border-muted-foreground/30 px-2 py-0.5 hover:bg-muted"
+                    onClick={() => onChange({ files: params.files.filter((_, k) => k !== i) })}
+                    type="button"
+                  >
+                    {words.attach.remove}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {linkList("links")}
+          {linkList("youtube")}
+        </div>
       </Row>
 
       </div>

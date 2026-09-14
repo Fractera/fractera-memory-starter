@@ -161,17 +161,33 @@ export function MemoryTest({
   const send = useCallback(async () => {
     if (busy) return;
     if (mode === "say" && !text.trim()) return;
+    // 🔒 ССЫЛКА НЕ СВОЕГО РОДА НЕ УХОДИТ (200-5): кнопка заперта, причина названа под панелью.
+    if (preview.invalid.length) return;
     const asked = mode === "say" ? text.trim() : text.trim() || "(без вопроса — всё, что известно)";
 
     setBusy(true);
     const started = Date.now();
     try {
-      const r = await fetch("/api/fractera/memory-test", {
-        body: JSON.stringify({ body: preview.body, method: preview.method }),
-        cache: "no-store",
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
+      // 🔒 ФАЙЛЫ — ФОРМОЙ (200-5): часть `payload` — то же JSON-тело, части `files` — файлы. Заголовок `Content-Type`
+      // руками не ставится: границу частей ставит браузер, без неё дверь тела не разберёт.
+      let init: RequestInit;
+      if (preview.files.length) {
+        const form = new FormData();
+        form.append("payload", JSON.stringify(preview.body));
+        for (const f of preview.files) form.append("files", f);
+        init = { body: form, cache: "no-store", method: "POST" };
+      } else {
+        init = {
+          body: JSON.stringify({ body: preview.body, method: preview.method }),
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        };
+      }
+      const r = await fetch(
+        preview.files.length ? "/api/fractera/memory-test?method=remember" : "/api/fractera/memory-test",
+        init
+      );
       // 🛑 ЧИТАЕМ ТЕЛО, А НЕ КОД: дверь отвечает `200`, а код `/v1` лежит внутри.
       const text_ = await r.text();
       let parsed: unknown;
@@ -292,10 +308,11 @@ export function MemoryTest({
               <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-md bg-muted px-2 py-1 font-mono text-[length:var(--fs-small)]">
                 {[
                   `POST ${base}/v1/${preview.method}`,
-                  "content-type: application/json",
+                  `content-type: ${preview.files.length ? "multipart/form-data" : "application/json"}`,
                   `x-memory-key: ${keyMask ?? words.keyMissing}`,
                   "",
                   JSON.stringify(preview.body, null, 2),
+                  ...preview.files.map((f) => `files: ${f.name} · ${f.size} B`),
                 ].join("\n")}
               </pre>
               {preview.dropped.length ? (
@@ -303,10 +320,15 @@ export function MemoryTest({
                   {words.droppedTitle}: {preview.dropped.join(", ")}
                 </p>
               ) : null}
+              {preview.invalid.length ? (
+                <p className="text-[length:var(--fs-small)] text-destructive" data-testid="invalid-links">
+                  {words.controls.attach.blocked}: {preview.invalid.join(", ")}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex items-center gap-2">
-              <Button disabled={busy} onClick={() => void send()} size="sm" type="button">
+              <Button disabled={busy || preview.invalid.length > 0} onClick={() => void send()} size="sm" type="button">
                 {busy ? words.sending : words.send}
               </Button>
               <span className="text-[length:var(--fs-small)] text-muted-foreground">⌘/Ctrl + Enter</span>
@@ -362,6 +384,21 @@ export function MemoryTest({
                       <div className="mb-1 break-all font-mono text-[length:var(--fs-small)] text-muted-foreground">
                         POST {s.url}
                       </div>
+                    ) : null}
+                    {Array.isArray((s.body as { objects?: unknown } | null)?.objects) ? (
+                      <ul className="mb-1 space-y-0.5" data-testid="attachment-fates">
+                        {(s.body as { objects: Array<Record<string, unknown>> }).objects.map((o, k) => (
+                          <li
+                            className={`font-mono text-[length:var(--fs-small)] ${o.ok ? "" : "text-destructive"}`}
+                            key={k}
+                          >
+                            {o.ok ? "✓" : "✗"} {String(o.name ?? o.url ?? "")} —{" "}
+                            {o.ok
+                              ? `${String(o.kind ?? "")} · messageId ${String(o.messageId ?? "—")}${o.existing ? " · existing" : ""}`
+                              : String(o.error ?? "")}
+                          </li>
+                        ))}
+                      </ul>
                     ) : null}
                     {s.trouble ? (
                       <p className="rounded-md border border-destructive/40 px-2 py-1 text-[length:var(--fs-small)] text-destructive">
