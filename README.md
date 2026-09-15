@@ -1,10 +1,14 @@
 # Fractera Memory
 
 **A self-hosted, open-source memory engine for agents.** Knowledge graph built on write and read
-without a model turn · geospatial and temporal recall with `lat`/`lon` and radius search · native
-multimodal input — voice, images, video, PDF — with its own object store · one short model call per
-request over a feature registry, after which code and the stores do the rest · and a self-evolving skill core that **A/B split-tests its own candidates** before
-promoting them.
+without a model turn · spatial-temporal scope with `lat`/`lon` validated and stored on every record ·
+native multimodal input — voice, images, video, PDF, pages, links — with its own object store · one
+short model call per request over a feature registry, after which code and the stores do the rest.
+
+> **How to read this document.** The engine is described whole, so it is clear what it does and how it
+> is built. Anything not yet in the code says so on the spot, in **bold, in the same paragraph** — and
+> the section "How a request travels" carries the full list of what exists today and what remains.
+> Nothing here is promised without that mark.
 
 Built to act as the architect's personal command centre — through a Telegram bot, a web chat or
 anything else that speaks HTTP — it closes the gap between a volatile context window and real
@@ -37,6 +41,8 @@ describes the thing itself and keeps it in four places at once, or in none:
 | `pdf` | read whole by Claude: structure, headings, content, tables row by row |
 | `markdown`, `html`, `text` | read by Claude; HTML is shown as a sandboxed page and as its source |
 | source code | analysed, not rewritten — what it does, what it exports and imports; stored as text, never executed |
+| a link | the page is opened by a real browser (the AI-browser service); **description and structure** are kept — headings, interactive elements, media by attribute, a snippet. The final HTML is never stored |
+| a YouTube video | read by the official API: title, data, the author's own chapters — which is what answers «at what minute was this said» — thumbnail and the start of the description |
 
 The file with its full description goes to the **object store**; the summary goes to a table row and a **vector**
 search card; the full description with its origin — source, author, date — goes to the **knowledge graph**. Find it
@@ -54,25 +60,35 @@ A scope entry carries coordinates, not just a place name:
 ]
 ```
 
-Coordinates are **spatially indexed**, so recall answers «what do I know near this point» with a
-radius search rather than a string match. Coordinates are validated as a pair and against the bounds
-of the planet — a lone latitude is half a point, and 200 degrees of longitude is a typo that would
-otherwise become knowledge. Scope propagates into totals, life cycles and answers: a taxi ride in
-Madrid never merges with one in London, and the same question asked in another city is a different
-question. **An empty scope means «I do not know where and when» — never «everywhere, always».**
+Coordinates are validated as a pair and against the bounds of the planet — a lone latitude is half a
+point, and 200 degrees of longitude is a typo that would otherwise become knowledge. They are stored
+with the record and indexed. **An empty scope means «I do not know where and when» — never
+«everywhere, always».**
 
-### 3. Skill evolution runs a real A/B split test
+**In development, and not to be counted on today:** retrieval by radius («what do I know within 500 m
+of this point») and totals and life cycles grouped by scope. Today the coordinates of a question are
+accepted and reported back in `params`, and reading does not use them; a sum is computed over all rows
+of a feature, with no scope. See notes \*⁹ and \*¹⁰ below.
 
-When memory sees a repeated miss, it writes a **second version of the skill next to the working
-one** and runs it as a **challenger in the shadow**: on real traffic, while people keep being
-answered by the champion. Promotion has a rule, not a feeling — the challenger wins only if it wins
-on **external verdicts** and does not lose on **cost**, and quality is tracked **per case, per tool,
-per version and per scope**, because one skill is excellent with one set of parameters and poor with
-another. The loser is deleted together with the record of why. Every edit is a commit, and there is a
-one-click return to the first version if an evolution goes wrong.
+### 3. Skill evolution is designed as a real A/B split test — **and is not built yet**
+
+**State, plainly: none of this paragraph is in the code today.** It is published as a design so it can
+be argued with before it is written, and because the engine is open source: you can read the whole
+repository and confirm what is there.
+
+The design: when memory sees a repeated miss, it writes a **second version of the skill next to the
+working one** and runs it as a **challenger in the shadow** — on real traffic, while people keep being
+answered by the champion. Promotion has a rule, not a feeling: the challenger wins only if it wins on
+**external verdicts** and does not lose on **cost**, and quality is tracked per case, per tool, per
+version and per scope, because one skill is excellent with one set of parameters and poor with
+another.
+
+**What exists today instead:** skills are plain files in `.claude/skills/`, every edit is a commit and
+is reverted by one, and verdicts on real answers are collected from people on the built-in bench.
 
 **The engine's own opinion of success is never counted.** A model retelling its own work errs in its
-own favour; the verdict comes from whoever asked.
+own favour; the verdict comes from whoever asked. That rule is why the shadow run is worth building
+rather than replacing with self-assessment.
 
 ---
 
@@ -95,15 +111,15 @@ instance.
 | What you need | How this engine does it |
 |---|---|
 | **Any front-end — Telegram today, a web chat or mobile app tomorrow** | A working web console comes in the box and is already connected; every other client — a Telegram bot, a web widget, a mobile app, a cron job — attaches to the same REST API as a caller with a key. An agent's tool schema is generated from `GET /v1/contract` over HTTP, so a new front-end is wired in minutes. |
-| **Decisions and actions, not hints** | Answers carry the conclusion, its source table, the kind of claim (said or inferred), the grounds, and the reasoning chain. Conclusions that imply a next step become scheduled follow-ups. |
+| **Decisions and actions, not hints** | Answers carry the conclusion, its source table, the kind of claim (said or inferred), the grounds, and — on request — the chain of the search. **Scheduled follow-ups are not built:** memory has no scheduler, and nothing in an answer creates one. |
 | **Video, images, PDF, audio** | Native, with the pipeline and the object store inside — see §1 above. |
-| **Geolocation, and dates when they matter** | Spatial-temporal scope with `lat`/`lon`, `radius_m` and `at`, spatially indexed — see §2 above. |
-| **Deep reasoning that finds what was never written down** | Five explicit levels; above the database sit the knowledge graph, a reasoning session that builds and compares variants, semantic search, and bounded recursive research. «Who of my contacts could have known that person» is the reference case, not an edge case. |
+| **Geolocation, and dates when they matter** | Spatial-temporal scope with `lat`/`lon`, `radius_m` and `at`, validated and stored on every record — see §2 above, including what retrieval does not yet do with it. |
+| **Deep reasoning that finds what was never written down** | Partly. Three levels are built — table, one short model call, knowledge graph — and `depth_used` always reports the one actually reached. **Semantic search inside reading and bounded recursive research are in development** (note *⁶). «Who of my contacts could have known that person» is the reference case being built towards. |
 | **Fast with no AI in some cases, a strong model in others** | Partly. Every request costs one short model call over 8 candidate features, never the whole schema; the table and the graph then answer without further model turns, and sums are computed by code. Only a request with no question uses no model at all. `depth_used` always reports how far memory actually went. |
-| **The slow answer must become instant next time** | Every expensive result is folded back — artefact into the object store, summary into text, into the vector store and into the graph, relation table updated. The repeat question is answered from the cheap levels. |
-| **Complex requests should build an entity and come back as a report** | Memory creates the table while answering; `need_table` forces it at once. The answer carries the artefact plus a short summary — a report, not a dump. |
+| **The slow answer must become instant next time** | The design, and the order it happens in, is fixed — artefact into the object store, summary into text, into the vector store and into the graph, relation table updated. **Today the loop is driven from outside:** an agent keeps the answer with `keep_object`; reading does not fold its own result back (note *⁷). |
+| **Complex requests should build an entity and come back as a report** | Memory creates the table while answering, and `need_table` forces it at once — that part works. **Assembling a document over the tables inside reading is in development** (note *¹¹); today the agent composes it and hands it over with `keep_object`. |
 | **Its own object storage** | Built in, on your machine, referenced from answers by id. |
-| **An evolution core with split-testing** | Champion/challenger shadow testing with an explicit promotion rule — see §3 above. |
+| **An evolution core with split-testing** | Designed, **not built** — champion/challenger shadow testing with an explicit promotion rule, see §3 above. |
 | **Free, on my own server** | Self-hosted on your VPS, deployed by the installer robot. No metered API in the middle; nothing leaves the machine. |
 | **A knowledge graph updated on write, nearly free on read** | Exactly the design: entities and links are built as facts arrive, and on read the graph is queried in context mode — **no model turn** — so the cheap path stays cheap. |
 | **Open source, modifiable by hand** | This repository is the whole service: contract, verbs, stores, pages. Every design decision is written down next to the code that implements it. |
@@ -192,12 +208,12 @@ On a contradiction: *«was X, now Y»* — the latest wins, out loud, with the p
 | `who` | string | yes | Who is being asked about. |
 | `text` | string | no | The question in a human sentence; without it everything known comes back. |
 | `lang` | string | no | Language of the words meant for a person. |
-| `depth` | string | no | `standard` · `deep` · `extreme`. |
+| `depth` | string | no | `standard` · `deep` · `extreme`. **Reading stops at the knowledge graph today**; `depth_used` reports the level actually reached (note \*⁶). |
 | `history` | string | no | The previous conversation, when the caller has one. |
 | `prior` | string | no | What has already been found before this question. |
 | `want_chain` | boolean | no | Return the steps of the search. |
-| `thread` | string | no | Continue an earlier line of reasoning. |
-| `scope` | array | no | Where and when the question is asked — including coordinates and radius. |
+| `features` | array | no | Feature keys the question is about, from `GET /v1/features` — sending them skips the model call. An unknown key is refused with the nearest keys memory does have. |
+| `scope` | array | no | Where and when the question is asked. Accepted, validated and reported back; **retrieval does not use the coordinates yet** (note *⁹). |
 
 Returns `known` (each value with `from_table`, `claim`, `basis`), `not_yet_known`, `used_model`,
 `depth_asked` / `depth_used`, `used_input`, `chain` and `params`.
@@ -322,7 +338,7 @@ development is marked with an asterisk and explained in the notes below.
 **\* In development — what exists today and what remains to build**
 
 - **\*¹ A request without a verb.** Today the verb is set only by the address; the parse returns an `action` field that routes nothing. To build: a single address in the contract, routing by `action`, an answer field naming the verb and who decided.
-- **\*² Features on retrieval.** Today only writing accepts `features`. To build: the parameter on `recall`, and skipping the model call when features are sent.
+- **\*² Features on retrieval — built.** `recall` accepts `features`, the model call is skipped when they are sent, and an unknown key comes back with the nearest keys memory does have. The mark stays here so the change is visible against the previous edition of this list.
 - **\*³ Links to messages.** Today the journal can link one message to another, but only saving a link uses it (a snippet to its page); `thread`, `history` and `prior` do not point at stored messages. To build: message numbers in the contract, candidates by meaning and time, links for every phrase, their use when reading.
 - **\*⁴ One call for all three determinations.** Today the call determines only features, in two ways: writing shows the model every registry kind, reading shows 8 candidates. To build: one shared parse for both verbs.
 - **\*⁵ The registry catches up.** Today kinds without a feature are visible only to a probe; 27 kinds created by the model wait for their features. To build: the list on the panel page and features added by development steps.
@@ -365,6 +381,11 @@ back a wall of text. It builds the thing you asked for:
 3. **Returns a short executive summary next to the artifact**, so the answer reads well and the
    detail stays referenceable.
 
+**Where this stands.** The object side is built: any caller — an agent included — composes the document
+and hands it over with `keep_object`, and it comes back by id with its file, description and summary,
+findable by meaning. **Assembling the document over the tables inside `recall` is in development**
+(note \*¹¹): today reading does not build the report by itself.
+
 ## Threads of reasoning — and why continuing one is cheaper
 
 Every answer in which the engine thought carries `thread`; send it back and the same chain continues,
@@ -384,20 +405,30 @@ hypothesis stays on record so the same search does not reproduce it tomorrow.
 
 ## The memoization loop: the slow answer becomes the fast one
 
-Nothing expensive is paid for twice:
+The design rule is that nothing expensive is paid for twice:
 
-1. An expensive computation or research loop runs at level 4 or 5.
+1. An expensive computation or research loop runs at the deep levels.
 2. An artifact is created with its ID, alongside a concise conclusion.
 3. The conclusion is indexed into the vector store, the knowledge graph and the tables.
-4. Repeat questions are answered **in about 0.2 s at levels 1–3, for zero tokens**.
+4. The repeat question is then answered from the cheap levels.
 
 A computed table and the output of deep research are the same case, not two.
 
-## The evolution core: skills that improve themselves under A/B testing
+**Where this stands. The loop is not automatic yet** (note \*⁷). Today it is driven from outside: a
+caller keeps the result with `keep_object`, and what is kept is found by meaning afterwards. Reading
+does not fold its own result back, and there is no answer cache — a repeated question costs the same
+one short model call as the first one did.
 
-After every cycle the engine records the facts of the run: how deep it went, how many model turns,
-how many seconds, what kind of answer came out, which skills and tools were called. These are data,
-not impressions.
+## The evolution core: skills that improve themselves under A/B testing — **the design, not yet the code**
+
+**State first, so nothing here is mistaken for a feature: this section describes what is being built,
+and none of it runs today.** What exists now: skills are files in `.claude/skills/`, each edit is a
+commit that can be reverted, and verdicts on real answers are collected from people on the built-in
+bench — the corpus the comparison will need.
+
+The design. After every cycle the engine records the facts of the run: how deep it went, how many model
+turns, how many seconds, what kind of answer came out, which skills and tools were called. These are
+data, not impressions.
 
 When it detects a repeated miss, it writes a **second version of the skill next to the working one**
 and runs it as a **challenger in the shadow** — on real traffic, while people keep being answered by
@@ -425,10 +456,11 @@ It is not a demo page: it is how you operate the memory day to day.
 |---|---|
 | **Passport** | the full design of the engine, read from disk on every request — edit the document, reload, see it |
 | **API** | this reference, generated from the live contract, with the **Generate access key** button |
-| **Playground** | talk to memory with nothing in between and see the raw answer with its timing |
+| **Memory test** | talk to memory with nothing in between, over the public `/v1/*` path, and see the raw answer with its timing |
+| **Graph test · Vector test · Object test · Link test** | each store probed on its own — otherwise you measure the black box as a whole and cannot say which part answered |
 | **Journal** | what memory did: what arrived, what was decided, what was dropped and why |
-| **Settings · Subscription** | keys and switches of the service itself |
-| **Terminal** | a live shell into the service for the people who own the machine |
+| **OpenAI subscription · Settings** | keys and switches of the service itself |
+| **Terminal · Build workshop** | a live shell on the server, and Claude Code opened in the service folder with its steps, skills and instruction |
 
 **What the playground is for**, in three lines: execute direct API requests against the memory core
 with no front-end abstraction in the way; inspect raw JSON payloads, execution timings and exact
@@ -455,8 +487,8 @@ built on a different philosophy.
 | Storage architecture | Hybrid: graph + vector + relational + object store | Vector DB only | Relational / text files | Vector plus a basic graph |
 | Zero-token reads | Only a request with no question; every other read costs one short model call | No | No | Partial |
 | Native multimodality | Built in: audio, video, PDF, images | Requires external parsers | Requires external parsers | Text focused |
-| Spatial proximity indexing | Native lat/lon radius search | Text matching only | Function calling only | Basic metadata |
-| Skill evolution | Champion / challenger A/B testing | None | Manual prompt edits | None |
+| Spatial proximity indexing | lat/lon and radius_m validated and stored on every record; radius search in development | Text matching only | Function calling only | Basic metadata |
+| Skill evolution | Champion / challenger A/B testing (designed and published, in development) | None | Manual prompt edits | None |
 | Self-hosted / open source | 100% on-premise, single node | Varies | Yes | Freemium / cloud |
 
 | Feature | **Fractera Memory** | IVA Agent (`smixs/iva-agent`) |
@@ -465,9 +497,9 @@ built on a different philosophy.
 | Architecture | A decoupled microservice; the Telegram bot is an optional client | A monolith: Telegram, userbot and vault manager in one codebase |
 | Cost optimisation | One short model call over 8 registry candidates, never the whole schema; the table and the graph answer without further model turns | Every operation leans on model passes, BM25 and vector lookups |
 | Multimodality | Built-in object storage; audio transcribed with timestamps; images, PDF, pages, code and video frames read by a vision model | Audio transcription and plain text handling |
-| Geolocation | Native lat/lon plus radius_m proximity search | None; dates and places are unstructured text |
+| Geolocation | lat/lon and radius_m as structured fields of every record; proximity search in development | None; dates and places are unstructured text |
 | Data processing | Dynamic SQL tables, structured artifacts with IDs, knowledge graph | Markdown cards written to a folder for Obsidian to sync |
-| System evolution | Shadow A/B testing with external verdicts | None; execution logic is fixed in prompt files |
+| System evolution | Shadow A/B testing with external verdicts (designed, in development); today skills are files and every edit is a revertible commit | None; execution logic is fixed in prompt files |
 | Integrations | Many front-ends at once over one REST API | Bound to one Telegram account and an Obsidian setup |
 
 ## Boundaries that are design, not gaps
@@ -494,9 +526,12 @@ with no question is answered with no model at all. The answer reports `depth_use
 reached.
 
 **Can it answer questions about a place by coordinates, not by a word?**
-Yes. A scope entry carries `lat`, `lon` and an optional `radius_m`, and the coordinates are spatially
-indexed. You can ask what you know within 500 metres of a point, and knowledge recorded in Madrid
-never merges with knowledge recorded in London.
+It accepts them; it does not yet search by them. A scope entry carries `lat`, `lon` and an optional
+`radius_m`; the pair is validated against the bounds of the planet, stored with the record and
+indexed. **Retrieval by radius — «what do I know within 500 metres of this point» — is in development**
+(note \*⁹), and until it lands the coordinates of a question are reported back in `params` and not used
+for the search. What already holds: an empty scope means «I do not know where and when», never
+«everywhere, always».
 
 **What can I send besides text?**
 Voice notes, images, video, PDF, Markdown, HTML and source code — as a form upload, by URL, or as `media` next to a
@@ -509,13 +544,18 @@ None. You send a sentence. The engine adds columns as new kinds of fact appear a
 relational tables when a kind grows into an entity. There are no migrations to write.
 
 **What happens after an expensive research run?**
-It folds the result back — artifact, summary, vector store, knowledge graph, relation tables — and
-the same question is then answered from the cheap levels in fractions of a second.
+By design the result is folded back — artifact, summary, vector store, knowledge graph, relation
+tables — so the same question is later answered from the cheap levels. **Today that loop is driven by
+the caller** (note \*⁷): an agent keeps the answer with `keep_object` and it is found by meaning
+afterwards; reading does not fold its own result back, and the deep levels are themselves in
+development. The answer always reports `depth_used`, the depth actually reached.
 
 **How does it improve itself without breaking what works?**
-It writes a second version of the skill and runs it as a challenger in the shadow, on real traffic,
-while people keep being answered by the champion. Promotion needs an external verdict and no
-regression in cost: the engine is never allowed to grade its own work.
+**This is the design, not the current behaviour.** The plan: a second version of the skill runs as a
+challenger in the shadow, on real traffic, while people keep being answered by the champion, and
+promotion needs an external verdict with no regression in cost — the engine is never allowed to grade
+its own work. Today: skills are files, every edit is a commit that can be reverted, and verdicts are
+collected from people on the bench.
 
 **What can I connect to it?**
 Any HTTP client: a Telegram bot, a web chat, a mobile app, a scheduled job. The bundled console is

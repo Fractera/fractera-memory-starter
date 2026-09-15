@@ -69,11 +69,20 @@ function FlowList({ items, prefix, labels }: { items: FlowItem[]; prefix: string
 // получит отказ. Установку делает робот — об этом одна карточка словами.
 
 function Section({
+  building,
   children,
   id,
   lead,
   title,
 }: {
+  /**
+   * Что из этого раздела ещё строится — словами, ПОД ЛИДОМ, а не сноской внизу страницы (205-12).
+   *
+   * 🔒 ПОМЕТКА СТОИТ ТАМ, ГДЕ ЧИТАЮТ ОБЕЩАНИЕ. Сноска внизу длинной страницы честна формально:
+   * до неё не доходит тот, кто уже поверил заголовку. ✗ Оплачено сверкой 205-11 — страница
+   * обещала поиск по радиусу, мемоизацию и эволюцию навыков как построенное.
+   */
+  building?: string;
   children?: React.ReactNode;
   id: string;
   lead?: string;
@@ -86,6 +95,11 @@ function Section({
       <div className="mx-auto w-full max-w-5xl px-6">
         <h2 className="text-[length:var(--fs-h2)] font-semibold tracking-tight">{title}</h2>
         {lead ? <p className="mt-3 max-w-3xl text-[length:var(--fs-body)] text-muted-foreground">{lead}</p> : null}
+        {building ? (
+          <p className="mt-4 max-w-3xl rounded-md border border-border border-l-4 bg-muted px-4 py-3 text-[length:var(--fs-small)]">
+            {building}
+          </p>
+        ) : null}
         {children ? <div className="mt-6">{children}</div> : null}
       </div>
     </section>
@@ -269,7 +283,7 @@ export function Landing({ base, lang }: { base: string; lang: string }) {
         </div>
       </Section>
 
-      <Section id="scope" lead={w.scope.lead} title={w.scope.title}>
+      <Section building={w.scope.building} id="scope" lead={w.scope.lead} title={w.scope.title}>
         <div className="grid gap-3 md:grid-cols-3">
           {w.scope.items.map((i) => (
             <Card body={i.body} key={i.title} title={i.title} />
@@ -278,7 +292,7 @@ export function Landing({ base, lang }: { base: string; lang: string }) {
       </Section>
 
       {/* ── АРТЕФАКТЫ: вид `olist` каталога ────────────────────────────────── */}
-      <Section id="artifacts" lead={w.artifacts.lead} title={w.artifacts.title}>
+      <Section building={w.artifacts.building} id="artifacts" lead={w.artifacts.lead} title={w.artifacts.title}>
         <ol className="ml-5 list-decimal space-y-2 text-[length:var(--fs-small)] leading-relaxed">
           {w.artifacts.steps.map((s) => (
             <li key={s}>{s}</li>
@@ -287,7 +301,7 @@ export function Landing({ base, lang }: { base: string; lang: string }) {
       </Section>
 
       {/* ── ПЕТЛЯ ЗАПОМИНАНИЯ: `flow` в одну колонку ──────────────────────── */}
-      <Section id="memoization" lead={w.memoization.lead} title={w.memoization.title}>
+      <Section building={w.memoization.building} id="memoization" lead={w.memoization.lead} title={w.memoization.title}>
         <ol className="space-y-2">
           {w.memoization.chain.map((step, i) => (
             <li className="flex items-start gap-3" key={step}>
@@ -300,7 +314,7 @@ export function Landing({ base, lang }: { base: string; lang: string }) {
         </ol>
       </Section>
 
-      <Section id="evolution" lead={w.evolution.lead} title={w.evolution.title}>
+      <Section building={w.evolution.building} id="evolution" lead={w.evolution.lead} title={w.evolution.title}>
         <div className="grid gap-3 md:grid-cols-3">
           {w.evolution.items.map((i) => (
             <Card body={i.body} key={i.title} title={i.title} />
@@ -376,7 +390,7 @@ export function Landing({ base, lang }: { base: string; lang: string }) {
       </Section>
 
       {/* ── ПРИМЕРЫ API: вид `code` каталога ───────────────────────────────── */}
-      <Section id="api" lead={w.api.lead} title={w.api.title}>
+      <Section building={w.api.building} id="api" lead={w.api.lead} title={w.api.title}>
         <div className="space-y-5">
           {w.api.samples.map((s) => (
             <div key={s.title}>

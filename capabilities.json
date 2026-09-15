@@ -39,21 +39,25 @@
     "coordinates": "lat/lon accepted per scope entry, validated as a pair and against planet bounds",
     "radius": "radius_m per entry",
     "spatial_index": true,
-    "radius_search": true,
+    "radius_search": false,
+    "radius_search_state": "in development: the coordinates of a question are accepted and reported back in params, and retrieval does not use them yet",
     "place_names": true,
     "temporal_scope": "at (YYYY-MM-DD) per entry",
-    "grouping": "totals, life cycles and answers are grouped by scope: Madrid never merges with London",
+    "grouping": false,
+    "grouping_state": "in development: a total is currently computed over all rows of a feature, with no scope",
     "empty_scope_semantics": "unknown, never universal"
   },
   "reasoning": {
     "deterministic_router": true,
+    "levels_built": 3,
     "levels": [
-      { "level": 1, "uses": "relational lookup", "model_calls": 0 },
-      { "level": 2, "uses": "relational lookup plus one model call", "model_calls": 1 },
-      { "level": 3, "uses": "knowledge graph context plus a reasoning session", "graph_read_model_calls": 0 },
-      { "level": 4, "uses": "semantic search over the vector store", "opened_by": "caller, depth=deep" },
-      { "level": 5, "uses": "bounded recursive research", "opened_by": "caller, depth=extreme", "time_bound_minutes": 10 }
+      { "level": 1, "uses": "relational lookup", "model_calls": 0, "built": true },
+      { "level": 2, "uses": "relational lookup plus one model call", "model_calls": 1, "built": true },
+      { "level": 3, "uses": "knowledge graph context", "graph_read_model_calls": 0, "built": true },
+      { "level": 4, "uses": "semantic search over the vector store", "opened_by": "caller, depth=deep", "built": false },
+      { "level": 5, "uses": "bounded recursive research", "opened_by": "caller, depth=extreme", "time_bound_minutes": 10, "built": false }
     ],
+    "levels_state": "depth=deep and depth=extreme are declared in the contract and reading stops at the knowledge graph; depth_used always reports the level actually reached",
     "answers_not_written_down": "conclusions are assembled from the graph, the vector store and world knowledge, and returned as probabilistic answers with their reasoning chain",
     "reported_back": ["depth_asked", "depth_used", "used_model", "chain", "params"]
   },
@@ -63,14 +67,15 @@
     "reason": "the graph is queried in context mode, not generation mode, so the cheap path stays cheap"
   },
   "evolution": {
-    "ab_split_testing": true,
+    "ab_split_testing": false,
+    "state": "design only, not built: nothing in the code records run facts as data, writes a candidate skill or runs a shadow comparison. What exists today: skills are files in .claude/skills, every edit is a revertible commit, and verdicts on answers are collected from people on the built-in bench",
     "method": "champion/challenger: a candidate skill runs in the shadow on real traffic while people are answered by the version in force",
     "promotion_rule": "the challenger is promoted only if it wins on external verdicts and does not lose on cost",
     "verdict_source": "the caller — a human or the calling model; the engine's own opinion of success is not counted",
     "scoped_quality": "quality is tracked per case, per tool, per version and per scope",
     "telemetry_per_run": ["depth reached", "model turns", "seconds", "kind of answer", "skills and tools called"],
-    "rollback": "every skill edit is a commit; one-click return to the first version",
-    "caching_effect": "expensive research is folded back into the stores, so the repeat question is answered from the cheap levels"
+    "rollback": "every skill edit is a commit and is reverted by one; the one-click return to the first version of the instruction is in development",
+    "caching_effect": "by design an expensive result is folded back into the stores so the repeat question is answered from the cheap levels; today the caller does it with keep_object and reading does not fold its own result back"
   },
   "reports": {
     "entity_creation": "a second value of a kind promotes a column into its own table; need_table forces it at once",

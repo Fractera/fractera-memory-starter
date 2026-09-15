@@ -54,10 +54,11 @@ ${w.media.items.map((i) => `- ${i.title}: ${i.body}`).join("\n")}
 
 ## Spatial-temporal scope
 ${w.scope.items.map((i) => `- ${i.title}: ${i.body}`).join("\n")}
-
+${w.scope.building ? `\n${w.scope.building}\n` : ""}
 ## Skill evolution
 ${w.evolution.lead}
 ${w.evolution.items.map((i) => `- ${i.title}: ${i.body}`).join("\n")}
+${w.evolution.building ? `\n${w.evolution.building}\n` : ""}
 
 ## Questions and answers
 ${faq}

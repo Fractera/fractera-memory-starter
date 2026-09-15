@@ -98,14 +98,27 @@ export type LandingWords = {
     /** Подписи метки навыка у пункта: зелёная — навык есть, красная — будет создан (слово владельца 2026-09-15). */
     skillLabels: { have: string; plan: string };
   };
-  scope: { title: string; lead: string; items: Array<{ title: string; body: string }> };
-  artifacts: { title: string; lead: string; steps: string[] };
-  memoization: { title: string; lead: string; chain: string[] };
-  evolution: { title: string; lead: string; items: Array<{ title: string; body: string }> };
+  /**
+   * 🔒 `building` — ЧТО ИЗ ЭТОГО РАЗДЕЛА ЕЩЁ НЕ ПОСТРОЕНО, СЛОВАМИ И НА МЕСТЕ (205-12).
+   *
+   * Правило владельца 2026-09-15 (паспорт §0 п. 5): описываем целиком, как работающее, а
+   * недостроенное помечаем — «если ты напишешь просто "мы не построили", то как же ты будешь это
+   * строить?». В паспорте это звёздочка со сноской внизу; на странице сноски внизу никто не
+   * доскроллит, поэтому пометка стоит В САМОМ РАЗДЕЛЕ, под лидом.
+   * ✗ Оплачено сверкой 205-11: страница обещала поиск по радиусу, мгновенный повтор вопроса и эволюцию
+   * навыков как работающее, а кода нет ни строки. Обещание, которого продукт не держит, человек
+   * проверяет в свой худший день.
+   * 🛑 Текст пометки говорит ДВЕ вещи: что есть сегодня и что предстоит. Одно «в разработке» без
+   * «что есть» читается как «не работает ничего».
+   */
+  scope: { title: string; lead: string; items: Array<{ title: string; body: string }>; building?: string };
+  artifacts: { title: string; lead: string; steps: string[]; building?: string };
+  memoization: { title: string; lead: string; chain: string[]; building?: string };
+  evolution: { title: string; lead: string; items: Array<{ title: string; body: string }>; building?: string };
   stores: { title: string; lead: string; items: Array<{ title: string; body: string }> };
   media: { title: string; lead: string; items: Array<{ title: string; body: string }> };
   bench: { title: string; lead: string; items: string[]; where: string };
-  api: { title: string; lead: string; samples: Array<{ title: string; code: string }> };
+  api: { title: string; lead: string; samples: Array<{ title: string; code: string }>; building?: string };
   comparison: { title: string; lead: string; feature: string; ours: string; tables: ComparisonTable[] };
   /**
    * Установка — одна мысль, без команд.
@@ -190,15 +203,19 @@ const CURL_DEEP_RU = `curl -X POST https://memory.your-domain.com/v1/recall \\
 
 const EN: LandingWords = {
   api: {
+    building:
+      "Two calls below reach further than the engine goes today: the scope of a question is accepted but the search does not yet use the coordinates, and depth «deep» stops at the knowledge graph — the answer always reports depth_used, the depth actually reached.",
     lead: "One REST API, one key. Every example below runs against a live instance as it stands.",
     samples: [
       { code: CURL_REMEMBER_EN, title: "Store a voice note with spatial coordinates" },
-      { code: CURL_RADIUS_EN, title: "Recall everything within a radius" },
-      { code: CURL_DEEP_EN, title: "Deep reasoning with the chain returned" },
+      { code: CURL_RADIUS_EN, title: "Ask with the place of the question (radius search in development)" },
+      { code: CURL_DEEP_EN, title: "Ask for depth and the chain of the search" },
     ],
     title: "API quickstart",
   },
   artifacts: {
+    building:
+      "Today: an agent composes the document and hands it to memory with keep_object — it comes back by id, with its file, description and summary. In development: reading that assembles the document over the tables by itself and returns the summary next to the artifact.",
     lead:
       "Asked to summarise complex data — last month's spending, a project's state — memory does not hand back a wall of text. It builds the thing you asked for:",
     steps: [
@@ -252,12 +269,12 @@ const EN: LandingWords = {
           },
           {
             feature: "Spatial proximity indexing",
-            ours: "Native lat/lon radius search",
+            ours: "lat/lon and radius_m stored and validated on every record; radius search in development",
             rivals: ["Text matching only", "Function calling only", "Basic metadata"],
           },
           {
             feature: "Skill evolution",
-            ours: "Champion / challenger A/B testing",
+            ours: "Champion / challenger A/B testing — designed and published, in development",
             rivals: ["None", "Manual prompt edits", "None"],
           },
           {
@@ -288,7 +305,7 @@ const EN: LandingWords = {
           },
           {
             feature: "Data processing",
-            ours: "Dynamic SQL tables, structured artifacts, a knowledge graph",
+            ours: "Dynamic SQL tables grown from phrases, a knowledge graph, objects with ids",
             rivals: ["Markdown cards written to a folder for Obsidian to sync"],
           },
           {
@@ -320,6 +337,8 @@ const EN: LandingWords = {
         title: "Versioning and safe rollback",
       },
     ],
+    building:
+      "Not built yet — this is the design, published so it can be checked before it is written. Today: skills are files in the repository, every edit is a commit, and verdicts are collected from people on the built-in bench. In development: the run facts written as data, the candidate skill, the shadow run and the promotion rule.",
     lead:
       "When the engine detects repeated misses or a sub-optimal path, it writes a candidate skill and runs it as a challenger in the shadow — on real production traffic, while people keep being answered by the verified champion.",
     title: "A self-evolving skill core with shadow A/B testing",
@@ -331,7 +350,7 @@ const EN: LandingWords = {
         q: "Does every request cost tokens?",
       },
       {
-        a: "Yes. A scope entry carries lat, lon and an optional radius_m, and the coordinates are spatially indexed. You can ask what you know within 500 metres of a point, and knowledge recorded in Madrid never merges with knowledge recorded in London.",
+        a: "It accepts them, and it does not yet search by them. A scope entry carries lat, lon and an optional radius_m; the pair is validated against the bounds of the planet and stored with the record, and an index over the coordinates exists. Search by radius — «what do I know within 500 metres of this point» — is in development, and until it lands the coordinates of a question are not used for retrieval. An empty scope always means «I do not know where and when», never «everywhere, always».",
         q: "Can it answer questions about a place by coordinates, not by a word?",
       },
       {
@@ -343,11 +362,11 @@ const EN: LandingWords = {
         q: "What schema do I have to design first?",
       },
       {
-        a: "It folds the result back. The artifact goes to the object store, its summary into text, into the vector store and into the knowledge graph, and the relation tables are updated. The same question is then answered from the cheap levels, in fractions of a second.",
+        a: "By design, the result is folded back: the artifact to the object store, its summary into the vector store and the knowledge graph, the relation tables updated — so the same question is later answered from the cheap levels. Today that loop is driven from outside: an agent keeps the answer as an object with keep_object, and what is kept is found by meaning. Reading does not yet fold its own result back, and the deep levels themselves are in development — the answer always reports depth_used, the depth actually reached.",
         q: "What happens after an expensive research run?",
       },
       {
-        a: "It writes a second version of the skill and runs it as a challenger in the shadow, on real traffic, while people keep being answered by the champion. Promotion needs an external verdict and no regression in cost: the engine is never allowed to grade its own work.",
+        a: "The design is champion and challenger: a second version of the skill runs in the shadow on real traffic while people keep being answered by the working one, and promotion needs an external verdict with no regression in cost — the engine is never allowed to grade its own work. This part is not built yet. Today skills are files in the repository, every edit is a commit that can be reverted, and verdicts on answers are collected from people on the built-in bench.",
         q: "How does it improve itself without breaking what works?",
       },
       {
@@ -369,20 +388,20 @@ const EN: LandingWords = {
   },
   seo: {
     description:
-      "Self-hosted memory engine for AI agents: knowledge graph, vector and relational stores, built-in object storage, geospatial lat/lon radius recall, native voice, image, video, PDF, Markdown, HTML and source-code input, one short model call per request over a feature registry, and champion/challenger skill evolution. One REST API, open source.",
+      "Self-hosted memory engine for AI agents: knowledge graph, vector and relational stores, built-in object storage, spatial-temporal scope with lat/lon on every record, native voice, image, video, PDF, Markdown, HTML, source-code and link input, and one short model call per request over a feature registry. One REST API, open source.",
     title: "Fractera Memory — self-hosted memory engine for AI agents",
   },
   toc: { heading: "On this page", label: "Contents" },
   hero: {
-    badges: ["Zero per-request fees", "Zero vendor lock-in", "Full privacy on your server"],
+    badges: ["No metered per-request fees", "Zero vendor lock-in", "Full privacy on your server"],
     body:
-      "The engine ingests raw, unstructured real-world input — text, images, voice notes, video, whole PDF documents, Markdown and HTML pages, source code, precise spatial-temporal coordinates and dates — and turns it into an indexed knowledge graph and structured relational stores, without unnecessary model calls and without per-request token costs.",
+      "The engine ingests raw, unstructured real-world input — text, images, voice notes, video, whole PDF documents, Markdown and HTML pages, source code, links, and spatial-temporal coordinates and dates — and turns it into an indexed knowledge graph and structured relational stores. One short model call per request understands what is meant; after it the tables and the graph answer without further model turns, and a request with no question costs no model call at all.",
     eyebrow: "Fractera Memory Starter",
     lead:
       "An autonomous, self-hosted long-term memory engine and the cognitive core for AI agents. Built to work as the architect's personal command centre through Telegram and a unified REST API, it closes the gap between a volatile context window and real cognitive continuity.",
     primary: "Read the API",
     secondary: "Open the passport",
-    title: "The deterministic, multimodal, self-evolving memory engine for autonomous AI agents",
+    title: "The deterministic, multimodal memory engine for autonomous AI agents",
   },
   install: {
     body:
@@ -875,12 +894,14 @@ const EN: LandingWords = {
   },
   memoization: {
     chain: [
-      "An expensive computation or research loop runs at level 4 or 5",
+      "An expensive computation or research loop runs at the deep levels",
       "An artifact is created with its ID, alongside a concise conclusion",
       "The conclusion is indexed into the vector store, the knowledge graph and the tables",
-      "Repeat questions are answered in 0.2 s at levels 1–3, for zero tokens",
+      "The repeat question is then answered from the cheap levels",
     ],
-    lead: "Nothing expensive is paid for twice. Every high-cost chain is folded back down into the cheaper tiers.",
+    building:
+      "Today: an agent can keep an answer as an object itself (keep_object), and everything kept is searchable by meaning. In development: reading that folds its own expensive result back — the artifact, its summary, the vector card and the graph document. Until then a repeat question costs the same one short model call as the first.",
+    lead: "The design rule: nothing expensive is paid for twice. Every high-cost chain is folded back down into the cheaper tiers.",
     title: "The memoization loop",
   },
   principles: {
@@ -937,11 +958,13 @@ const EN: LandingWords = {
       },
       {
         body:
-          "A built-in spatial index over lat, lon and radius_m answers proximity queries: notes, expenses and records near this point.",
-        title: "Radius search",
+          "Coordinates are validated as a pair and against the bounds of the planet: a lone latitude is half a point, and 200 degrees of longitude is a typo that would otherwise become knowledge.",
+        title: "Coordinates checked, not trusted",
       },
     ],
-    lead: "Time and coordinates are first-class indexes here, not flat text tags.",
+    building:
+      "Today: a scope entry — date, place, lat, lon, radius_m — is accepted, validated and stored with a record, and an index over the coordinates exists. In development: recall by radius («what do I know within 500 m of this point») and totals and life cycles grouped by scope. Until then, reading does not use the coordinates.",
+    lead: "Time and coordinates are first-class fields here, not flat text tags.",
     title: "Spatial-temporal context",
   },
   stores: {
@@ -958,15 +981,19 @@ const EN: LandingWords = {
 
 const RU: LandingWords = {
   api: {
+    building:
+      "Два примера ниже заглядывают дальше, чем память доходит сегодня: охват вопроса принимается, но поиск ещё не использует координаты, а глубина «deep» останавливается на графе знаний — ответ всегда называет depth_used, глубину, достигнутую на деле.",
     lead: "Один REST API, один ключ. Каждый пример ниже работает на живой службе как есть.",
     samples: [
       { code: CURL_REMEMBER_RU, title: "Сохранение голосовой заметки с координатами" },
-      { code: CURL_RADIUS_RU, title: "Поиск по пространственному радиусу" },
-      { code: CURL_DEEP_RU, title: "Глубокое исследование с выводом цепочки" },
+      { code: CURL_RADIUS_RU, title: "Вопрос с местом, откуда он задан (поиск по радиусу в разработке)" },
+      { code: CURL_DEEP_RU, title: "Просьба о глубине и цепочке поиска" },
     ],
     title: "Быстрый старт и примеры API",
   },
   artifacts: {
+    building:
+      "Сегодня: документ собирает агент и отдаёт памяти рукой keep_object — он возвращается по идентификатору, с файлом, описанием и саммари. В разработке: чтение, которое само собирает документ по таблицам и отдаёт саммари рядом с артефактом.",
     lead:
       "Память не просто пишет текстом цифры или факты. При запросах на сведение данных — отчёт по финансам, состояние проекта — система:",
     steps: [
@@ -1020,12 +1047,12 @@ const RU: LandingWords = {
           },
           {
             feature: "Пространственный индекс",
-            ours: "Родной поиск по lat/lon и радиусу",
+            ours: "lat/lon и radius_m хранятся и проверяются у каждой записи; поиск по радиусу в разработке",
             rivals: ["Только совпадение по тексту", "Только через вызов функций", "Простые метаданные"],
           },
           {
             feature: "Эволюция навыков",
-            ours: "A/B-тестирование: чемпион против претендента",
+            ours: "A/B-тестирование «чемпион против претендента» — замысел опубликован, в разработке",
             rivals: ["Нет", "Ручная правка промптов", "Нет"],
           },
           {
@@ -1088,6 +1115,8 @@ const RU: LandingWords = {
         title: "Страховка и версионность",
       },
     ],
+    building:
+      "Ещё не построено — это замысел, опубликованный, чтобы его можно было проверить до того, как он написан. Сегодня: навыки — файлы репозитория, каждая правка ложится коммитом, вердикты о ответах собираются от людей на встроенном стенде. В разработке: факты прогона как данные, навык-претендент, теневой прогон и правило продвижения.",
     lead:
       "Если память фиксирует повторяющиеся промахи, она создаёт альтернативную версию навыка и запускает её претендентом в тени — на реальном трафике, пока человек получает ответы от проверенного чемпиона.",
     title: "Эволюция навыков с A/B сплит-тестированием",
@@ -1099,7 +1128,7 @@ const RU: LandingWords = {
         q: "Каждый запрос стоит токенов?",
       },
       {
-        a: "Да. В записи охвата есть lat, lon и необязательный radius_m, а координаты идут в пространственный индекс. Можно спросить, что известно в радиусе 500 метров от точки, и мадридское знание никогда не смешается с лондонским.",
+        a: "Принимает — и пока не ищет по ним. В записи охвата есть lat, lon и необязательный radius_m; пара проверяется по границам планеты и хранится вместе с записью, указатель по координатам построен. Поиск по радиусу — «что я знаю в 500 метрах отсюда» — в разработке, и до него координаты вопроса при поиске не используются. Пустой охват всегда значит «не знаю где и когда», а не «везде и всегда».",
         q: "Умеет ли она отвечать про место по координатам, а не по слову?",
       },
       {
@@ -1111,11 +1140,11 @@ const RU: LandingWords = {
         q: "Какую схему нужно спроектировать заранее?",
       },
       {
-        a: "Он замыкается обратно. Артефакт уходит в объектное хранилище, его саммари — в текст, в векторную базу и в граф знаний, а таблицы связей обновляются. Тот же вопрос потом отвечается на дешёвых уровнях, за доли секунды.",
+        a: "По замыслу результат замыкается обратно: артефакт — в объектное хранилище, саммари — в векторную базу и граф знаний, таблицы связей обновляются, и тот же вопрос потом отвечается с дешёвых ступеней. Сегодня этот цикл ведётся снаружи: агент сохраняет ответ объектом рукой keep_object, и сохранённое находится по смыслу. Само чтение свой результат ещё не возвращает в оборот, и глубокие ступени тоже в разработке — ответ всегда называет depth_used, глубину, достигнутую на деле.",
         q: "Что происходит после дорогого исследования?",
       },
       {
-        a: "Она пишет вторую версию навыка и запускает её претендентом в тени, на реальном трафике, пока человеку отвечает чемпион. Для продвижения нужен внешний вердикт и отсутствие проседания по цене: оценивать свою работу самой памяти запрещено.",
+        a: "Замысел — чемпион и претендент: вторая версия навыка идёт в тени на реальном трафике, пока человеку отвечает работающая, а для продвижения нужен внешний вердикт без проседания по цене — оценивать свою работу самой памяти запрещено. Эта часть ещё не построена. Сегодня навыки — файлы репозитория, каждая правка ложится коммитом и откатывается им же, а вердикты об ответах собираются от людей на встроенном стенде.",
         q: "Как она улучшает себя, не ломая работающее?",
       },
       {
@@ -1137,20 +1166,20 @@ const RU: LandingWords = {
   },
   seo: {
     description:
-      "Автономная память для ИИ-агентов на вашем сервере: граф знаний, векторное и реляционное хранилища, встроенное объектное хранилище, поиск по координатам и радиусу, приём голоса, изображений, видео, PDF, Markdown, HTML и исходного кода, один короткий вызов модели на запрос по реестру признаков и эволюция навыков через A/B. Один REST API, открытый код.",
+      "Автономная память для ИИ-агентов на вашем сервере: граф знаний, векторное и реляционное хранилища, встроенное объектное хранилище, охват записи с координатами и датой, приём голоса, изображений, видео, PDF, Markdown, HTML, исходного кода и ссылок, один короткий вызов модели на запрос по реестру признаков. Один REST API, открытый код.",
     title: "Fractera Memory — автономная память для ИИ-агентов на вашем сервере",
   },
   toc: { heading: "На этой странице", label: "Оглавление" },
   hero: {
     badges: ["Ноль комиссий за запрос", "Ноль зависимости от поставщика", "Полная приватность на вашем сервере"],
     body:
-      "Память превращает необработанные мультимодальные данные — текст, изображения, голосовые заметки, видео, PDF-документы, страницы Markdown и HTML, исходный код, геолокацию и временные метки — в индексированный граф знаний и реляционные структуры, без лишних вызовов языковых моделей и расходов на токены.",
+      "Память превращает необработанные мультимодальные данные — текст, изображения, голосовые заметки, видео, PDF-документы, страницы Markdown и HTML, исходный код, ссылки, геолокацию и временные метки — в индексированный граф знаний и реляционные структуры. Один короткий вызов модели на запрос понимает, о чём речь; дальше отвечают таблицы и граф без новых ходов модели, а запрос без вопроса не стоит вызова вовсе.",
     eyebrow: "Fractera Memory Starter",
     lead:
       "Автономная система долгосрочной памяти и когнитивный мозг для ИИ-агентов, служащая персональным пультом управления архитектора через Telegram и REST API. Она ликвидирует разрыв между ограниченным контекстным окном модели и полноценной когнитивной непрерывностью.",
     primary: "Читать API",
     secondary: "Открыть паспорт",
-    title: "Детерминированное, мультимодальное, самоэволюционирующее ядро памяти для автономных ИИ-агентов",
+    title: "Детерминированное мультимодальное ядро памяти для автономных ИИ-агентов",
   },
   install: {
     body:
@@ -1643,12 +1672,14 @@ const RU: LandingWords = {
   },
   memoization: {
     chain: [
-      "Дорогой расчёт или исследование проходит на уровне 4–5",
+      "Дорогой расчёт или исследование проходит на глубоких ступенях",
       "Создаётся артефакт с ID и саммари вывода рядом с ним",
       "Саммари записывается в векторную базу, граф связей и таблицы",
-      "Повторный аналогичный вопрос обрабатывается за 0.2 с на уровнях 1–3 и стоит ноль токенов",
+      "Повторный вопрос отвечается с дешёвых ступеней",
     ],
-    lead: "За дорогое не платят дважды. Любая дорогая цепочка замыкается обратно, на дешёвые уровни.",
+    building:
+      "Сегодня: агент может сам сохранить ответ объектом (keep_object), и сохранённое находится по смыслу. В разработке: чтение, которое само возвращает свой дорогой результат в оборот — артефакт, саммари, карточка вектора, документ графа. До этого повторный вопрос стоит тот же один короткий вызов модели, что и первый.",
+    lead: "Правило замысла: за дорогое не платят дважды. Любая дорогая цепочка замыкается обратно, на дешёвые уровни.",
     title: "Замыкание дорогого расчёта",
   },
   principles: {
@@ -1705,11 +1736,13 @@ const RU: LandingWords = {
       },
       {
         body:
-          "Поддержка lat, lon и radius_m позволяет находить записи, файлы и расходы в пространственном радиусе от указанной точки.",
-        title: "Поиск по радиусу",
+          "Координаты проверяются парой и по границам планеты: одинокая широта — половина точки, а 200 градусов долготы — опечатка, которая иначе стала бы знанием.",
+        title: "Координаты проверены, а не приняты на веру",
       },
     ],
-    lead: "Время и пространственные координаты — фундаментальные индексы, а не произвольные текстовые теги.",
+    building:
+      "Сегодня: охват — дата, место, lat, lon, radius_m — принимается, проверяется и хранится вместе с записью, указатель по координатам построен. В разработке: поиск по радиусу («что я знаю в 500 метрах отсюда») и суммы с историями, сгруппированные по охвату. До этого чтение координаты не использует.",
+    lead: "Время и пространственные координаты — полноправные поля записи, а не произвольные текстовые теги.",
     title: "Физический контекст",
   },
   stores: {
