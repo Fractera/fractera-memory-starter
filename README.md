@@ -2,15 +2,15 @@
 
 **A self-hosted, open-source memory engine for agents.** Knowledge graph built on write and read
 without a model turn · geospatial and temporal recall with `lat`/`lon` and radius search · native
-multimodal input — voice, images, video, PDF — with its own object store · a deterministic router
-that answers without any LLM when no LLM is needed · bounded deep reasoning that reaches conclusions
-nobody wrote down · and a self-evolving skill core that **A/B split-tests its own candidates** before
+multimodal input — voice, images, video, PDF — with its own object store · one short model call per
+request over a feature registry, after which code and the stores do the rest · and a self-evolving skill core that **A/B split-tests its own candidates** before
 promoting them.
 
 Built to act as the architect's personal command centre — through a Telegram bot, a web chat or
 anything else that speaks HTTP — it closes the gap between a volatile context window and real
-cognitive continuity. A factual lookup comes back in **under 10 ms for zero tokens**; a question that
-once took a minute of deep research is answered **in about 0.2 s** the second time it is asked.
+cognitive continuity. Every request costs **one short model call** that names what the person means;
+the table and the graph then answer without further model turns. Measured on a live server on
+2026-09-15: **5–17 s per question**.
 
 It ships **with its own web console** — passport, API reference with key generation, a live
 playground, the work journal and settings — wired up and working from the first minute. The console
@@ -99,7 +99,7 @@ instance.
 | **Video, images, PDF, audio** | Native, with the pipeline and the object store inside — see §1 above. |
 | **Geolocation, and dates when they matter** | Spatial-temporal scope with `lat`/`lon`, `radius_m` and `at`, spatially indexed — see §2 above. |
 | **Deep reasoning that finds what was never written down** | Five explicit levels; above the database sit the knowledge graph, a reasoning session that builds and compares variants, semantic search, and bounded recursive research. «Who of my contacts could have known that person» is the reference case, not an edge case. |
-| **Fast with no AI in some cases, a strong model in others** | A deterministic router decides. Level one is pure lookup: milliseconds, zero tokens. The model is called only when the cheap path found nothing, and `depth_used` always reports how far memory actually went. |
+| **Fast with no AI in some cases, a strong model in others** | Partly. Every request costs one short model call over 8 candidate features, never the whole schema; the table and the graph then answer without further model turns, and sums are computed by code. Only a request with no question uses no model at all. `depth_used` always reports how far memory actually went. |
 | **The slow answer must become instant next time** | Every expensive result is folded back — artefact into the object store, summary into text, into the vector store and into the graph, relation table updated. The repeat question is answered from the cheap levels. |
 | **Complex requests should build an entity and come back as a report** | Memory creates the table while answering; `need_table` forces it at once. The answer carries the artefact plus a short summary — a report, not a dump. |
 | **Its own object storage** | Built in, on your machine, referenced from answers by id. |
@@ -268,26 +268,30 @@ curl -s $MEM/recall -H "Content-Type: application/json" -H "x-memory-key: $MEMOR
 
 # How it works
 
-## The deterministic router
+## How a request travels
 
-Most questions do not deserve a language model, and the engine refuses to spend one on them.
+Every request, written or read, costs **one short model call** — the price of understanding what the
+person means. Everything after it is done by code and by the stores.
 
-| Level | What it brings in | Cost | Who opens it |
-|---|---|---|---|
-| **1** | direct lookup — **no model at all** | milliseconds, zero tokens | the engine |
-| **2** | lookup plus one model call | one turn | the engine, when level one found nothing |
-| **3** | **knowledge graph** context plus a reasoning session | graph read costs **no model turn** | the engine, when level two found nothing |
-| **4** | **semantic search over the vector store** | seconds | the caller, `depth: "deep"` |
-| **5** | **bounded recursive research**, ten minutes maximum | minutes | the caller, `depth: "extreme"` |
+| Step | What happens | Cost |
+|---|---|---|
+| **1 · Candidates** | the feature registry is searched by meaning and returns the **8 closest features**; the model never sees the whole schema | no model, 0.2–0.3 s |
+| **2 · Meaning** | **one model call, with no conversation kept**, decides which features the phrase carries and with what values; code checks every value against its type and rejects the rest with a reason. A caller that sends its own features narrows the choice | about 4 s of model time, 6–7 s in total |
+| **3 · Write** | **everything said goes into the knowledge graph** with its introduction (who, channel, anchors, features); exact, countable and current values **also become a table row**, and the graph keeps a pointer to it | no extra turn of memory's model; the graph processes the document in the background, 2–6 s |
+| **4 · Read the table** | the named feature is answered from the table; **sums are computed by code**. A request with no question returns everything memory holds, with no model at all | no extra model turns |
+| **5 · Read the graph** | nothing in the table — names in the question are checked against the graph, and if the graph knows the name it answers about the links | no model turn, 0.2–3 s |
+| **6 · Don't know** | nothing found — memory says so and names what is missing | — |
+| **7 · Deeper** | semantic vector search (`depth: "deep"`) and bounded recursive research (`depth: "extreme"`) are declared in the contract but **not yet part of reading** | not built |
 
-The ladder is ordered by **cost**, which is why the graph sits below the vector store: it returns
-ready context without generating anything. The answer always reports `depth_used`, so you know what
-you paid for.
+The answer always reports `depth_used` — the depth actually reached, not the depth asked for.
 
-*«What is my timezone»* is answered at level one with zero tokens. *«Who of my contacts could have
-known that person»* exists nowhere in the stores and is assembled at levels three to five out of the
-graph, the vector store and the model's knowledge of the world — returned as a probabilistic answer
-**with the chain that produced it**.
+*«How much did I spend today?»* — one call names the feature «expenses», code adds up the rows: 900.
+Measured on a live server on 2026-09-15: 5–17 s per question, with the same quality whether or not the
+caller sends features of its own.
+
+**The feature registry** (`AGI-CONFIG/agi-config.json`) holds 21 features and is edited by hand. A
+phrase that fits none of them stays only in the graph, and the answer says «no such feature». Rules for
+reusing existing features and adding new ones are **not defined yet**.
 
 ## Four stores, one black box
 
@@ -408,7 +412,7 @@ built on a different philosophy.
 | Capability | **Fractera Memory** | Standard RAG frameworks | MemGPT / Letta | Mem0 / Zep |
 |---|---|---|---|---|
 | Storage architecture | Hybrid: graph + vector + relational + object store | Vector DB only | Relational / text files | Vector plus a basic graph |
-| Zero-token reads | Yes — deterministic paths at levels 1–3 | No | No | Partial |
+| Zero-token reads | Only a request with no question; every other read costs one short model call | No | No | Partial |
 | Native multimodality | Built in: audio, video, PDF, images | Requires external parsers | Requires external parsers | Text focused |
 | Spatial proximity indexing | Native lat/lon radius search | Text matching only | Function calling only | Basic metadata |
 | Skill evolution | Champion / challenger A/B testing | None | Manual prompt edits | None |
@@ -418,7 +422,7 @@ built on a different philosophy.
 |---|---|---|
 | System classification | An autonomous memory engine behind an API, for any front-end | An end-to-end Telegram assistant tied to an Obsidian vault |
 | Architecture | A decoupled microservice; the Telegram bot is an optional client | A monolith: Telegram, userbot and vault manager in one codebase |
-| Cost optimisation | A five-tier deterministic router; instant zero-token reads | Every operation leans on model passes, BM25 and vector lookups |
+| Cost optimisation | One short model call over 8 registry candidates, never the whole schema; the table and the graph answer without further model turns | Every operation leans on model passes, BM25 and vector lookups |
 | Multimodality | Built-in object storage; audio transcribed with timestamps; images, PDF, pages, code and video frames read by a vision model | Audio transcription and plain text handling |
 | Geolocation | Native lat/lon plus radius_m proximity search | None; dates and places are unstructured text |
 | Data processing | Dynamic SQL tables, structured artifacts with IDs, knowledge graph | Markdown cards written to a folder for Obsidian to sync |
@@ -442,10 +446,11 @@ built on a different philosophy.
 ## Questions and answers
 
 **Does every request cost tokens?**
-No. Levels 1 to 3 are answered without a model at all: a direct lookup, a graph traversal, a
-conclusion already folded back into the stores. A model turn is spent only when the cheap
-deterministic paths return nothing, and the answer reports `depth_used` so you can see what you paid
-for.
+Almost every one — and exactly one short call. To understand what a person means, memory makes one
+model call over 8 candidate features from its registry, with no conversation kept. After that the
+table and the graph answer without further model turns, and sums are computed by code. Only a request
+with no question is answered with no model at all. The answer reports `depth_used`, the depth actually
+reached.
 
 **Can it answer questions about a place by coordinates, not by a word?**
 Yes. A scope entry carries `lat`, `lon` and an optional `radius_m`, and the coordinates are spatially

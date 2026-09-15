@@ -194,7 +194,7 @@ const EN: LandingWords = {
           },
           {
             feature: "Zero-token reads",
-            ours: "Yes — deterministic paths at levels 1–3",
+            ours: "Only a request with no question; every other read costs one short model call",
             rivals: ["No", "No", "Partial"],
           },
           {
@@ -235,7 +235,7 @@ const EN: LandingWords = {
           },
           {
             feature: "Cost optimisation",
-            ours: "A five-tier deterministic router; instant zero-token reads",
+            ours: "One short model call over 8 registry candidates, never the whole schema; the table and the graph answer without further model turns",
             rivals: ["Every operation leans on model passes, BM25 and vector lookups"],
           },
           {
@@ -279,7 +279,7 @@ const EN: LandingWords = {
   faq: {
     items: [
       {
-        a: "No. The engine answers levels 1 to 3 without a model at all: a direct lookup, a graph traversal, a conclusion already folded back into the stores. A model turn is spent only when the cheap deterministic paths return nothing, and the answer reports depth_used so you can see what you paid for.",
+        a: "Almost every one — and exactly one short call. To understand what a person means, memory makes one model call over 8 candidate features from its registry, with no conversation kept. After that the table and the graph answer without further model turns, and sums are computed by code. Only a request with no question is answered with no model at all. The answer reports depth_used, the depth actually reached.",
         q: "Does every request cost tokens?",
       },
       {
@@ -321,7 +321,7 @@ const EN: LandingWords = {
   },
   seo: {
     description:
-      "Self-hosted memory engine for AI agents: knowledge graph, vector and relational stores, built-in object storage, geospatial lat/lon radius recall, native voice, image, video, PDF, Markdown, HTML and source-code input, zero-token deterministic reads and champion/challenger skill evolution. One REST API, open source.",
+      "Self-hosted memory engine for AI agents: knowledge graph, vector and relational stores, built-in object storage, geospatial lat/lon radius recall, native voice, image, video, PDF, Markdown, HTML and source-code input, one short model call per request over a feature registry, and champion/challenger skill evolution. One REST API, open source.",
     title: "Fractera Memory — self-hosted memory engine for AI agents",
   },
   toc: { heading: "On this page", label: "Contents" },
@@ -344,43 +344,61 @@ const EN: LandingWords = {
   },
   ladder: {
     example:
-      "«What is my passport number?» resolves instantly at level 1 for zero tokens. «Which of my contacts could have known this person?» escalates through levels 3–5 and comes back as a probabilistic reasoning chain.",
-    head: { by: "Opened by", cost: "Cost and purpose", how: "Retrieval mechanism", level: "Level" },
+      "«How much did I spend today?» — one call names the feature «expenses», and code adds up the table rows: 900. Measured on the live server on 2026-09-15: 5–17 seconds per question, with the same quality whether or not the caller sends features of its own.",
+    head: { by: "Who does it", cost: "Cost", how: "What happens", level: "Step" },
     lead:
-      "Every request is resolved with the minimum compute that can answer it. A query escalates only when the cheaper, deterministic tiers fail to produce a complete answer.",
+      "Every request, written or read, costs one short model call: that is the price of understanding what the person means. Everything after it is done by code and by the stores, and a more expensive step is taken only when the cheaper one gave no answer.",
     rows: [
       {
-        by: "Engine router",
-        cost: "$0 / 0 tokens. Sub-10 ms latency. Exact factual properties.",
-        how: "Direct SQL / key-value query, no model",
-        level: "Level 1",
+        by: "Engine",
+        cost: "No model. 0.2–0.3 s — the phrase is embedded.",
+        how: "The feature registry is searched by meaning and returns the 8 closest features. The model never sees the whole schema.",
+        level: "1 · Candidates",
       },
       {
-        by: "Engine router",
-        cost: "Minimal. Direct execution and simple parsing.",
-        how: "Single-pass model call without conversation history",
-        level: "Level 2",
+        by: "Engine; a caller that sends its own features narrows the choice",
+        cost: "One short call: about 4 s of model time, 6–7 s in total. Nothing of the conversation is kept.",
+        how: "One model call decides which features the phrase carries and with what values. Code checks every value against its type and rejects the rest with a reason.",
+        level: "2 · Meaning",
       },
       {
-        by: "Engine router",
-        cost: "Low. Context retrieved without generating model tokens.",
-        how: "Knowledge graph traversal plus a context session",
-        level: "Level 3",
+        by: "Engine",
+        cost: "No extra turn of the memory's model; the graph processes the document in the background, 2–6 s.",
+        how: "Everything said goes into the knowledge graph with its introduction: who said it, the channel, the anchors, the features. Exact, countable and current values also become a table row, and the graph keeps a pointer to it.",
+        level: "3 · Write",
       },
       {
-        by: "Caller — depth: deep",
-        cost: "Higher. Fuzzy semantic search across historical context.",
-        how: "Semantic vector store retrieval",
-        level: "Level 4",
+        by: "Engine",
+        cost: "No extra model turns.",
+        how: "The named feature is answered from the table. Sums are computed by code, not retold by the model. A request with no question returns everything memory holds, with no model at all.",
+        level: "4 · Read the table",
       },
       {
-        by: "Caller — depth: extreme",
-        cost: "Maximum. Multi-hypothesis research and unstated facts.",
-        how: "Bounded recursive deep reasoning, up to 10 minutes",
-        level: "Level 5",
+        by: "Engine",
+        cost: "No model turn; 0.2–3 s.",
+        how: "Nothing in the table: the names in the question are checked against the graph, and if the graph knows the name it answers about the links.",
+        level: "5 · Read the graph",
+      },
+      {
+        by: "Engine",
+        cost: "—",
+        how: "Nothing found: memory says it does not know and names what is missing, instead of returning everything it has.",
+        level: "6 · Don't know",
+      },
+      {
+        by: "Caller — depth: deep / extreme",
+        cost: "Not built yet.",
+        how: "Semantic vector search and bounded recursive research are declared in the contract but not yet part of reading. The answer reports the depth actually reached, not the depth asked for.",
+        level: "7 · Deeper",
+      },
+      {
+        by: "Architect",
+        cost: "—",
+        how: "The feature registry holds 21 features and is edited by hand. A phrase that fits none of them stays only in the graph, and the answer says «no such feature». Rules for reusing existing features and adding new ones are not defined yet.",
+        level: "Registry",
       },
     ],
-    title: "Cost-first architecture: the cost ladder",
+    title: "The economics of the architecture",
   },
   media: {
     items: [
@@ -426,19 +444,19 @@ const EN: LandingWords = {
   },
   problem: {
     body:
-      "Fractera Memory works as a black box engine: in go multimodal input and runtime context parameters, out come structured objects, synthesised data, verified conclusions or actionable reports. One architecture unifies four storage layers under a deterministic multi-level router.",
+      "Fractera Memory works as a black box engine: in go multimodal input and runtime context parameters, out come structured objects, synthesised data, verified conclusions or actionable reports. One architecture unifies four storage layers behind one entry point that first names what a request means, then lets code decide where to write and where to read.",
     lead:
       "Standard RAG pipelines and vector stores make agents lose critical context at every session reset, burn compute re-reading long logs, and never synthesise personal experience over time.",
     title: "The architect's operating system",
   },
   router: {
-    cheapBranch: "Levels 1–3 · direct database and graph traversal",
-    cheapCost: "Zero tokens, no model, sub-10 ms",
-    deepBranch: "Levels 4–5 · vector search and deep reasoning",
-    deepCost: "A model turn: hypothesis chains and reports",
+    cheapBranch: "Graph and table · write everything, read what was named",
+    cheapCost: "No further model turns: code reads the row and adds up sums; the graph answers by name",
+    deepBranch: "Vector search and deep research · depth: deep / extreme",
+    deepCost: "Declared in the contract, not yet part of reading",
     inbox: "Incoming stream — text, geolocation, voice, images, video, PDF, Markdown, HTML, code, links, dates",
-    lead: "One entry point, one router, two very different costs behind it.",
-    routerBox: "Deterministic multi-level router",
+    lead: "One entry point: one short model call names what the person means, then code decides where to write and where to read.",
+    routerBox: "Feature registry → 8 candidates → one model call with no conversation kept",
     title: "How a request travels",
   },
   schema: {
@@ -532,7 +550,7 @@ const RU: LandingWords = {
           },
           {
             feature: "Чтение за ноль токенов",
-            ours: "Да — детерминированные пути уровней 1–3",
+            ours: "Только запрос без вопроса; любое другое чтение стоит одного короткого вызова модели",
             rivals: ["Нет", "Нет", "Частично"],
           },
           {
@@ -573,7 +591,7 @@ const RU: LandingWords = {
           },
           {
             feature: "Управление расходами",
-            ours: "Пятиуровневый детерминированный роутер; чтение без токенов",
+            ours: "Один короткий вызов модели по 8 кандидатам реестра, а не по всей схеме; таблица и граф отвечают без дальнейших ходов модели",
             rivals: ["Каждая операция опирается на вызовы модели, BM25 и векторы"],
           },
           {
@@ -617,7 +635,7 @@ const RU: LandingWords = {
   faq: {
     items: [
       {
-        a: "Нет. Уровни с первого по третий память отвечает вообще без модели: прямой поиск по базе, обход графа, готовый вывод, уже сложенный обратно в хранилища. Ход модели тратится, только когда дешёвые детерминированные пути ничего не вернули, и ответ называет depth_used, чтобы было видно, за что вы заплатили.",
+        a: "Почти каждый — и ровно одного короткого вызова. Чтобы понять, что имеет в виду человек, память делает один вызов модели по 8 признакам-кандидатам из реестра, без сохранения разговора. Дальше таблица и граф отвечают без новых ходов модели, а суммы считает код. Вовсе без модели отвечается только запрос без вопроса. Ответ называет depth_used — глубину, достигнутую на деле.",
         q: "Каждый запрос стоит токенов?",
       },
       {
@@ -659,7 +677,7 @@ const RU: LandingWords = {
   },
   seo: {
     description:
-      "Автономная память для ИИ-агентов на вашем сервере: граф знаний, векторное и реляционное хранилища, встроенное объектное хранилище, поиск по координатам и радиусу, приём голоса, изображений, видео, PDF, Markdown, HTML и исходного кода, детерминированное чтение за ноль токенов и эволюция навыков через A/B. Один REST API, открытый код.",
+      "Автономная память для ИИ-агентов на вашем сервере: граф знаний, векторное и реляционное хранилища, встроенное объектное хранилище, поиск по координатам и радиусу, приём голоса, изображений, видео, PDF, Markdown, HTML и исходного кода, один короткий вызов модели на запрос по реестру признаков и эволюция навыков через A/B. Один REST API, открытый код.",
     title: "Fractera Memory — автономная память для ИИ-агентов на вашем сервере",
   },
   toc: { heading: "На этой странице", label: "Оглавление" },
@@ -682,40 +700,58 @@ const RU: LandingWords = {
   },
   ladder: {
     example:
-      "На вопрос «какой у меня номер паспорта?» система отвечает на уровне 1 мгновенно и бесплатно. Запрос «кто из моих контактов мог знать этого человека?» уходит на уровни 3–5 и возвращается вероятностной цепочкой рассуждений.",
-    head: { by: "Кто открывает", cost: "Затраты и назначение", how: "Чем достаётся", level: "Уровень" },
+      "«Сколько я потратил сегодня?» — один вызов называет признак «траты», код складывает строки таблицы: 900. Измерено на живом сервере 2026-09-15: 5–17 секунд на вопрос, и качество одно и то же, прислал ли зовущий свои признаки или нет.",
+    head: { by: "Кто делает", cost: "Цена", how: "Что происходит", level: "Шаг" },
     lead:
-      "Память стремится решить любую задачу с минимальными затратами ресурсов и времени. Запрос поднимается на более дорогой уровень только тогда, когда предыдущий дешёвый уровень не дал ответа.",
+      "Любой запрос — запись или чтение — стоит одного короткого вызова модели: это цена понимания того, что человек имеет в виду. Всё дальнейшее делают код и хранилища, а более дорогой шаг делается только тогда, когда дешёвый не дал ответа.",
     rows: [
       {
-        by: "Роутер системы",
-        cost: "0$ / 0 токенов. Задержка меньше 10 мс. Точечные факты и свойства.",
-        how: "Поиск по строкам в локальной базе, без ИИ",
-        level: "Уровень 1",
+        by: "Память",
+        cost: "Без модели. 0,2–0,3 с — фраза превращается в вектор.",
+        how: "Реестр признаков ищется по смыслу и отдаёт 8 ближайших признаков. Всю схему модель не видит никогда.",
+        level: "1 · Кандидаты",
       },
       {
-        by: "Роутер системы",
-        cost: "Минимальные. Простая обработка или лёгкая эвристика.",
-        how: "Одиночный запрос к модели без истории",
-        level: "Уровень 2",
+        by: "Память; зовущий, приславший свои признаки, сужает выбор",
+        cost: "Один короткий вызов: около 4 с работы модели, 6–7 с всего. Разговор не сохраняется.",
+        how: "Один вызов модели решает, какие признаки есть во фразе и с какими значениями. Код проверяет каждое значение по типу и отвергает остальное с причиной.",
+        level: "2 · Смысл",
       },
       {
-        by: "Роутер системы",
-        cost: "Низкие. Готовый контекст графа извлекается без вызова модели.",
-        how: "Запрос к графу связей плюс сессия контекста",
-        level: "Уровень 3",
+        by: "Память",
+        cost: "Лишних ходов модели памяти нет; граф обрабатывает документ в фоне, 2–6 с.",
+        how: "Всё сказанное ложится в граф знаний с вводной частью: кто сказал, каким каналом, якоря, признаки. Точное, счётное и текущее — ещё и строкой таблицы, а граф хранит указатель на неё.",
+        level: "3 · Запись",
       },
       {
-        by: "Архитектор — depth: deep",
-        cost: "Высокие. Семантический поиск по всей истории.",
-        how: "Подключение векторного хранилища по смыслу",
-        level: "Уровень 4",
+        by: "Память",
+        cost: "Лишних ходов модели нет.",
+        how: "Названный признак отвечается из таблицы. Сумму считает код, а не пересказывает модель. Запрос без вопроса возвращает всё, что память знает, вовсе без модели.",
+        level: "4 · Чтение таблицы",
       },
       {
-        by: "Архитектор — depth: extreme",
-        cost: "Максимальные. Сбор гипотез и поиск ненаписанных фактов.",
-        how: "Рекурсивное исследование, автономный цикл до 10 минут",
-        level: "Уровень 5",
+        by: "Память",
+        cost: "Без хода модели; 0,2–3 с.",
+        how: "В таблице нет — имена из вопроса сверяются с графом, и если граф знает имя, он отвечает о связях.",
+        level: "5 · Чтение графа",
+      },
+      {
+        by: "Память",
+        cost: "—",
+        how: "Ничего не нашлось — память говорит «не знаю» и называет, чего не хватает, вместо того чтобы вернуть всё, что есть.",
+        level: "6 · Не знаю",
+      },
+      {
+        by: "Зовущий — depth: deep / extreme",
+        cost: "Ещё не построено.",
+        how: "Поиск по смыслу в векторном хранилище и ограниченное рекурсивное исследование объявлены в договоре, но в чтение ещё не входят. Ответ называет глубину, которой память достигла на деле, а не ту, что просили.",
+        level: "7 · Глубже",
+      },
+      {
+        by: "Архитектор",
+        cost: "—",
+        how: "В реестре признаков 21 признак, и правится он руками. Фраза, не подошедшая ни к одному, остаётся только в графе, а ответ говорит «нет такого признака». Правил переиспользования существующих признаков и заведения новых пока нет.",
+        level: "Реестр",
       },
     ],
     title: "Экономический закон архитектуры",
@@ -764,19 +800,19 @@ const RU: LandingWords = {
   },
   problem: {
     body:
-      "Fractera Memory работает по принципу чёрного ящика: на входе мультимодальный текст и параметры, на выходе — готовый объект, сведение данных, проверенный вывод или отчёт. Единая система объединяет четыре типа хранилищ под управлением детерминированного роутера.",
+      "Fractera Memory работает по принципу чёрного ящика: на входе мультимодальный текст и параметры, на выходе — готовый объект, сведение данных, проверенный вывод или отчёт. Единая система объединяет четыре типа хранилищ за одним входом, который сначала называет смысл запроса, а потом код решает, куда писать и откуда читать.",
     lead:
       "Традиционные подходы — RAG и векторные базы — заставляют ИИ забывать контекст при сбросе сессии, расходуют огромные бюджеты на вычитку длинных логов и не способны накапливать личный опыт.",
     title: "Операционная система архитектора",
   },
   router: {
-    cheapBranch: "Уровни 1–3 · прямой поиск по базе и графу",
-    cheapCost: "0 токенов, без ИИ, задержка меньше 10 мс",
-    deepBranch: "Уровни 4–5 · векторы и глубокие рассуждения",
-    deepCost: "Вызов языковой модели: цепочки гипотез и отчёты",
+    cheapBranch: "Граф и таблица · записать всё, прочитать названное",
+    cheapCost: "Без дальнейших ходов модели: код читает строку и складывает суммы, граф отвечает по имени",
+    deepBranch: "Векторы и глубокое исследование · depth: deep / extreme",
+    deepCost: "Объявлено в договоре, в чтение ещё не входит",
     inbox: "Входящий поток — текст, геолокация, голос, фото, видео, PDF, Markdown, HTML, код, ссылки, даты",
-    lead: "Один вход, один роутер и две очень разные цены за ним.",
-    routerBox: "Детерминированный многоуровневый роутер",
+    lead: "Один вход: один короткий вызов модели называет, что имеет в виду человек, а потом код решает, куда писать и откуда читать.",
+    routerBox: "Реестр признаков → 8 кандидатов → один вызов модели без сохранения разговора",
     title: "Как проходит запрос",
   },
   schema: {
