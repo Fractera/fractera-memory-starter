@@ -14,7 +14,7 @@
 | словари, проверки, вывод имени рода | `../lib/features.mjs` |
 | сторож, стоящий в сборке | `../scripts/check-features.mjs` (`node scripts/check-features.mjs --fix` чинит указатель) |
 | наружу | `GET /v1/features` и `GET /v1/features/{ключ}` |
-| замысел целиком | `../development-docs/PASSPORT.md` §21 |
+| замысел целиком | `../development-docs/PASSPORT.md` §6 |
 
 ## Три закона этой папки
 

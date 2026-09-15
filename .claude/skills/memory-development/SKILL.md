@@ -34,7 +34,7 @@ will do** (files, order) · **what the right result looks like and what proves i
 working — stop only when two readings lead to materially different work; then show both, a line each.
 What you added yourself goes in as "I assume that…".
 
-🔒 **Ask him about results, never about file or function names** (PASSPORT §0.4). A technical decision
+🔒 **Ask him about results, never about file or function names** (PASSPORT §1). A technical decision
 that follows from something he already required is yours: take it and name it.
 
 ## Where the record lives
@@ -158,9 +158,9 @@ Full texts live in `LAWS.md` and the passport; read them, never copy them here.
 - **`CLAUDE.md` holds only what is true now** — no tombstones; history belongs to the passport.
 - **Instructions and skills stay compact:** the result wanted and the tools available; the model
   finds the way.
-- **Describe memory whole, as if built; unbuilt parts get an asterisk and a note** (PASSPORT §0.5) — and
+- **Describe memory whole, as if built; unbuilt parts get an asterisk and a note** (PASSPORT §0) — and
   only after reading the passport and skills, never from recollection.
-- **Memory grows by itself; the registry catches up** (PASSPORT §23): new kinds are allowed, a feature for
+- **Memory grows by itself; the registry catches up** (PASSPORT §6): new kinds are allowed, a feature for
   each is added by a development step, a duplicate is retired with its replacement.
 
 ## Delivery

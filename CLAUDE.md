@@ -67,7 +67,7 @@ matching what you do.
 
 Memory keeps a dictionary of what a caller may mean — `AGI-CONFIG/agi-config.json`. Everything said
 reaches the knowledge graph; exact, countable and current values also land in tables. The rules
-(PASSPORT §23):
+(PASSPORT §6):
 
 - **Reuse first.** When an existing kind fits the meaning, the value goes there — keep records different
   from each other; a second kind for the same meaning is a defect.
