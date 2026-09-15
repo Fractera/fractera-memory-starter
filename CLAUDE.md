@@ -23,7 +23,8 @@ Two things: **record** and **retrieve**.
 
 | Tool | When |
 |---|---|
-| `what_i_already_know` · `write_value` · `make_new_kind` · `promote_to_list` | **being removed (step 206)**: these four hands write into the old per-person table, which memory no longer fills and which is going away. Do not build on them. |
+| `what_i_already_know` | **first, on every phrase**: the last things this person said and sent |
+| `remember_said` | something to record — hand over the person's phrase as it was said; where it lands is memory's decision, not yours |
 | `ask_graph` | the answer lies in how people and things are connected |
 | `search_vectors` | the words of the question and of the record differ — when the caller asked for depth |
 | `find_objects` · `open_object` | a document, picture or PDF is asked for |
@@ -35,7 +36,7 @@ Two things: **record** and **retrieve**.
 | When | Skill |
 |---|---|
 | what you already know does not answer the question | `use-depth-ladder` |
-| something to write down | `use-tables` — **outdated, being rewritten in step 206**: it describes columns and tables that no longer exist |
+| something to write down | `use-tables` — one table, and what happens around it |
 | the answer is in connections | `use-knowledge-graph` |
 | words differ between question and record | `use-vector-store` |
 | a document, file, picture or PDF — asked for or as your answer | `use-object-store` |

@@ -16,10 +16,7 @@
 // закрытию stdin молча, без ошибки и без строки в журнале.
 
 import { readFileSync } from "node:fs"
-import { addColumn, columnsOfChecked, ensureRoot, REQUIRED_COLUMNS, rowOf, sql } from "../../lib/store.mjs"
-import { BASIS_SUFFIX, CLAIM_SUFFIX } from "../../lib/store.mjs"
-import { ROOT, ROOT_HISTORY, normalizeName } from "../../lib/naming.mjs"
-import { appendToTable, promote, tableExists, tableForKind, valuesFromTable } from "../../lib/promote.mjs"
+import { recall, remember } from "../../lib/verbs.mjs"
 
 const BOOKKEEPING = new Set(["id", "who", "created_at"])
 const isPair = (c) => c.endsWith(CLAIM_SUFFIX) || c.endsWith(BASIS_SUFFIX)
@@ -40,8 +37,8 @@ const text = (s) => ({ content: [{ text: String(s), type: "text" }] })
 const TOOLS = [
   {
     description:
-      "ПЕРВЫМ ДЕЛОМ на каждую фразу: что о человеке уже известно и какие рода значений заведены. " +
-      "Без этого ты заведёшь второе место под то же понятие, и они разойдутся навсегда.",
+      "Что памяти уже известно об этом человеке: последнее, что он говорил и присылал. " +
+      "Зови первым, когда нужно понять, о чём вообще речь.",
     inputSchema: {
       properties: { who: { description: "Ключ человека — приходит вместе с фразой", type: "string" } },
       required: ["who"],
@@ -51,57 +48,19 @@ const TOOLS = [
   },
   {
     description:
-      "Записать значение в СУЩЕСТВУЮЩИЙ род. Если у рода уже есть другое значение и человек его " +
-      "ИСПРАВЛЯЕТ — зови это; прежнее уйдёт в историю. Если ДОБАВЛЯЕТ ещё одно — зови promote_to_list.",
+      "Записать то, что сказал человек — его словами, как есть. Куда это ляжет, решает память: " +
+      "короткое идёт в связи и в поиск по смыслу, длинное сохраняется целой вещью. " +
+      "Своих таблиц и колонок у памяти нет, и заводить их нечем.",
     inputSchema: {
       properties: {
-        basis: { description: "Если вывел сам — из чего. Для выведенного ОБЯЗАТЕЛЬНО", type: "string" },
-        claim: { description: "said — сказал прямо; guess — ты вывел", type: "string" },
-        kind: { description: "Имя рода, буква в букву из what_i_already_know", type: "string" },
-        value: { description: "Значение словами человека, кратко", type: "string" },
+        text: { description: "Фраза человека как есть, без пересказа", type: "string" },
+        via: { description: "Канал: Telegram, почта, стенд", type: "string" },
         who: { description: "Ключ человека", type: "string" },
       },
-      required: ["kind", "value", "who"],
+      required: ["text", "who"],
       type: "object",
     },
-    name: "write_value",
-  },
-  {
-    description:
-      "Завести НОВЫЙ род значения и сразу положить в него значение. Только когда в " +
-      "what_i_already_know ничего подходящего нет. Имя вечное: английские слова, НЕ МЕНЬШЕ ЧЕТЫРЁХ, " +
-      "фраза, а не ярлык.",
-    inputSchema: {
-      properties: {
-        basis: { description: "Если вывел сам — из чего", type: "string" },
-        claim: { description: "said или guess", type: "string" },
-        kind: { description: "Новое имя рода: фраза из четырёх слов и больше", type: "string" },
-        value: { description: "Значение словами человека", type: "string" },
-        who: { description: "Ключ человека", type: "string" },
-      },
-      required: ["kind", "value", "who"],
-      type: "object",
-    },
-    name: "make_new_kind",
-  },
-  {
-    description:
-      "Человек ДОБАВИЛ ещё одно значение к тому же роду («ещё друг Дима», «и Аня»). Поле перестаёт " +
-      "быть подходящей формой: рождается список, прежнее значение переезжает в него первой строкой " +
-      "со своим временем. Зови и тогда, когда список уже есть — просто добавит строку.",
-    inputSchema: {
-      properties: {
-        basis: { description: "Если вывел сам — из чего", type: "string" },
-        claim: { description: "said или guess", type: "string" },
-        kind: { description: "Имя рода", type: "string" },
-        value: { description: "Новое значение", type: "string" },
-        who: { description: "Ключ человека", type: "string" },
-        words: { description: "Фраза человека как есть — попадёт в историю", type: "string" },
-      },
-      required: ["kind", "value", "who"],
-      type: "object",
-    },
-    name: "promote_to_list",
+    name: "remember_said",
   },
   {
     description:
@@ -213,125 +172,45 @@ const TOOLS = [
 
 // ── ИСПОЛНИТЕЛИ ──────────────────────────────────────────────────────────────
 
+/**
+ * Что памяти уже известно об этом человеке.
+ *
+ * 🔒 С 206-3 ЭТО ЧТЕНИЕ ЕДИНСТВЕННОЙ ТАБЛИЦЫ, А НЕ ОБХОД КОЛОНОК. Зовём тот же глагол, которым
+ * пользуется весь мир: второй путь к одному делу — лишний ход и молчаливое расхождение.
+ */
 async function whatIKnow({ who }) {
-  await ensureRoot()
-  const row = await rowOf(who)
-  const cols = await columnsOfChecked(ROOT)
-  if (!cols.ok) return "Не удалось прочитать, что уже заведено: " + cols.error
-
-  const lines = []
-  for (const c of cols.columns) {
-    if (BOOKKEEPING.has(c) || isPair(c)) continue
-    const asList = await tableExists(tableForKind(c))
-    if (asList) {
-      const rows = await valuesFromTable({ table: tableForKind(c), who })
-      lines.push(`- ${c} — СПИСОК, в нём: ${rows.map((r) => r.value).join(", ") || "пока пусто"}`)
-      continue
-    }
-    const v = row ? row[c] : null
-    lines.push(`- ${c}${v ? ` = ${v}` : " (пока пусто)"}${REQUIRED_COLUMNS[c] ? ` — ${REQUIRED_COLUMNS[c]}` : ""}`)
-  }
-  return lines.length
-    ? "Уже заведено у этого человека:\n" + lines.join("\n")
-    : "О человеке не заведено ещё ничего."
-}
-
-/** Проверка рода значения — общая для записи и заведения. */
-function checkClaim(claim, basis) {
-  const raw = typeof claim === "string" ? claim.trim() : ""
-  // 🛑 НЕЗНАКОМОЕ СЛОВО ОТВЕРГАЕТСЯ, А НЕ ПРЕВРАЩАЕТСЯ В «НЕ НАЗВАНО» (193-3). Измерено
-  // прогоном: без навыка все семь записей пришли с `fact` — словом чёрного ящика службы
-  // 3600, — и все семь легли пустыми. Сказанное человеком молча стало «род не назван», без
-  // единой ошибки. Тот же класс, что имя, которое чинили вместо отказа (193-1): вызывающий
-  // обязан узнать, что его слово не понято, иначе он уверен, что записал свидетельство.
-  if (raw && raw !== "said" && raw !== "guess")
-    return { error: `Род утверждения «${raw}» не понят. Есть два: said — человек сказал прямо; guess — ты вывел сам, и тогда нужно основание.`, ok: false }
-  const c = raw
-  const b = typeof basis === "string" ? basis.trim() : ""
-  // 🛑 ДОГАДКА БЕЗ ОСНОВАНИЯ ОТБРАСЫВАЕТСЯ ЦЕЛИКОМ, а не записывается наполовину.
-  if (c === "guess" && !b) return { error: "догадка без основания: скажи, из чего вывел", ok: false }
-  return { basis: b, claim: c, ok: true }
-}
-
-async function writeValue({ basis, claim, kind, value, who }) {
-  await ensureRoot()
-  const k = normalizeName(kind)
-  if (!k) return `Имя рода не годится: «${kind}»`
-  const cl = checkClaim(claim, basis)
-  if (!cl.ok) return cl.error
-
-  const cols = await columnsOfChecked(ROOT)
-  if (!cols.ok) return "Не удалось прочитать, что уже заведено"
-  if (!cols.columns.includes(k)) return `Рода «${k}» ещё нет — заведи его через make_new_kind`
-
-  await rowOf(who)
-  const cur = await sql(`SELECT ${k} AS v FROM ${ROOT} WHERE who = ?`, [who])
-  const was = cur.ok && cur.rows.length ? cur.rows[0].v : null
-  if (was === value) return `Это уже записано: ${k} = ${value}`
-
-  await sql(
-    `UPDATE ${ROOT} SET ${k} = ?, ${k}${CLAIM_SUFFIX} = ?, ${k}${BASIS_SUFFIX} = ? WHERE who = ?`,
-    [value, cl.claim || null, cl.basis || null, who],
+  const r = await recall({ lang: "ru", who })
+  if (!r.ok) return `Не смог прочитать: ${r.error ?? "?"}`
+  const rows = r.known ?? []
+  if (!rows.length) return "О человеке ещё ничего не записано."
+  return (
+    "Последнее, что он говорил и присылал:\n" +
+    rows.slice(0, 20).map((k) => `- ${k.at ?? ""} ${k.what}: ${String(k.value).slice(0, 200)}`).join("\n")
   )
-  if (was) {
-    await sql(
-      `INSERT INTO ${ROOT_HISTORY} (who, what_changed, was, became, his_words) VALUES (?, ?, ?, ?, ?)`,
-      [who, k, was, value, ""],
-    )
-    return `Было «${was}», стало «${value}» — прежнее сохранено в истории.`
-  }
-  return `Записано: ${k} = ${value}`
 }
 
-async function makeNewKind({ basis, claim, kind, value, who }) {
-  await ensureRoot()
-  const k = normalizeName(kind)
-  if (!k) return `Имя рода не годится: «${kind}»`
-  // 🔒 ЧЕТЫРЕ СЛОВА ПРОВЕРЯЕТ КОД, А НЕ ТОЛЬКО ПРОСЬБА В ИНСТРУКЦИИ.
-  // ✗ Оплачено: правило стояло словами, и модель завела `friend_name`, в который
-  // потом лёг кот. Правило без проверки исполняется настолько, насколько его
-  // помнят в этот ход.
-  if (k.split("_").length < 4) {
-    return `Имя «${k}» — ярлык, а не фраза: нужно не меньше четырёх слов, и в имени сказано, чьё это и что это. Плохое имя притягивает не своё.`
-  }
-  const cl = checkClaim(claim, basis)
-  if (!cl.ok) return cl.error
-
-  const made = await addColumn(ROOT, k)
-  if (!made.ok) return `Не удалось завести «${k}»: ${made.error}`
-  await rowOf(who)
-  await sql(
-    `UPDATE ${ROOT} SET ${k} = ?, ${k}${CLAIM_SUFFIX} = ?, ${k}${BASIS_SUFFIX} = ? WHERE who = ?`,
-    [value, cl.claim || null, cl.basis || null, who],
-  )
-  return `Заведён новый род «${k}» и записано: ${value}`
+/**
+ * Записать сказанное человеком.
+ *
+ * 🔒 ОДНА РУКА ВМЕСТО ЧЕТЫРЁХ (206-3). Прежде их было четыре — «посмотри, что есть», «запиши
+ * значение», «заведи новый род», «сделай список», — и все они правили колонки корневой таблицы.
+ * Таблиц под роды больше нет: куда лечь сказанному, решает сама память, и решает она это в одном
+ * месте — глаголе «Сказать». Рука, дублирующая его решение, разошлась бы с ним на первой правке.
+ * 🛑 РУКА НЕ РЕШАЕТ, ЧТО ЗАПОМНИТЬ: она передаёт фразу как есть. Пересказ агента вместо слов
+ * человека — это уже его вывод, и отличить его потом от свидетельства будет нечем.
+ */
+async function rememberSaid({ text, via, who }) {
+  const r = await remember({ lang: "ru", text, via, who })
+  if (!r.ok) return `Не записалось: ${r.error ?? r.what_happened ?? "?"}`
+  const where =
+    r.kept_whole?.where === "objects"
+      ? "текст длинный — сохранён целиком отдельной вещью"
+      : "сохранено в связях и по смыслу"
+  const noted = (r.noted ?? []).map((n) => `${n.what}: ${n.became}`).join("; ")
+  return [r.what_happened, where, noted ? `разобрано: ${noted}` : ""].filter(Boolean).join(String.fromCharCode(10))
 }
 
-async function promoteToList({ basis, claim, kind, value, who, words }) {
-  await ensureRoot()
-  const k = normalizeName(kind)
-  if (!k) return `Имя рода не годится: «${kind}»`
-  const cl = checkClaim(claim, basis)
-  if (!cl.ok) return cl.error
 
-  const table = tableForKind(k)
-  if (await tableExists(table)) {
-    const put = await appendToTable({ basis: cl.basis, claim: cl.claim, kind: k, value, who })
-    if (!put.ok) return `Не удалось добавить: ${put.error}`
-    return put.already ? `Это уже есть в списке «${k}»: ${value}` : `Добавлено в список «${k}»: ${value}`
-  }
-
-  const up = await promote({ basis: cl.basis, claim: cl.claim, kind: k, newValue: value, who, words })
-  if (!up.ok) {
-    if (up.error === "nothing-to-promote") {
-      return `У рода «${k}» пока нет первого значения — запиши его через write_value или make_new_kind.`
-    }
-    return `Не удалось завести список: ${up.error}`
-  }
-  return `Теперь «${k}» — список: в нём «${up.moved}» и «${up.added}». Первое переехало со своим временем.`
-}
-
-/** Ответ наружу. Ничего не пишет — только собирает то, что уйдёт из ящика. */
 function answer({ heard, said }) {
   const lines = Array.isArray(heard) ? heard : []
   return JSON.stringify({ heard: lines, said: String(said ?? "") })
@@ -539,10 +418,8 @@ const RUN = {
   keep_object: keepObject,
   open_object: openObject,
   search_vectors: searchVectors,
-  make_new_kind: makeNewKind,
-  promote_to_list: promoteToList,
+  remember_said: rememberSaid,
   what_i_already_know: whatIKnow,
-  write_value: writeValue,
 }
 
 // ── ПРОТОКОЛ ─────────────────────────────────────────────────────────────────
