@@ -70,6 +70,10 @@
    **Попутный дефект:** `.claude/settings.json` разрешал управляющему 5 инструментов из 10 (`ask_graph`, `search_vectors`, `find_objects`,
    `open_object`, `keep_object` не разрешены → в `claude -p` молча не зовутся) — добавлены. Прибор `scripts/probe/instruction-203-1.mjs`:
    первая редакция была слепа к имени без подчёркивания (`answer`) — исправлено, добавлен негатив C. `tsc` RC=0.
+7. ▶ (2026-09-15) Владелец: **«push to server»**. Доставка `new-step-203` (включает 204) от базы `baee113`, терминал мастерской не
+   запущен. 🛑 `deliver-memory.sh` не возит удаления (`--diff-filter=ACMR`) — после доставки на сервере убираются `MEMORY-AGENT.md`,
+   `.claude/skills/use-development-steps`, `.claude/skills/use-testing` скриптом `/code/scripts/rcmd-203-clean.sh`.
+8. ✅ (2026-09-15) Доставлено на сервер: `DELIVERED_COMMIT=dbdaba8` (ветка `new-step-203`, включает 204), `BUILD_RC=0`, порт за 6 с, слушатель `3700` = pid pm2 `fractera-memory`. Уборка удалённого: `MEMORY-AGENT.md`, `use-development-steps`, `use-testing` — gone; навыки на сервере: describe-incoming-object memory-development use-depth-ladder use-knowledge-graph use-links use-object-store use-tables use-vector-store. Страница `memory.aifa.dev`: ru «Реестр признаков → 8 кандидатов» 2, «0 токенов, без ИИ» 0; en «The economics of the architecture» 4, «Zero tokens, no model» 0; выдуманная строка 0. **Не проверено:** живая сессия `claude` с новым `CLAUDE.md` (квота). ▶ Ждём слова владельца по 203-3…203-5.
 
 
 ## ▶ ШАГ 200 ПЛАНИРУЕТСЯ — стенд «Тест памяти» поверх публичного API (2026-09-14, поздний вечер)
