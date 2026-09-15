@@ -128,3 +128,30 @@
 2. **Реестр чата описывает ещё и механизмы** (род входа, намерение, куда уехало) — у памяти они не признаки, и перенос их в `AGI-CONFIG`
    завёл бы вторые места одних понятий.
 3. **Ключей памяти чат не знает** — §3р требует брать их из `GET /v1/features`, код чата не переключён.
+
+## 9. Дополнение после 205-1: 27 родов живой памяти вне реестра (найдено прибором 2026-09-15)
+
+Корневая таблица памяти на сервере несёт **46 родов**, реестр покрывает **19**. Остальные 27 заведены моделью при записи в обход реестра
+(в 201-3 было 14 из 14). **Сколько в них значений, не измерено:** дверь `/v1/tables/{имя}` отдаёт описание родов, а не счёт значений.
+Решения ниже — **предложение, не утверждено**; живые данные не трогались.
+
+| Род в памяти | Предложение | Почему |
+|---|---|---|
+| `money_he_spent_on_purchases_by_item` | **слить** → `money.spent-on-a-purchase` | дубль смысла |
+| `currency_he_counts_his_money_in` | **слить** → `person.currency-he-counts-money-in` | дубль смысла (одно слово разницы) |
+| `time_after_which_he_stops_answering_work_messages` | **слить** → `person.work-hours-he-keeps-each-day` | та же фраза «когда можно писать» |
+| `plans_he_wrote_down_for_the_month` | **слить** → новый `person.tasks-he-plans-to-do` (205-2) | задачи с горизонтом |
+| `rules_he_asks_us_to_follow_when_writing_him` · `rules_he_asks_us_to_follow_in_food_advice` · `file_formats_he_asks_us_to_use` | **новый признак** `person.rules-he-asks-us-to-follow` (list) | правила для нас — не запреты «никогда» |
+| `rules_he_keeps_about_working_on_weekends` · `rules_he_keeps_about_what_he_packs_for_trips` | **новый признак** `person.rules-he-keeps-for-himself` (list) | его собственные правила |
+| `food_allergies_he_says_he_has` · `foods_that_are_safe_for_him` · `precautions_he_takes_with_his_food` | **новый признак** `person.food-allergies-he-has` (object list: что · чем опасно · что можно) | один предмет в трёх местах |
+| `trips_he_is_planning_to_take` | **новый признак** `person.trips-he-is-planning` (object list, охват time · place) | таблица рода уже родилась |
+| `cars_that_belong_to_him` | **новый признак** `person.cars-that-belong-to-him` (object list, глубина 1) | вещь первого круга |
+| `how_long_he_has_known_his_friend_denis` · `rules_he_keeps_about_feeding_his_dog` | **только граф** с якорем | глубина 2: атрибут друга и собаки (§21.2) |
+| `reason_he_gives_for_his_language_choice` · `reason_he_gives_for_telling_us_about_his_dog` · `reason_he_gives_for_keeping_this_plan` · `reason_he_gives_for_keeping_his_packing_list_in_markdown` | **только граф** | причина — рассказ, не значение |
+| `what_the_product_he_builds_does` · `side_work_he_does_besides_the_platform` · `how_he_divides_his_time_between_his_projects` | **граф**; проект — в `person.projects-he-is-working-on` | описание проекта — рассказ |
+| `topics_he_says_will_come_up_with_us_often` | **граф** | тема разговора — не факт о человеке |
+| `packing_list_items_he_takes_on_a_trip` · `format_he_keeps_his_packing_list_in` · `when_he_reviews_his_packing_list_before_departure` | **граф** или объект-документ | один эпизод со списком — вещь целиком |
+
+**Итог предложения:** 4 рода сливаются в существующие признаки · 11 родов → 5 новых признаков · 12 родов → только граф. Реестр памяти
+вырос бы с 23 до 28 признаков. **Главное:** без правила 205-4 модель продолжит заводить роды в обход реестра — эта таблица через месяц
+снова вырастет.
