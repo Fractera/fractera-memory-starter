@@ -27,6 +27,7 @@ export type BuildUi = {
   >
   terminal: {
     warnTitle: string
+    workspaceLabel: string
     warnBody: string
     warnRollback: string
     warnOnly: string
@@ -99,7 +100,8 @@ const EN: BuildUi = {
     instruction: { label: "Main instruction", lead: "Who Claude Code is in this folder and by which rules it builds." },
   },
   terminal: {
-    warnTitle: "What you are letting in",
+    warnTitle: "What exactly you are starting",
+    workspaceLabel: "The agent will be started in the workspace:",
     warnBody:
       "You are letting in a process that is fundamentally able to modify this product — and sometimes to exhaust or break the version that works right now.",
     warnRollback:
@@ -220,7 +222,8 @@ const RU: BuildUi = {
     instruction: { label: "Главная инструкция", lead: "Кто такой Claude Code в этой папке и по каким правилам он строит." },
   },
   terminal: {
-    warnTitle: "Что именно вы впускаете",
+    warnTitle: "Что именно вы запускаете",
+    workspaceLabel: "Агент будет запущен в рабочем пространстве:",
     warnBody:
       "Вы впускаете процесс, который на фундаментальном уровне способен изменить этот продукт — и иногда истощить или сломать ту версию, которая работает сейчас.",
     warnRollback:

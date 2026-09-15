@@ -56,6 +56,7 @@ import { WebSocketServer } from "ws"
 import { claudeAuthState, claudeBin } from "./lib/fractera/claude-cli.mjs"
 import { redeemPtyTicket } from "./lib/fractera/pty-ticket.mjs"
 import * as buildSession from "./lib/fractera/build-session.mjs"
+import { workspaceDir } from "./lib/fractera/workspace-dir.mjs"
 import { contract, CONTRACT_VERSION, METHODS, SERVICE } from "./contract.mjs"
 // 🔒 СЛОВА ОТКАЗОВ — ИЗ ОДНОГО СЛОВАРЯ НА ВСЮ СЛУЖБУ (181-10): дверь и глаголы
 // говорят человеку одними и теми же фразами, и переводятся они в одном месте.
@@ -291,10 +292,7 @@ function shellPath() {
 // 🔒 РАБОЧАЯ ПАПКА ТЕРМИНАЛА — ДЕРЕВО ПАМЯТИ, А НЕ ПАПКА БОТА (решение 180).
 // Закон проекта: рабочая папка есть личность агента. `claude`, набранный здесь
 // руками, должен оказаться агентом памяти, а не агентом Telegram.
-function workspaceDir() {
-  const named = process.env.AGENT_WORKSPACE || "/opt/fractera/memory"
-  return existsSync(named) ? named : process.cwd()
-}
+// 🔒 С 202-9 ФУНКЦИЯ ЖИВЁТ В `lib/fractera/workspace-dir.mjs`: ту же папку называет страница мастерской, и копия здесь разошлась бы с ней.
 
 // 🛑 `node-pty` — НАТИВНЫЙ МОДУЛЬ, И ЕГО ОТКАЗ ОБЯЗАН БЫТЬ ГРОМКИМ, А НЕ ТИХИМ.
 // Не собравшись, он не должен уронить память: договор и страницы живут и без

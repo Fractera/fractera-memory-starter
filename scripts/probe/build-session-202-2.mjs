@@ -117,6 +117,14 @@ say(st.json?.running === true && alive(pid), `запуск: running=${st.json?.r
 say(first.received.length > 0, `   экран пришёл по сокету: ${first.received.length} байт`)
 // 🔒 КОНТРОЛЬ САМОГО СЧЁТЧИКА: исправленный образец обязан ВИДЕТЬ живого строителя, иначе «0» выше доказывает слепоту.
 say(Number(builders()) >= 1, `   счётчик видит живого строителя: ${builders()}`)
+// 🔒 202-9: папка, которую называет страница, — это папка, в которой процесс ДЕЙСТВИТЕЛЬНО работает (а не то, что написано в коде).
+let cwd = ""
+try {
+  cwd = execSync(`readlink /proc/${pid}/cwd`, { encoding: "utf8" }).trim()
+} catch { /* нет процесса — проверка ниже провалится */ }
+const pageRes = await fetch(`${BASE}/ru/build?section=terminal`, { headers: { "x-data-secret": SECRET } })
+const named = (await pageRes.text()).match(/ data-build-workspace="([^"]+)"/)?.[1] ?? ""
+say(cwd !== "" && cwd === named, `   процесс работает в папке «${cwd}», страница называет «${named}»`)
 
 // ── A: уход со вкладки ────────────────────────────────────────────────────────
 first.ws.close()

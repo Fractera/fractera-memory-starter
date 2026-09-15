@@ -3,7 +3,8 @@ import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { sameSecret } from "@/lib/bench-guard"
 import { Suspense } from "react"
-import { AlertTriangle, BookOpen, FileText, GitFork } from "lucide-react"
+import { AlertTriangle, BookOpen, ChevronDown, FileText, GitFork } from "lucide-react"
+import { workspaceDir } from "@/lib/fractera/workspace-dir.mjs"
 import { PageCrumbs } from "@/components/nav/page-crumbs.server"
 import { Eyebrow, H1, Lead } from "@/components/ui/typography"
 import { WorkspaceShell, type WorkspaceShellItem } from "@/components/workspace/workspace-shell"
@@ -240,21 +241,37 @@ function SectionBody({
   if (active === "terminal") {
     return (
       <>
-        {/* 🛑 ОДИН ЦВЕТ ТРЕВОГИ И ОДНА ВРЕЗКА — ДО ТЕРМИНАЛА, А НЕ ПОД НИМ. */}
-        <section className="rounded-lg border border-destructive/50 bg-destructive/5 p-5">
-          <h3 className="flex items-center gap-2 font-medium text-[length:var(--fs-h4)]">
-            <AlertTriangle className="size-5" aria-hidden />
-            {ui.terminal.warnTitle}
-          </h3>
-          <p className="mt-3 max-w-3xl text-[length:var(--fs-body)]">{ui.terminal.warnBody}</p>
-          <p className="mt-2 max-w-3xl text-[length:var(--fs-body)]">{ui.terminal.warnRollback}</p>
-          <p className="mt-2 max-w-3xl font-medium text-[length:var(--fs-body)]">{ui.terminal.warnOnly}</p>
-          <ul className="mt-3 max-w-3xl list-disc space-y-1 pl-5 text-[length:var(--fs-small)] text-muted-foreground">
-            {ui.terminal.bounds.map((b) => (
-              <li key={b}>{b}</li>
-            ))}
-          </ul>
-        </section>
+        {/* 🔒 РАБОЧЕЕ ПРОСТРАНСТВО НАЗВАНО ДО ЗАПУСКА (202-9, слово владельца: «Агент будет запущен в рабочем пространстве :…»).
+            Папка — из той же функции, что у моста терминала: рабочая папка есть личность агента, и страница не имеет права назвать
+            одну, пока агент запускается в другой. */}
+        <p className="text-[length:var(--fs-body)]">
+          {ui.terminal.workspaceLabel}{" "}
+          <code className="break-all rounded bg-muted px-2 py-0.5 font-mono text-[length:var(--fs-small)]" data-build-workspace={workspaceDir()}>
+            {workspaceDir()}
+          </code>
+        </p>
+
+        {/* 🛑 ОДИН ЦВЕТ ТРЕВОГИ И ОДНА ВРЕЗКА — ДО ТЕРМИНАЛА, А НЕ ПОД НИМ.
+            🔒 С 202-9 ОНА СВЁРНУТА ДО ЗАГОЛОВКА (слово владельца: «по умолчанию показать схлопнутый и показывает только заголовок … при
+            нажатии v иконку показывает текущий текст»). `<details>` браузера — без островка: текст в разметке остаётся, скрыто только
+            его показ. */}
+        <details className="group rounded-lg border border-destructive/50 bg-destructive/5" data-build-warning>
+          <summary className="flex cursor-pointer list-none items-center gap-2 p-4 font-medium text-[length:var(--fs-h4)] [&::-webkit-details-marker]:hidden">
+            <AlertTriangle className="size-5 shrink-0" aria-hidden />
+            <span className="flex-1">{ui.terminal.warnTitle}</span>
+            <ChevronDown className="size-5 shrink-0 transition-transform group-open:rotate-180" aria-hidden />
+          </summary>
+          <div className="px-5 pb-5">
+            <p className="max-w-3xl text-[length:var(--fs-body)]">{ui.terminal.warnBody}</p>
+            <p className="mt-2 max-w-3xl text-[length:var(--fs-body)]">{ui.terminal.warnRollback}</p>
+            <p className="mt-2 max-w-3xl font-medium text-[length:var(--fs-body)]">{ui.terminal.warnOnly}</p>
+            <ul className="mt-3 max-w-3xl list-disc space-y-1 pl-5 text-[length:var(--fs-small)] text-muted-foreground">
+              {ui.terminal.bounds.map((b) => (
+                <li key={b}>{b}</li>
+              ))}
+            </ul>
+          </div>
+        </details>
         <BuildTerminal
           words={{
             clear: ui.terminal.clear,

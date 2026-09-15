@@ -158,5 +158,16 @@ const newPath = await page(`?section=steps-new&doc=step-new:${listSteps("new")[0
 const shownNew = newPath.html.match(/ data-doc-path="true"[^>]*>([^<]+)</)?.[1] ?? ""
 say(shownNew.startsWith(`${ROOT}/`) && (existsSync(shownNew.replace("-*.md", "-main.md")) || existsSync(shownNew)), `окно нового шага показывает существующий полный путь: ${shownNew}`)
 
+// ── 202-9: рабочее пространство названо, предупреждение свёрнуто ─────────────
+const t9 = await page("?section=terminal")
+const ws = t9.html.match(/ data-build-workspace="([^"]+)"/)?.[1] ?? ""
+say(ws === ROOT && existsSync(ws), `терминал называет рабочее пространство: «${ws}» (ждали ${ROOT}), на диске: ${existsSync(ws)}`)
+say(/Агент будет запущен в рабочем пространстве:/.test(t9.html), "   фраза «Агент будет запущен в рабочем пространстве:» на странице")
+const warn = t9.html.match(/<details[^>]* data-build-warning="true"[^>]*>/)?.[0] ?? ""
+say(warn !== "" && !/\sopen(=|\s|>)/.test(warn), `красная карточка — <details> без open, то есть свёрнута: ${warn ? "да" : "НЕТ"}`)
+const summary = t9.html.slice(t9.html.indexOf(warn)).match(/<summary[\s\S]*?<\/summary>/)?.[0] ?? ""
+say(/Что именно вы запускаете/.test(summary) && /lucide-chevron-down/.test(summary), "   в заголовке «Что именно вы запускаете» и иконка-стрелка")
+say(/способен изменить этот продукт/.test(t9.html.slice(t9.html.indexOf(warn))), "   текст предупреждения в разметке есть — раскрытие его не теряет")
+
 console.log(`===PROBE_202_PAGE=== ${bad ? `ПРОВАЛОВ: ${bad}` : "всё сошлось"} ${new Date().toISOString()}`)
 process.exit(bad ? 1 : 0)
