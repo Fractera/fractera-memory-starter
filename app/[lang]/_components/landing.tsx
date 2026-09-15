@@ -4,6 +4,25 @@ import { landingWords } from "../_i18n/landing.i18n";
 import { LandingToc } from "./landing-toc";
 import { breadcrumbSchema, faqSchema, FRACTERA_PROJECT_URL, softwareSchema, urlFor, webSiteSchema } from "@/lib/seo";
 
+/** Пункт схемы обработки запроса: номер выводится из места, а не пишется в словаре — иначе он разошёлся бы при вставке пункта. */
+type FlowItem = { text: string; items?: FlowItem[] };
+
+function FlowList({ items, prefix }: { items: FlowItem[]; prefix: string }) {
+  return (
+    <ol className="mt-2 space-y-1.5">
+      {items.map((item, i) => (
+        <li className="flex gap-2 leading-relaxed" key={`${prefix}${i}`}>
+          <span className="shrink-0 font-mono text-muted-foreground tabular-nums">{`${prefix}${i + 1}.`}</span>
+          <div className="min-w-0">
+            {item.text}
+            {item.items?.length ? <FlowList items={item.items} prefix={`${prefix}${i + 1}.`} /> : null}
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 // ПУБЛИЧНЫЙ ЛЕНДИНГ ПАМЯТИ (186).
 //
 // 🎯 ЗАКАЗ ВЛАДЕЛЬЦА 2026-09-11: «нужно сгенерировать корневую страницу памяти,
@@ -197,33 +216,33 @@ export function Landing({ base, lang }: { base: string; lang: string }) {
         <p className="max-w-3xl text-[length:var(--fs-small)] leading-relaxed">{w.schema.body}</p>
       </Section>
 
-      {/* ── ЛЕСТНИЦА ЦЕНЫ: вид `table` каталога ───────────────────────────── */}
+      {/* ── КАК ПАМЯТЬ ОБРАБАТЫВАЕТ ЗАПРОС: фазы нумерованным списком, сноски «в разработке» (204) ──
+          🔒 Таблица «лестницы цены» снята: она сливала оба глагола в одну цепочку. Якорь `#ladder` сохранён — на него ведёт оглавление. */}
       <Section id="ladder" lead={w.ladder.lead} title={w.ladder.title}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-[length:var(--fs-small)]">
-            <thead className="text-muted-foreground">
-              <tr>
-                <th className="py-2 pr-4 font-medium">{w.ladder.head.level}</th>
-                <th className="py-2 pr-4 font-medium">{w.ladder.head.how}</th>
-                <th className="py-2 pr-4 font-medium">{w.ladder.head.cost}</th>
-                <th className="py-2 font-medium">{w.ladder.head.by}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {w.ladder.rows.map((r) => (
-                <tr className="border-t border-muted-foreground/15 align-top" key={r.level}>
-                  <td className="py-2 pr-4 font-medium whitespace-nowrap">{r.level}</td>
-                  <td className="py-2 pr-4">{r.how}</td>
-                  <td className="py-2 pr-4">{r.cost}</td>
-                  <td className="py-2 text-muted-foreground">{r.by}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <ol className="max-w-3xl space-y-5 text-[length:var(--fs-small)]">
+          {w.ladder.phases.map((phase, i) => (
+            <li key={phase.title}>
+              <div className="flex gap-2 font-medium">
+                <span className="font-mono text-primary tabular-nums">{`${i + 1}.`}</span>
+                <span>{phase.title}</span>
+              </div>
+              <div className="pl-5">
+                <FlowList items={phase.items} prefix={`${i + 1}.`} />
+              </div>
+            </li>
+          ))}
+        </ol>
+        <div className="mt-6 max-w-3xl border-t border-muted-foreground/15 pt-4 text-[length:var(--fs-small)]">
+          <div className="font-medium">{w.ladder.notesTitle}</div>
+          <ul className="mt-2 space-y-2 text-muted-foreground">
+            {w.ladder.notes.map((n) => (
+              <li className="flex gap-2 leading-relaxed" key={n.mark}>
+                <span className="shrink-0 font-mono text-primary">{n.mark}</span>
+                <span>{n.text}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-        <p className="mt-4 max-w-3xl text-[length:var(--fs-small)] italic text-muted-foreground">
-          {w.ladder.example}
-        </p>
       </Section>
 
       <Section id="scope" lead={w.scope.lead} title={w.scope.title}>

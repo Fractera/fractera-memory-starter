@@ -270,28 +270,60 @@ curl -s $MEM/recall -H "Content-Type: application/json" -H "x-memory-key: $MEMOR
 
 ## How a request travels
 
-Every request, written or read, costs **one short model call** — the price of understanding what the
-person means. Everything after it is done by code and by the stores.
+Described as finished, so it is clear what memory does and how to build it. What is still in
+development is marked with an asterisk and explained in the notes below.
 
-| Step | What happens | Cost |
-|---|---|---|
-| **1 · Candidates** | the feature registry is searched by meaning and returns the **8 closest features**; the model never sees the whole schema | no model, 0.2–0.3 s |
-| **2 · Meaning** | **one model call, with no conversation kept**, decides which features the phrase carries and with what values; code checks every value against its type and rejects the rest with a reason. A caller that sends its own features narrows the choice | about 4 s of model time, 6–7 s in total |
-| **3 · Write** | **everything said goes into the knowledge graph** with its introduction (who, channel, anchors, features); exact, countable and current values **also become a table row**, and the graph keeps a pointer to it | no extra turn of memory's model; the graph processes the document in the background, 2–6 s |
-| **4 · Read the table** | the named feature is answered from the table; **sums are computed by code**. A request with no question returns everything memory holds, with no model at all | no extra model turns |
-| **5 · Read the graph** | nothing in the table — names in the question are checked against the graph, and if the graph knows the name it answers about the links | no model turn, 0.2–3 s |
-| **6 · Don't know** | nothing found — memory says so and names what is missing | — |
-| **7 · Deeper** | semantic vector search (`depth: "deep"`) and bounded recursive research (`depth: "extreme"`) are declared in the contract but **not yet part of reading** | not built |
+1. **Input: what the caller sent**
+   1. Required: who is speaking (`who`) and the person's phrase (`text`).
+   2. The verb — optional.
+      1. With a verb, the request comes to `/v1/remember` (add) or `/v1/recall` (retrieve).
+      2. Without one, it comes to a single address and memory decides itself\*¹.
+   3. Features from the registry — optional, for both verbs.
+      1. A list of key and value; keys come from `GET /v1/features`.
+      2. Retrieval accepts them as well as writing\*².
+   4. Links to earlier messages — optional.
+      1. The caller names earlier messages by their numbers in memory's journal\*³.
+      2. Or sends a reasoning thread (`thread`), earlier turns (`history`) and what was already found (`prior`).
+2. **Preliminary phase: memory works out what was not sent**
+   1. The verb, the features and the links were all sent — no model is called at all.
+   2. Something is missing — **one** model call covers everything missing at once, with no conversation kept\*⁴.
+      1. The model receives the phrase and candidates: the 8 registry features closest in meaning, and this person's latest messages closest in meaning and time\*³.
+      2. It returns the verb, the features with values, the numbers of related messages, and what the registry lacks.
+      3. Code checks all of it: the verb is one of two; every key is among the candidates and every value has the right type; the message numbers exist and belong to this person.
+   3. A meaning the registry does not have.
+      1. What was said still goes into the graph.
+      2. A proposal for a new feature is kept for the architect: what it would be and which phrase called for it\*⁵.
+      3. When a fitting feature exists, it is reused instead of creating a near-twin\*⁵.
+3. **Main phase: two scenarios**
+   1. **Adding a record**
+      1. Every value is checked against its feature type; an unknown key is rejected with a reason.
+      2. Related messages become links in the graph: continuation, clarification, reply to\*³.
+      3. A value that corrects one from a related message replaces it; the old one goes to history, and the answer says so.
+      4. Exact, countable and current values — sums, quantities, a city — become table rows.
+      5. Everything said goes into the knowledge graph with its introduction: who, channel, anchors, features and a pointer to the table row.
+      6. Files, pages and videos become objects with a description.
+   2. **Retrieving from memory**
+      1. Related messages narrow the search: their anchors and features join the question\*³.
+      2. A named feature is answered from the table; sums are computed by code.
+      3. Nothing in the table — names from the question are looked up in the graph, which answers about the links with no model call.
+      4. `depth: "deep"` — semantic search in the vector store, when the words of the question and of the record differ\*⁶.
+      5. `depth: "extreme"` — bounded research of up to 10 minutes: hypotheses from the graph, the vectors and the model's knowledge of the world; the result and its chain are kept as an object, so a repeated question is answered from the cheap steps\*⁶\*⁷.
+      6. Nothing found — «I don't know», with what is missing.
+      7. A request with no question returns everything known about the person, with no model.
+4. **Final phase: the answer**
+   1. For both: `ok`, `what_happened`, `text`, `objects`; which verb was executed and who decided it\*¹; the fate of every feature; which messages the request is linked to\*³.
+   2. For a write: `kept_whole`, `used_model`, `thread`.
+   3. For a read: `found_by`, `depth_used`, `not_yet_known`, the chain on `want_chain`.
 
-The answer always reports `depth_used` — the depth actually reached, not the depth asked for.
+**\* In development — what exists today and what remains to build**
 
-*«How much did I spend today?»* — one call names the feature «expenses», code adds up the rows: 900.
-Measured on a live server on 2026-09-15: 5–17 s per question, with the same quality whether or not the
-caller sends features of its own.
-
-**The feature registry** (`AGI-CONFIG/agi-config.json`) holds 21 features and is edited by hand. A
-phrase that fits none of them stays only in the graph, and the answer says «no such feature». Rules for
-reusing existing features and adding new ones are **not defined yet**.
+- **\*¹ A request without a verb.** Today the verb is set only by the address; the parse returns an `action` field that routes nothing. To build: a single address in the contract, routing by `action`, an answer field naming the verb and who decided.
+- **\*² Features on retrieval.** Today only writing accepts `features`. To build: the parameter on `recall`, and skipping the model call when features are sent.
+- **\*³ Links to messages.** Today there are `thread`, `history` and `prior`, but no link to specific stored messages. To build: journal message numbers in the contract, candidates by meaning and time, links in the graph, their use when reading.
+- **\*⁴ One call for all three determinations.** Today the call determines only features, in two ways: writing shows the model every registry kind, reading shows 8 candidates. To build: one shared parse for both verbs.
+- **\*⁵ Registry rules.** Today the registry's 21 features are edited by hand; a phrase with no fitting feature stays only in the graph. To build: stored proposals for new features and the rules for reuse — agreed with the architect first.
+- **\*⁶ Depth `deep` and `extreme`.** Today both are declared in the contract, and reading stops at the graph. To build: vectors inside reading and bounded research with its chain.
+- **\*⁷ Keeping an expensive answer.** Today the agent can keep an answer object (`keep_object`); reading does not keep its own result. To build: the result of `extreme` kept as an object, a vector card and a graph document.
 
 ## Four stores, one black box
 

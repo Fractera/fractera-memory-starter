@@ -1,4 +1,4 @@
-import { landingWords } from "@/app/[lang]/_i18n/landing.i18n";
+import { flowLines, landingWords } from "@/app/[lang]/_i18n/landing.i18n";
 import { FRACTERA_PROJECT_URL, SEO_LANGS, urlFor } from "./seo";
 
 // КАРТА ДЛЯ АГЕНТОВ — `llms.txt` (186-2).
@@ -22,7 +22,7 @@ export function buildLlmsTxt(base: string, lang: string): string {
   const page = urlFor(base, lang);
 
   const faq = w.faq.items.map((i) => `- ${i.q}\n  ${i.a}`).join("\n");
-  const ladder = w.ladder.rows.map((r) => `- ${r.level}: ${r.how} — ${r.cost} (${r.by})`).join("\n");
+  const ladder = flowLines(w.ladder).join("\n");
 
   return `# Fractera Memory
 

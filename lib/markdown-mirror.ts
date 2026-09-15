@@ -1,4 +1,4 @@
-import { landingWords } from "@/app/[lang]/_i18n/landing.i18n";
+import { flowLines, landingWords } from "@/app/[lang]/_i18n/landing.i18n";
 import { FRACTERA_PROJECT_URL, urlFor } from "./seo";
 
 // MARKDOWN-ЗЕРКАЛО СТРАНИЦЫ (186-3).
@@ -51,12 +51,7 @@ export function buildLandingMarkdown(base: string, lang: string): string {
   parts.push(`## ${w.schema.title}`, "", w.schema.body, "");
 
   parts.push(`## ${w.ladder.title}`, "", w.ladder.lead, "");
-  parts.push(
-    `| ${w.ladder.head.level} | ${w.ladder.head.how} | ${w.ladder.head.cost} | ${w.ladder.head.by} |`
-  );
-  parts.push("|---|---|---|---|");
-  for (const r of w.ladder.rows) parts.push(`| ${r.level} | ${r.how} | ${r.cost} | ${r.by} |`);
-  parts.push("", `*${w.ladder.example}*`, "");
+  parts.push(...flowLines(w.ladder), "");
 
   const cards = (title: string, lead: string, items: Array<{ body: string; title: string }>) => {
     parts.push(`## ${title}`, "", lead, "");

@@ -19,6 +19,29 @@ export type ComparisonTable = {
   rows: Array<{ feature: string; ours: string; rivals: string[] }>;
 };
 
+type FlowText = { text: string; items?: FlowText[] };
+
+/**
+ * Схема «как память обрабатывает запрос» простым текстом: нумерация 1. / 1.2. / 1.2.1. и сноски.
+ * 🔒 ОДНА РЕАЛИЗАЦИЯ НА ДВУХ ЧИТАТЕЛЕЙ — `llms.txt` и зеркало страницы в Markdown; нумерация выводится из места, как на странице.
+ */
+export function flowLines(ladder: { phases: Array<{ title: string; items: FlowText[] }>; notesTitle: string; notes: Array<{ mark: string; text: string }> }): string[] {
+  const out: string[] = [];
+  const walk = (items: FlowText[], prefix: string, depth: number) =>
+    items.forEach((item, i) => {
+      const no = `${prefix}${i + 1}.`;
+      out.push(`${"   ".repeat(depth)}${no} ${item.text}`);
+      if (item.items?.length) walk(item.items, no, depth + 1);
+    });
+  ladder.phases.forEach((phase, i) => {
+    out.push(`${i + 1}. **${phase.title}**`);
+    walk(phase.items, `${i + 1}.`, 1);
+  });
+  out.push("", `**${ladder.notesTitle}**`, "");
+  for (const n of ladder.notes) out.push(`- ${n.mark} ${n.text}`);
+  return out;
+}
+
 export type LandingWords = {
   hero: {
     eyebrow: string;
@@ -43,12 +66,19 @@ export type LandingWords = {
     deepCost: string;
   };
   schema: { title: string; body: string };
+  /**
+   * Как память обрабатывает запрос (204): четыре фазы, пункты до трёх уровней вложенности, сноски «в разработке».
+   * 🔒 Описано целиком, как работающее; недостроенное — звёздочкой в тексте и сноской (паспорт §0 п. 5, §22).
+   */
   ladder: {
     title: string;
     lead: string;
-    head: { level: string; how: string; cost: string; by: string };
-    rows: Array<{ level: string; how: string; cost: string; by: string }>;
-    example: string;
+    phases: Array<{
+      title: string;
+      items: Array<{ text: string; items?: Array<{ text: string; items?: Array<{ text: string }> }> }>;
+    }>;
+    notesTitle: string;
+    notes: Array<{ mark: string; text: string }>;
   };
   scope: { title: string; lead: string; items: Array<{ title: string; body: string }> };
   artifacts: { title: string; lead: string; steps: string[] };
@@ -343,62 +373,186 @@ const EN: LandingWords = {
     title: "Installation",
   },
   ladder: {
-    example:
-      "«How much did I spend today?» — one call names the feature «expenses», and code adds up the table rows: 900. Measured on the live server on 2026-09-15: 5–17 seconds per question, with the same quality whether or not the caller sends features of its own.",
-    head: { by: "Who does it", cost: "Cost", how: "What happens", level: "Step" },
-    lead:
-      "Every request, written or read, costs one short model call: that is the price of understanding what the person means. Everything after it is done by code and by the stores, and a more expensive step is taken only when the cheaper one gave no answer.",
-    rows: [
+    "title": "How memory handles a request",
+    "lead": "Everything below is described as finished, so it is clear what memory does and how to build it. What is still in development is marked with an asterisk and explained in the notes.",
+    "phases": [
       {
-        by: "Engine",
-        cost: "No model. 0.2–0.3 s — the phrase is embedded.",
-        how: "The feature registry is searched by meaning and returns the 8 closest features. The model never sees the whole schema.",
-        level: "1 · Candidates",
+        "title": "Input: what the caller sent",
+        "items": [
+          {
+            "text": "Required: who is speaking (who) and the person's phrase (text)."
+          },
+          {
+            "text": "The verb — optional.",
+            "items": [
+              {
+                "text": "With a verb, the request comes to /v1/remember (add) or /v1/recall (retrieve)."
+              },
+              {
+                "text": "Without one, it comes to a single address and memory decides itself*¹."
+              }
+            ]
+          },
+          {
+            "text": "Features from the registry — optional, for both verbs.",
+            "items": [
+              {
+                "text": "A list of key and value; keys come from GET /v1/features."
+              },
+              {
+                "text": "Retrieval accepts them as well as writing*²."
+              }
+            ]
+          },
+          {
+            "text": "Links to earlier messages — optional.",
+            "items": [
+              {
+                "text": "The caller names earlier messages by their numbers in memory's journal*³."
+              },
+              {
+                "text": "Or sends a reasoning thread (thread), earlier turns (history) and what was already found (prior)."
+              }
+            ]
+          }
+        ]
       },
       {
-        by: "Engine; a caller that sends its own features narrows the choice",
-        cost: "One short call: about 4 s of model time, 6–7 s in total. Nothing of the conversation is kept.",
-        how: "One model call decides which features the phrase carries and with what values. Code checks every value against its type and rejects the rest with a reason.",
-        level: "2 · Meaning",
+        "title": "Preliminary phase: memory works out what was not sent",
+        "items": [
+          {
+            "text": "The verb, the features and the links were all sent — no model is called at all."
+          },
+          {
+            "text": "Something is missing — one model call covers everything missing at once, with no conversation kept*⁴.",
+            "items": [
+              {
+                "text": "The model receives the phrase and candidates: the 8 registry features closest in meaning, and this person's latest messages closest in meaning and time*³."
+              },
+              {
+                "text": "It returns the verb, the features with values, the numbers of related messages, and what the registry lacks."
+              },
+              {
+                "text": "Code checks all of it: the verb is one of two; every key is among the candidates and every value has the right type; the message numbers exist and belong to this person."
+              }
+            ]
+          },
+          {
+            "text": "A meaning the registry does not have.",
+            "items": [
+              {
+                "text": "What was said still goes into the graph."
+              },
+              {
+                "text": "A proposal for a new feature is kept for the architect: what it would be and which phrase called for it*⁵."
+              },
+              {
+                "text": "When a fitting feature exists, it is reused instead of creating a near-twin*⁵."
+              }
+            ]
+          }
+        ]
       },
       {
-        by: "Engine",
-        cost: "No extra turn of the memory's model; the graph processes the document in the background, 2–6 s.",
-        how: "Everything said goes into the knowledge graph with its introduction: who said it, the channel, the anchors, the features. Exact, countable and current values also become a table row, and the graph keeps a pointer to it.",
-        level: "3 · Write",
+        "title": "Main phase: two scenarios",
+        "items": [
+          {
+            "text": "Adding a record",
+            "items": [
+              {
+                "text": "Every value is checked against its feature type; an unknown key is rejected with a reason."
+              },
+              {
+                "text": "Related messages become links in the graph: continuation, clarification, reply to*³."
+              },
+              {
+                "text": "A value that corrects one from a related message replaces it; the old one goes to history, and the answer says so."
+              },
+              {
+                "text": "Exact, countable and current values — sums, quantities, a city — become table rows."
+              },
+              {
+                "text": "Everything said goes into the knowledge graph with its introduction: who said it, the channel, anchors, features and a pointer to the table row."
+              },
+              {
+                "text": "Files, pages and videos become objects with a description."
+              }
+            ]
+          },
+          {
+            "text": "Retrieving from memory",
+            "items": [
+              {
+                "text": "Related messages narrow the search: their anchors and features join the question*³."
+              },
+              {
+                "text": "A named feature is answered from the table; sums are computed by code."
+              },
+              {
+                "text": "Nothing in the table — names from the question are looked up in the graph, which answers about the links with no model call."
+              },
+              {
+                "text": "depth: deep — semantic search in the vector store, when the words of the question and of the record differ*⁶."
+              },
+              {
+                "text": "depth: extreme — bounded research of up to 10 minutes: hypotheses from the graph, the vectors and the model's knowledge of the world; the result and its chain are kept as an object, so a repeated question is answered from the cheap steps*⁶*⁷."
+              },
+              {
+                "text": "Nothing found — «I don't know», with what is missing."
+              },
+              {
+                "text": "A request with no question returns everything known about the person, with no model."
+              }
+            ]
+          }
+        ]
       },
       {
-        by: "Engine",
-        cost: "No extra model turns.",
-        how: "The named feature is answered from the table. Sums are computed by code, not retold by the model. A request with no question returns everything memory holds, with no model at all.",
-        level: "4 · Read the table",
-      },
-      {
-        by: "Engine",
-        cost: "No model turn; 0.2–3 s.",
-        how: "Nothing in the table: the names in the question are checked against the graph, and if the graph knows the name it answers about the links.",
-        level: "5 · Read the graph",
-      },
-      {
-        by: "Engine",
-        cost: "—",
-        how: "Nothing found: memory says it does not know and names what is missing, instead of returning everything it has.",
-        level: "6 · Don't know",
-      },
-      {
-        by: "Caller — depth: deep / extreme",
-        cost: "Not built yet.",
-        how: "Semantic vector search and bounded recursive research are declared in the contract but not yet part of reading. The answer reports the depth actually reached, not the depth asked for.",
-        level: "7 · Deeper",
-      },
-      {
-        by: "Architect",
-        cost: "—",
-        how: "The feature registry holds 21 features and is edited by hand. A phrase that fits none of them stays only in the graph, and the answer says «no such feature». Rules for reusing existing features and adding new ones are not defined yet.",
-        level: "Registry",
-      },
+        "title": "Final phase: the answer",
+        "items": [
+          {
+            "text": "For both scenarios: ok, what_happened, text, objects; which verb was executed and who decided it — the caller or memory*¹; the fate of every feature — taken from the caller, found by memory, or rejected with a reason; which messages the request is linked to*³."
+          },
+          {
+            "text": "For a write: where things landed (kept_whole), whether a model was called (used_model), the reasoning thread (thread)."
+          },
+          {
+            "text": "For a read: how it was found (found_by), the depth reached (depth_used), what is missing (not_yet_known), the reasoning chain on want_chain."
+          }
+        ]
+      }
     ],
-    title: "The economics of the architecture",
+    "notesTitle": "* In development — what exists today and what remains to build",
+    "notes": [
+      {
+        "mark": "*¹",
+        "text": "A request without a verb. Today the verb is set only by the address. The parse already returns an action field, but nothing is routed by it. To build: a single address in the contract, routing by action, and an answer field saying which verb and who decided."
+      },
+      {
+        "mark": "*²",
+        "text": "Features on retrieval. Today only writing accepts features. To build: the parameter on recall, and skipping the model call when features are sent."
+      },
+      {
+        "mark": "*³",
+        "text": "Links to messages. Today there are thread, history and prior, but no link to specific stored messages. To build: journal message numbers in the contract, candidates from the journal by meaning and time, links in the graph, and their use when reading."
+      },
+      {
+        "mark": "*⁴",
+        "text": "One call for all three determinations. Today the call determines only features, and in two ways: writing shows the model every kind in the registry, reading shows 8 candidates. To build: one shared parse for both verbs, with candidate features and messages."
+      },
+      {
+        "mark": "*⁵",
+        "text": "Registry rules. Today the registry's 21 features are edited by hand; a phrase with no fitting feature gets «no such feature» and stays only in the graph. To build: stored proposals for new features and the rules for reuse — agreed with the architect first."
+      },
+      {
+        "mark": "*⁶",
+        "text": "Depth deep and extreme. Today both are declared in the contract, and reading stops at the graph. To build: the vector store inside reading, and bounded research with its reasoning chain."
+      },
+      {
+        "mark": "*⁷",
+        "text": "Keeping an expensive answer. Today the agent can keep an answer object (keep_object), but reading does not keep its own result. To build: the result of extreme kept as an object, a vector card and a graph document."
+      }
+    ]
   },
   media: {
     items: [
@@ -450,14 +604,14 @@ const EN: LandingWords = {
     title: "The architect's operating system",
   },
   router: {
-    cheapBranch: "Graph and table · write everything, read what was named",
-    cheapCost: "No further model turns: code reads the row and adds up sums; the graph answers by name",
-    deepBranch: "Vector search and deep research · depth: deep / extreme",
-    deepCost: "Declared in the contract, not yet part of reading",
-    inbox: "Incoming stream — text, geolocation, voice, images, video, PDF, Markdown, HTML, code, links, dates",
-    lead: "One entry point: one short model call names what the person means, then code decides where to write and where to read.",
-    routerBox: "Feature registry → 8 candidates → one model call with no conversation kept",
-    title: "How a request travels",
+    "cheapBranch": "1.0 Adding a record · the table for the exact, the graph for everything said",
+    "cheapCost": "No further model turns: code checks values and writes rows; the graph builds its links in the background",
+    "deepBranch": "2.0 Retrieving · table → graph → vectors (deep) → research (extreme)*⁶",
+    "deepCost": "The table and the graph answer with no model turn; deep and extreme spend more time and model turns",
+    "inbox": "Incoming stream — text, geolocation, voice, images, video, PDF, Markdown, HTML, code, links, dates",
+    "lead": "One entry point, four phases: what the caller sent, what memory works out itself, one of two scenarios, the answer.",
+    "routerBox": "Preliminary phase: one model call works out the verb, the features and related messages — only what the caller did not send*⁴",
+    "title": "How a request travels"
   },
   schema: {
     body:
@@ -699,62 +853,186 @@ const RU: LandingWords = {
     title: "Установка",
   },
   ladder: {
-    example:
-      "«Сколько я потратил сегодня?» — один вызов называет признак «траты», код складывает строки таблицы: 900. Измерено на живом сервере 2026-09-15: 5–17 секунд на вопрос, и качество одно и то же, прислал ли зовущий свои признаки или нет.",
-    head: { by: "Кто делает", cost: "Цена", how: "Что происходит", level: "Шаг" },
-    lead:
-      "Любой запрос — запись или чтение — стоит одного короткого вызова модели: это цена понимания того, что человек имеет в виду. Всё дальнейшее делают код и хранилища, а более дорогой шаг делается только тогда, когда дешёвый не дал ответа.",
-    rows: [
+    "title": "Как память обрабатывает запрос",
+    "lead": "Всё ниже описано так, как будто уже построено, — чтобы было понятно, что память делает и как это строить. То, что ещё в разработке, отмечено звёздочкой и объяснено в сносках.",
+    "phases": [
       {
-        by: "Память",
-        cost: "Без модели. 0,2–0,3 с — фраза превращается в вектор.",
-        how: "Реестр признаков ищется по смыслу и отдаёт 8 ближайших признаков. Всю схему модель не видит никогда.",
-        level: "1 · Кандидаты",
+        "title": "Вход: что прислал зовущий",
+        "items": [
+          {
+            "text": "Обязательное: кто говорит (who) и фраза человека (text)."
+          },
+          {
+            "text": "Глагол — необязательно.",
+            "items": [
+              {
+                "text": "С глаголом запрос приходит на /v1/remember (добавить) или /v1/recall (извлечь)."
+              },
+              {
+                "text": "Без глагола — на один общий адрес, и память решает сама*¹."
+              }
+            ]
+          },
+          {
+            "text": "Признаки из реестра — необязательно, у обоих глаголов.",
+            "items": [
+              {
+                "text": "Список «ключ — значение», ключи из GET /v1/features."
+              },
+              {
+                "text": "Их принимает не только запись, но и чтение*²."
+              }
+            ]
+          },
+          {
+            "text": "Связь с предыдущими сообщениями — необязательно.",
+            "items": [
+              {
+                "text": "Зовущий называет прежние сообщения их номерами в журнале памяти*³."
+              },
+              {
+                "text": "Или присылает нить разбора (thread), прежние реплики (history) и уже найденное (prior)."
+              }
+            ]
+          }
+        ]
       },
       {
-        by: "Память; зовущий, приславший свои признаки, сужает выбор",
-        cost: "Один короткий вызов: около 4 с работы модели, 6–7 с всего. Разговор не сохраняется.",
-        how: "Один вызов модели решает, какие признаки есть во фразе и с какими значениями. Код проверяет каждое значение по типу и отвергает остальное с причиной.",
-        level: "2 · Смысл",
+        "title": "Предварительная фаза: чего не прислали, память определяет сама",
+        "items": [
+          {
+            "text": "Прислано всё — глагол, признаки и связи: модель не зовётся вовсе."
+          },
+          {
+            "text": "Чего-то не хватает — один вызов модели на всё недостающее сразу, без сохранения разговора*⁴.",
+            "items": [
+              {
+                "text": "Модель получает фразу и кандидатов: 8 ближайших по смыслу признаков реестра и последние сообщения этого человека, ближайшие по смыслу и времени*³."
+              },
+              {
+                "text": "Возвращает глагол, признаки со значениями, номера связанных сообщений и то, чего в реестре нет."
+              },
+              {
+                "text": "Код проверяет всё: глагол — один из двух; ключ — из кандидатов, значение — нужного типа; номера сообщений существуют и принадлежат этому человеку."
+              }
+            ]
+          },
+          {
+            "text": "Смысл, которого в реестре нет.",
+            "items": [
+              {
+                "text": "Сказанное всё равно ложится в граф."
+              },
+              {
+                "text": "Архитектору сохраняется предложение нового признака: чем он был бы и какая фраза его вызвала*⁵."
+              },
+              {
+                "text": "Подходящий признак уже есть — берётся он, а не заводится похожий второй*⁵."
+              }
+            ]
+          }
+        ]
       },
       {
-        by: "Память",
-        cost: "Лишних ходов модели памяти нет; граф обрабатывает документ в фоне, 2–6 с.",
-        how: "Всё сказанное ложится в граф знаний с вводной частью: кто сказал, каким каналом, якоря, признаки. Точное, счётное и текущее — ещё и строкой таблицы, а граф хранит указатель на неё.",
-        level: "3 · Запись",
+        "title": "Основная фаза: два сценария",
+        "items": [
+          {
+            "text": "Добавление записи",
+            "items": [
+              {
+                "text": "Каждое значение проверяется по типу признака; неизвестный ключ отвергается с причиной."
+              },
+              {
+                "text": "Связанные сообщения становятся связью в графе: «продолжение», «уточнение», «ответ на»*³."
+              },
+              {
+                "text": "Значение, исправляющее значение связанного сообщения, заменяет его; прежнее уходит в историю, и ответ говорит об этом вслух."
+              },
+              {
+                "text": "Точное, счётное и текущее — суммы, количества, город — строкой в таблицу."
+              },
+              {
+                "text": "В граф знаний — всё сказанное с вводной частью: кто сказал, каким каналом, якоря, признаки и указатель на строку таблицы."
+              },
+              {
+                "text": "Файлы, страницы и ролики — объектами с описанием."
+              }
+            ]
+          },
+          {
+            "text": "Извлечение из памяти",
+            "items": [
+              {
+                "text": "Связанные сообщения сужают поиск: их якоря и признаки добавляются к вопросу*³."
+              },
+              {
+                "text": "Признак назван — ответ из таблицы, сумму считает код."
+              },
+              {
+                "text": "В таблице нет — имена из вопроса ищутся в графе, и граф отвечает о связях без вызова модели."
+              },
+              {
+                "text": "Глубина deep — поиск по смыслу в векторном хранилище, когда слова вопроса и записи разные*⁶."
+              },
+              {
+                "text": "Глубина extreme — ограниченное исследование до 10 минут: гипотезы из графа, векторов и знания модели о мире; итог и цепочка сохраняются объектом, и повторный вопрос отвечается из дешёвых ступеней*⁶*⁷."
+              },
+              {
+                "text": "Не нашлось ничего — «не знаю» с перечнем того, чего не хватает."
+              },
+              {
+                "text": "Запрос без вопроса возвращает всё известное о человеке, без модели."
+              }
+            ]
+          }
+        ]
       },
       {
-        by: "Память",
-        cost: "Лишних ходов модели нет.",
-        how: "Названный признак отвечается из таблицы. Сумму считает код, а не пересказывает модель. Запрос без вопроса возвращает всё, что память знает, вовсе без модели.",
-        level: "4 · Чтение таблицы",
-      },
-      {
-        by: "Память",
-        cost: "Без хода модели; 0,2–3 с.",
-        how: "В таблице нет — имена из вопроса сверяются с графом, и если граф знает имя, он отвечает о связях.",
-        level: "5 · Чтение графа",
-      },
-      {
-        by: "Память",
-        cost: "—",
-        how: "Ничего не нашлось — память говорит «не знаю» и называет, чего не хватает, вместо того чтобы вернуть всё, что есть.",
-        level: "6 · Не знаю",
-      },
-      {
-        by: "Зовущий — depth: deep / extreme",
-        cost: "Ещё не построено.",
-        how: "Поиск по смыслу в векторном хранилище и ограниченное рекурсивное исследование объявлены в договоре, но в чтение ещё не входят. Ответ называет глубину, которой память достигла на деле, а не ту, что просили.",
-        level: "7 · Глубже",
-      },
-      {
-        by: "Архитектор",
-        cost: "—",
-        how: "В реестре признаков 21 признак, и правится он руками. Фраза, не подошедшая ни к одному, остаётся только в графе, а ответ говорит «нет такого признака». Правил переиспользования существующих признаков и заведения новых пока нет.",
-        level: "Реестр",
-      },
+        "title": "Завершающая фаза: ответ",
+        "items": [
+          {
+            "text": "У обоих сценариев: ok, what_happened, text, objects; какой глагол выполнен и кто его определил — зовущий или память*¹; судьба каждого признака — взят от зовущего, определён памятью, отвергнут с причиной; с какими сообщениями связан запрос*³."
+          },
+          {
+            "text": "У записи: где что легло (kept_whole), звалась ли модель (used_model), нить разбора (thread)."
+          },
+          {
+            "text": "У чтения: чем достали (found_by), какой глубины достигли (depth_used), чего не хватает (not_yet_known), цепочка рассуждения по want_chain."
+          }
+        ]
+      }
     ],
-    title: "Экономический закон архитектуры",
+    "notesTitle": "* В разработке — что есть сегодня и что осталось построить",
+    "notes": [
+      {
+        "mark": "*¹",
+        "text": "Запрос без глагола. Сегодня глагол задаёт только адрес. Разбор уже возвращает поле action, но по нему ничего не направляется. Строить: общий адрес договора, направление по action и поле ответа «какой глагол и кто решил»."
+      },
+      {
+        "mark": "*²",
+        "text": "Признаки у чтения. Сегодня features принимает только запись. Строить: параметр у recall и пропуск вызова модели, когда признаки присланы."
+      },
+      {
+        "mark": "*³",
+        "text": "Связь с сообщениями. Сегодня есть thread, history и prior, но нет связи с конкретными сохранёнными сообщениями. Строить: номера сообщений журнала в договоре, кандидатов из журнала по смыслу и времени, связи в графе и их учёт при чтении."
+      },
+      {
+        "mark": "*⁴",
+        "text": "Один вызов на все три определения. Сегодня вызов определяет только признаки, и двумя путями: запись показывает модели все роды реестра, чтение — 8 кандидатов. Строить: один общий разбор для обоих глаголов с кандидатами признаков и сообщений."
+      },
+      {
+        "mark": "*⁵",
+        "text": "Правила реестра. Сегодня 21 признак правится руками; фраза без подходящего признака получает «нет такого признака» и остаётся только в графе. Строить: хранение предложений нового признака и правила переиспользования — сначала согласовать с архитектором."
+      },
+      {
+        "mark": "*⁶",
+        "text": "Глубина deep и extreme. Сегодня обе объявлены в договоре, а чтение останавливается на графе. Строить: векторное хранилище внутри чтения и ограниченное исследование с цепочкой рассуждения."
+      },
+      {
+        "mark": "*⁷",
+        "text": "Сохранение дорогого ответа. Сегодня объект-ответ умеет сохранять агент (keep_object), но чтение само свой итог не сохраняет. Строить: итог extreme — объектом, векторной карточкой и документом графа."
+      }
+    ]
   },
   media: {
     items: [
@@ -806,14 +1084,14 @@ const RU: LandingWords = {
     title: "Операционная система архитектора",
   },
   router: {
-    cheapBranch: "Граф и таблица · записать всё, прочитать названное",
-    cheapCost: "Без дальнейших ходов модели: код читает строку и складывает суммы, граф отвечает по имени",
-    deepBranch: "Векторы и глубокое исследование · depth: deep / extreme",
-    deepCost: "Объявлено в договоре, в чтение ещё не входит",
-    inbox: "Входящий поток — текст, геолокация, голос, фото, видео, PDF, Markdown, HTML, код, ссылки, даты",
-    lead: "Один вход: один короткий вызов модели называет, что имеет в виду человек, а потом код решает, куда писать и откуда читать.",
-    routerBox: "Реестр признаков → 8 кандидатов → один вызов модели без сохранения разговора",
-    title: "Как проходит запрос",
+    "cheapBranch": "1.0 Добавление записи · таблица для точного, граф для всего сказанного",
+    "cheapCost": "Без дальнейших ходов модели: код проверяет значения и пишет строки, граф строит связи в фоне",
+    "deepBranch": "2.0 Извлечение · таблица → граф → векторы (deep) → исследование (extreme)*⁶",
+    "deepCost": "Таблица и граф отвечают без хода модели; deep и extreme тратят больше времени и ходов модели",
+    "inbox": "Входящий поток — текст, геолокация, голос, фото, видео, PDF, Markdown, HTML, код, ссылки, даты",
+    "lead": "Один вход, четыре фазы: что прислал зовущий, что память определяет сама, один из двух сценариев, ответ.",
+    "routerBox": "Предварительная фаза: один вызов модели определяет глагол, признаки и связанные сообщения — только то, чего зовущий не прислал*⁴",
+    "title": "Как проходит запрос"
   },
   schema: {
     body:
