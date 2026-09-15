@@ -52,6 +52,11 @@ ${w.stores.items.map((i) => `- ${i.title}: ${i.body}`).join("\n")}
 ## Multimodal input
 ${w.media.items.map((i) => `- ${i.title}: ${i.body}`).join("\n")}
 
+## ${w.features.title}
+${w.features.lead}
+${w.features.why.map((i) => `- ${i.title}: ${i.body}`).join("\n")}
+${w.features.use.map((u) => `- ${u}`).join("\n")}
+${w.features.building ? `\n${w.features.building}\n` : ""}
 ## Spatial-temporal scope
 ${w.scope.items.map((i) => `- ${i.title}: ${i.body}`).join("\n")}
 ${w.scope.building ? `\n${w.scope.building}\n` : ""}

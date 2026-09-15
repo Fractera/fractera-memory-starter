@@ -111,6 +111,27 @@ export type LandingWords = {
    * 🛑 Текст пометки говорит ДВЕ вещи: что есть сегодня и что предстоит. Одно «в разработке» без
    * «что есть» читается как «не работает ничего».
    */
+  /**
+   * Реестр признаков простыми словами (шаг памяти 205, вопрос владельца 2026-09-15: «я всё равно не
+   * могу понять, для чего мы их создали»).
+   *
+   * 🔒 РАЗДЕЛ ОБЪЯСНЯЕТ ПОЛЬЗУ, А НЕ УСТРОЙСТВО. Признак — не место хранения и не разрешение на
+   * запись; он нужен ради счёта, дешевизны, разговора с человеком и видимости связей. Всё, что не
+   * попадает в эти четыре пользы, здесь не пишется вовсе.
+   */
+  features: {
+    title: string;
+    lead: string;
+    whyTitle: string;
+    why: Array<{ title: string; body: string }>;
+    caseTitle: string;
+    cases: Array<{ q: string; a: string }>;
+    useTitle: string;
+    use: string[];
+    addTitle: string;
+    add: string[];
+    building?: string;
+  };
   scope: { title: string; lead: string; items: Array<{ title: string; body: string }>; building?: string };
   artifacts: { title: string; lead: string; steps: string[]; building?: string };
   memoization: { title: string; lead: string; chain: string[]; building?: string };
@@ -212,6 +233,64 @@ const EN: LandingWords = {
       { code: CURL_DEEP_EN, title: "Ask for depth and the chain of the search" },
     ],
     title: "API quickstart",
+  },
+  features: {
+    title: "Named things memory understands",
+    lead:
+      "Memory writes down anything you tell it, whether or not it has a name for it. A named thing — we call it a feature — is what lets memory do more than store the sentence: count it, be asked about it in one word, know what to ask you back, and show who depends on it.",
+    whyTitle: "What a name buys you, and nothing else",
+    why: [
+      {
+        title: "Counting and keeping up to date",
+        body: "A name says how values pile up: the newest one wins, or they make a list, or they add up. Without it, «how much did I spend this month» has nothing to add — the amounts are just sentences.",
+      },
+      {
+        title: "One word instead of a model call",
+        body: "A caller that already knows what it is talking about sends the name, and memory skips working the sentence out. Same answer, one model turn cheaper.",
+      },
+      {
+        title: "Knowing what to ask you",
+        body: "A name carries what to do when the value is missing: ask, ask later, or stay quiet — and an example of a good answer. Without it memory can only be silent about what it lacks.",
+      },
+      {
+        title: "Seeing who depends on it",
+        body: "Parts of your project subscribe to the names they use. Change or retire one, and you see in advance whose work it breaks instead of finding out afterwards.",
+      },
+    ],
+    caseTitle: "What happens in practice",
+    cases: [
+      {
+        q: "«My name is Roman» — nobody sent a name for it",
+        a: "Memory works the sentence out itself with one short model call, records it, and answers about it. A name is not needed to remember.",
+      },
+      {
+        q: "A bot sends the value together with the name it means",
+        a: "No model call at all: memory checks the name exists and the value fits its type, and writes it. This is the cheapest path there is.",
+      },
+      {
+        q: "«How much did I spend on taxis this month?»",
+        a: "Adding up is only possible for a named thing that is declared to add up. This is the clearest case where a name is the difference between an answer and a shrug.",
+      },
+      {
+        q: "«What do I feed the dog?» — written down, never named",
+        a: "Today memory stores it and cannot find it when asked, because retrieval goes through names only. That is the one thing being fixed — see the note below.",
+      },
+    ],
+    useTitle: "How names are used",
+    use: [
+      "Sending a name is always optional. Without it memory does the same work itself — longer, and one model turn dearer, but to the same quality.",
+      "A name means the meaning, never a place: where the value is kept is memory's business, and it changes as the thing grows.",
+      "A name you send is checked, not trusted: an unknown one comes back with the closest names memory does have, a retired one with its replacement, and a value of the wrong type is refused.",
+      "Not having a name never hides your data: memory writes freely, so it must be able to read back everything it wrote.",
+    ],
+    addTitle: "How a new name appears",
+    add: [
+      "You say something new — memory makes room for it by itself, with no name yet. This is normal, not an error.",
+      "When the thing stops being accidental — it repeats, piles up, or you ask about it — memory proposes a name with a draft of everything it needs: type, how it accumulates, the words people use for it, an example.",
+      "A person approves it, and from then on it can be counted, asked for in one word, and subscribed to. Names live as files in the repository, so any change is visible and revertible.",
+    ],
+    building:
+      "In development: retrieval over everything written, named or not (today a question is answered only through names, and things stored without one are not found), and memory proposing new names by itself. Until both land, a name also decides what can be retrieved — which is exactly why the list of unnamed things is kept in plain sight.",
   },
   artifacts: {
     building:
@@ -990,6 +1069,64 @@ const RU: LandingWords = {
       { code: CURL_DEEP_RU, title: "Просьба о глубине и цепочке поиска" },
     ],
     title: "Быстрый старт и примеры API",
+  },
+  features: {
+    title: "Названные вещи, которые память понимает",
+    lead:
+      "Память записывает всё, что ей говорят, — есть у этого название или нет. Название (мы зовём его признаком) нужно не для записи, а для того, чтобы память умела с этим работать: считать, отвечать на вопрос в одно слово, знать, о чём переспросить человека, и показывать, кто на это опирается.",
+    whyTitle: "Что даёт название — и больше ничего",
+    why: [
+      {
+        title: "Считать и держать актуальным",
+        body: "У названия сказано, как копятся значения: побеждает последнее, копится списком или складывается. Без него «сколько я потратил за месяц» нечего складывать — суммы лежат просто фразами.",
+      },
+      {
+        title: "Одно слово вместо вызова модели",
+        body: "Тот, кто и так знает, о чём речь, присылает название — и память не разбирает фразу заново. Ответ тот же, а ход модели сэкономлен.",
+      },
+      {
+        title: "Знать, о чём вас переспросить",
+        body: "В названии записано, что делать, когда значения нет: спросить, спросить позже или промолчать, — и пример хорошего ответа. Без этого память может только молчать о том, чего ей не хватает.",
+      },
+      {
+        title: "Видеть, кто на это опирается",
+        body: "Части проекта подписываются на названия, которыми пользуются. Меняете или снимаете — заранее видно, чью работу это сломает, а не после того, как сломалось.",
+      },
+    ],
+    caseTitle: "Как это выглядит на деле",
+    cases: [
+      {
+        q: "«Меня зовут Рома» — названия никто не присылал",
+        a: "Память разбирает фразу сама одним коротким вызовом модели, записывает и потом об этом отвечает. Чтобы запомнить, название не нужно.",
+      },
+      {
+        q: "Бот прислал значение вместе с названием",
+        a: "Вызова модели нет вовсе: память проверяет, что такое название есть и значение ему по типу, и записывает. Это самый дешёвый путь из возможных.",
+      },
+      {
+        q: "«Сколько я потратил на такси за месяц?»",
+        a: "Сложить можно только то, у чего есть название и сказано, что оно складывается. Это самый наглядный случай, где название — разница между ответом и разведёнными руками.",
+      },
+      {
+        q: "«Чем я кормлю собаку?» — записано, но не названо",
+        a: "Сегодня память это хранит и по вопросу не находит: поиск идёт только по названиям. Ровно это и исправляется — см. пометку ниже.",
+      },
+    ],
+    useTitle: "Как названиями пользуются",
+    use: [
+      "Присылать название всегда необязательно. Без него память делает ту же работу сама — дольше и на один ход модели дороже, но тем же качеством.",
+      "Название означает смысл, а не место: где лежит значение — дело памяти, и форма меняется по мере того, как вещь растёт.",
+      "Присланное название проверяют, а не принимают на веру: неизвестное вернётся вместе с ближайшими, которые у памяти есть, снятое — с заменой, а значение не того типа не примут.",
+      "Отсутствие названия никогда не прячет ваши данные: память пишет свободно — значит и прочитать обязана всё, что записала.",
+    ],
+    addTitle: "Как появляется новое название",
+    add: [
+      "Вы сказали новое — память сама завела под это место, ещё без названия. Это нормальное состояние, а не ошибка.",
+      "Когда вещь перестала быть случайной — повторяется, копится или о ней уже спрашивали, — память предлагает название и черновик всего, что к нему нужно: тип, как копится, какими словами об этом говорят, пример.",
+      "Человек его утверждает, и с этого момента вещь можно считать, спрашивать одним словом и подписываться на неё. Названия живут файлами в репозитории: любая правка видна и откатывается.",
+    ],
+    building:
+      "В разработке: чтение всего записанного, а не только названного (сегодня вопрос отвечается только через названия, и записанное без названия по нему не находится), и предложение новых названий самой памятью. Пока и то и другое не построено, название решает ещё и что вообще можно достать, — поэтому список безымянного держится на виду.",
   },
   artifacts: {
     building:
