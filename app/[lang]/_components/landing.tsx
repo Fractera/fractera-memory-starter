@@ -201,7 +201,6 @@ export function Landing({ base, lang }: { base: string; lang: string }) {
           { id: "router", text: w.router.title },
           { id: "schema", text: w.schema.title },
           { id: "ladder", text: w.ladder.title },
-          { id: "features", text: w.features.title },
           { id: "scope", text: w.scope.title },
           { id: "artifacts", text: w.artifacts.title },
           { id: "memoization", text: w.memoization.title },
@@ -284,43 +283,6 @@ export function Landing({ base, lang }: { base: string; lang: string }) {
         </div>
       </Section>
 
-      {/* ── НАЗВАННЫЕ ВЕЩИ (реестр признаков) простыми словами ───────────────
-          🔒 Раздел стоит СРАЗУ ПОСЛЕ схемы обработки запроса, потому что объясняет её второй шаг:
-          «признаки прислали или память определила сама». Отдельно от схемы он читался бы как ещё
-          одна способность, а он — про то, из чего схема состоит. */}
-      <Section building={w.features.building} id="features" lead={w.features.lead} title={w.features.title}>
-        <h3 className="text-[length:var(--fs-body)] font-medium">{w.features.whyTitle}</h3>
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
-          {w.features.why.map((i) => (
-            <Card body={i.body} key={i.title} title={i.title} />
-          ))}
-        </div>
-
-        <h3 className="mt-8 text-[length:var(--fs-body)] font-medium">{w.features.caseTitle}</h3>
-        <dl className="mt-3 divide-y divide-border rounded-lg border border-border">
-          {w.features.cases.map((c) => (
-            <div className="px-4 py-3" key={c.q}>
-              <dt className="text-[length:var(--fs-small)] font-medium">{c.q}</dt>
-              <dd className="mt-1 text-[length:var(--fs-small)] leading-relaxed text-muted-foreground">{c.a}</dd>
-            </div>
-          ))}
-        </dl>
-
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
-          <div>
-            <h3 className="text-[length:var(--fs-body)] font-medium">{w.features.useTitle}</h3>
-            <ul className="mt-3 ml-5 list-disc space-y-2 text-[length:var(--fs-small)] leading-relaxed">
-              {w.features.use.map((u) => <li key={u}>{u}</li>)}
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-[length:var(--fs-body)] font-medium">{w.features.addTitle}</h3>
-            <ol className="mt-3 ml-5 list-decimal space-y-2 text-[length:var(--fs-small)] leading-relaxed">
-              {w.features.add.map((a) => <li key={a}>{a}</li>)}
-            </ol>
-          </div>
-        </div>
-      </Section>
 
       <Section building={w.scope.building} id="scope" lead={w.scope.lead} title={w.scope.title}>
         <div className="grid gap-3 md:grid-cols-3">

@@ -72,8 +72,6 @@ import { find_objects, open_object } from "./lib/object-verbs.mjs"
 // журнала. Проверку сессии для Next делает `lib/session-http.ts`.
 import { describeTable, listTables, nameQuality } from "./lib/catalogue.mjs"
 import { isSafeName } from "./lib/naming.mjs"
-import { featureByKey, listFeatures } from "./lib/features.mjs"
-import { consumersOf, elementsByFeature, setConsumers } from "./lib/feature-consumers.mjs"
 // 🔒 КЛЮЧ ВНЕШНИХ ИНСТРУМЕНТОВ ЧИТАЕТСЯ С ДИСКА НА КАЖДОМ ЗАПРОСЕ (185): новый
 // ключ начинает работать сразу, без перезапуска службы. Иначе кнопка «отозвать»
 // не отзывала бы ничего до ближайшего `pm2 reload`.
@@ -386,43 +384,8 @@ const server = createServer(async (req, res) => {
   // 🛑 В ОТВЕТЕ НЕТ НИ ИМЕНИ РОДА, НИ ИМЕНИ ТАБЛИЦЫ (`publicFeature`): каталог смыслов, ставший
   // картой хранилища, — это конец чёрного ящика, и тот же запрет уже стоит у `/v1/tables`
   // («имя источника называется в ОТВЕТЕ и не принимается в вопросе»).
-  if (req.method === "GET" && path === "/v1/features") {
-    // 🔒 КАТАЛОГ НАЗЫВАЕТ, КТО ПРИЗНАКОМ ПОЛЬЗУЕТСЯ (205-5). Это не место хранения, а ответ на вопрос
-    // «кого сломает снятие этого признака» — и он нужен ровно тому, кто собирается его снимать.
-    // 🛑 ОТКАЗ СКЛАДА НЕ ПРЕВРАЩАЕТСЯ В ПУСТОЙ СПИСОК: пустое читалось бы как «никто не пользуется»,
-    // то есть уверенно и неверно (закон 144). Поле просто не появляется, а отказ назван соседним.
-    const cat = listFeatures()
-    const used = await elementsByFeature()
-    if (used.ok) cat.features = cat.features.map((f) => ({ ...f, consumers: used.map[f.key] ?? [] }))
-    else cat.consumers_unavailable = used.error
-    return send(res, 200, cat)
-  }
-
-  // ── ПОДКЛЮЧЕНИЯ ЭЛЕМЕНТОВ (205-5) ────────────────────────────────────────
-  //
-  // 🛑 СТОИТ ДО ОБЩЕЙ ВЕТКИ `/v1/features/{ключ}`, И ЭТО НЕ ВКУС, А ЕДИНСТВЕННЫЙ ВЕРНЫЙ ПОРЯДОК.
-  // Общая ветка ловит ЛЮБОЙ хвост пути и назвала бы слово `consumers` ключом признака — ответ был бы
-  // честным `404 unknown-feature` о признаке, которого никто не спрашивал. Отказ, объясняющий не то,
-  // дороже отказа: искать стали бы в реестре.
-  if (req.method === "GET" && path === "/v1/features/consumers") {
-    // 🔒 ЗАПРОС РАЗБИРАЕТСЯ ГОТОВЫМ РАЗБОРЩИКОМ, А НЕ ДЕЛЕНИЕМ СТРОКИ: имя элемента приходит снаружи,
-    // и `decodeURIComponent` вручную — лишний способ ошибиться на первом же проценте в значении.
-    const element = new URL(req.url ?? "/", "http://localhost").searchParams.get("element") ?? ""
-    const got = await consumersOf(element)
-    return send(res, got.ok ? 200 : 400, got)
-  }
-  if (req.method === "PUT" && path === "/v1/features/consumers") {
-    const body = await readBody(req)
-    if (!body) return send(res, 400, { error: "bad-json", ok: false, what_happened: say("bad-json") })
-    const put = await setConsumers({ by: body.by ?? null, element: body.element, keys: body.keys })
-    return send(res, put.ok ? 200 : 400, put)
-  }
-
-  if (req.method === "GET" && path.startsWith("/v1/features/")) {
-    const key = decodeURIComponent(path.slice("/v1/features/".length))
-    const f = featureByKey(key)
-    return send(res, f.ok ? 200 : 404, f)
-  }
+  // 🪦 ЗДЕСЬ БЫЛИ АДРЕСА РЕЕСТРА ПРИЗНАКОВ: каталог, одна запись по ключу и подключения элементов.
+  // Реестр отменён целиком решением владельца 2026-09-15 — .
 
   // ── ФАЙЛ ОБЪЕКТА (194-17) ────────────────────────────────────────────────
   // 🔒 БАЙТЫ ТЕКУТ ПОТОКОМ ИЗ ДВЕРИ `object-file` ПО ПЕТЛЕ, С ЕЁ ТИПОМ И ИМЕНЕМ: файл до 200 МБ не собирается в

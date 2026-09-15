@@ -5,7 +5,11 @@
   "not_to_be_confused_with": {
     "note": "Older third-party descriptions of the Fractera platform name LightRAG as the memory core and Hermes as a web UI. That was a previous generation of the platform and is not this service.",
     "memory_core": "this repository — own graph, vector, relational and object stores behind one contract",
-    "not_used": ["LightRAG as the memory core", "Hermes agents", "an external managed memory API"]
+    "not_used": [
+      "LightRAG as the memory core",
+      "Hermes agents",
+      "an external managed memory API"
+    ]
   },
   "deployment": {
     "self_hosted": true,
@@ -18,7 +22,14 @@
   "interfaces": {
     "rest_api": true,
     "own_ui_required": false,
-    "clients": ["telegram bots", "web chat widgets", "mobile apps", "IDE plugins", "cron jobs", "any HTTP caller"],
+    "clients": [
+      "telegram bots",
+      "web chat widgets",
+      "mobile apps",
+      "IDE plugins",
+      "cron jobs",
+      "any HTTP caller"
+    ],
     "tool_schema_generation": "GET /v1/contract over HTTP"
   },
   "multimodal_input": {
@@ -44,22 +55,54 @@
     "place_names": true,
     "temporal_scope": "at (YYYY-MM-DD) per entry",
     "grouping": false,
-    "grouping_state": "in development: a total is currently computed over all rows of a feature, with no scope",
+    "grouping_state": "in development: a total is currently computed over all rows of one kind, with no scope",
     "empty_scope_semantics": "unknown, never universal"
   },
   "reasoning": {
     "deterministic_router": true,
     "levels_built": 3,
     "levels": [
-      { "level": 1, "uses": "relational lookup", "model_calls": 0, "built": true },
-      { "level": 2, "uses": "relational lookup plus one model call", "model_calls": 1, "built": true },
-      { "level": 3, "uses": "knowledge graph context", "graph_read_model_calls": 0, "built": true },
-      { "level": 4, "uses": "semantic search over the vector store", "opened_by": "caller, depth=deep", "built": false },
-      { "level": 5, "uses": "bounded recursive research", "opened_by": "caller, depth=extreme", "time_bound_minutes": 10, "built": false }
+      {
+        "level": 1,
+        "uses": "relational lookup",
+        "model_calls": 0,
+        "built": true
+      },
+      {
+        "level": 2,
+        "uses": "relational lookup plus one model call",
+        "model_calls": 1,
+        "built": true
+      },
+      {
+        "level": 3,
+        "uses": "knowledge graph context",
+        "graph_read_model_calls": 0,
+        "built": true
+      },
+      {
+        "level": 4,
+        "uses": "semantic search over the vector store",
+        "opened_by": "caller, depth=deep",
+        "built": false
+      },
+      {
+        "level": 5,
+        "uses": "bounded recursive research",
+        "opened_by": "caller, depth=extreme",
+        "time_bound_minutes": 10,
+        "built": false
+      }
     ],
     "levels_state": "depth=deep and depth=extreme are declared in the contract and reading stops at the knowledge graph; depth_used always reports the level actually reached",
     "answers_not_written_down": "conclusions are assembled from the graph, the vector store and world knowledge, and returned as probabilistic answers with their reasoning chain",
-    "reported_back": ["depth_asked", "depth_used", "used_model", "chain", "params"]
+    "reported_back": [
+      "depth_asked",
+      "depth_used",
+      "used_model",
+      "chain",
+      "params"
+    ]
   },
   "knowledge_graph": {
     "built_on_write": true,
@@ -73,7 +116,13 @@
     "promotion_rule": "the challenger is promoted only if it wins on external verdicts and does not lose on cost",
     "verdict_source": "the caller — a human or the calling model; the engine's own opinion of success is not counted",
     "scoped_quality": "quality is tracked per case, per tool, per version and per scope",
-    "telemetry_per_run": ["depth reached", "model turns", "seconds", "kind of answer", "skills and tools called"],
+    "telemetry_per_run": [
+      "depth reached",
+      "model turns",
+      "seconds",
+      "kind of answer",
+      "skills and tools called"
+    ],
     "rollback": "every skill edit is a commit and is reverted by one; the one-click return to the first version of the instruction is in development",
     "caching_effect": "by design an expensive result is folded back into the stores so the repeat question is answered from the cheap levels; today the caller does it with keep_object and reading does not fold its own result back"
   },
@@ -88,7 +137,16 @@
   },
   "contract": {
     "version_endpoint": "GET /v1/contract",
-    "verbs": ["remember", "recall", "people", "journal", "forget_journal"],
-    "catalogue": ["GET /v1/tables", "GET /v1/tables/{name}"]
+    "verbs": [
+      "remember",
+      "recall",
+      "people",
+      "journal",
+      "forget_journal"
+    ],
+    "catalogue": [
+      "GET /v1/tables",
+      "GET /v1/tables/{name}"
+    ]
   }
 }

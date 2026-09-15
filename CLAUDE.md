@@ -63,18 +63,17 @@ matching what you do.
 - **The reasoning chain only when asked for.**
 - Answer in the language of the request.
 
-## The feature registry
+## When a column, when a table
 
-Memory keeps a dictionary of what a caller may mean — `AGI-CONFIG/agi-config.json`. Everything said
-reaches the knowledge graph; exact, countable and current values also land in tables. The rules
-(PASSPORT §6):
+Everything said reaches the knowledge graph; exact and current values also land in tables. You do not
+decide the shape from memory — the rules are in `use-tables` and PASSPORT §6:
 
-- **Reuse first.** When an existing kind fits the meaning, the value goes there — keep records different
-  from each other; a second kind for the same meaning is a defect.
-- **Memory grows.** When nothing fits, a new kind is created: a column for a single value, a table when a
-  second value is added or the thing will keep growing (`use-tables`).
-- **The registry catches up.** A kind without a feature is work for the development agent, not an error.
-- **A retired feature** takes no new values; its reason names the replacement.
+- **Reuse first.** When something that fits already exists, the value goes there — a second place for
+  the same meaning is a defect.
+- **Nothing fits** — a new place is created: a column for a single value, a table when a second value
+  is added or the thing will keep growing.
+- **A correction replaces**, an addition turns the column into a table and carries the first value over.
+- **A story is not a value** — it belongs in the graph, with an anchor.
 
 ## What you never do
 

@@ -3,7 +3,7 @@
 **A self-hosted, open-source memory engine for agents.** Knowledge graph built on write and read
 without a model turn · spatial-temporal scope with `lat`/`lon` validated and stored on every record ·
 native multimodal input — voice, images, video, PDF, pages, links — with its own object store · one
-short model call per request over a feature registry, after which code and the stores do the rest.
+short model call per request over the tables you already have, after which code and the stores do the rest.
 
 > **How to read this document.** The engine is described whole, so it is clear what it does and how it
 > is built. Anything not yet in the code says so on the spot, in **bold, in the same paragraph** — and
@@ -68,7 +68,7 @@ with the record and indexed. **An empty scope means «I do not know where and wh
 **In development, and not to be counted on today:** retrieval by radius («what do I know within 500 m
 of this point») and totals and life cycles grouped by scope. Today the coordinates of a question are
 accepted and reported back in `params`, and reading does not use them; a sum is computed over all rows
-of a feature, with no scope. See notes \*⁹ and \*¹⁰ below.
+of one kind, with no scope. See the notes at the end of «How a request travels» — \*⁹ and \*¹⁰ below.
 
 ### 3. Skill evolution is designed as a real A/B split test — **and is not built yet**
 
@@ -115,7 +115,7 @@ instance.
 | **Video, images, PDF, audio** | Native, with the pipeline and the object store inside — see §1 above. |
 | **Geolocation, and dates when they matter** | Spatial-temporal scope with `lat`/`lon`, `radius_m` and `at`, validated and stored on every record — see §2 above, including what retrieval does not yet do with it. |
 | **Deep reasoning that finds what was never written down** | Partly. Three levels are built — table, one short model call, knowledge graph — and `depth_used` always reports the one actually reached. **Semantic search inside reading and bounded recursive research are in development** (note *⁶). «Who of my contacts could have known that person» is the reference case being built towards. |
-| **Fast with no AI in some cases, a strong model in others** | Partly. Every request costs one short model call over 8 candidate features, never the whole schema; the table and the graph then answer without further model turns, and sums are computed by code. Only a request with no question uses no model at all. `depth_used` always reports how far memory actually went. |
+| **Fast with no AI in some cases, a strong model in others** | Partly. Every request costs one short model call over this person's own tables, never the whole schema; the table and the graph then answer without further model turns, and sums are computed by code. Only a request with no question uses no model at all. `depth_used` always reports how far memory actually went. |
 | **The slow answer must become instant next time** | The design, and the order it happens in, is fixed — artefact into the object store, summary into text, into the vector store and into the graph, relation table updated. **Today the loop is driven from outside:** an agent keeps the answer with `keep_object`; reading does not fold its own result back (note *⁷). |
 | **Complex requests should build an entity and come back as a report** | Memory creates the table while answering, and `need_table` forces it at once — that part works. **Assembling a document over the tables inside reading is in development** (note *¹¹); today the agent composes it and hands it over with `keep_object`. |
 | **Its own object storage** | Built in, on your machine, referenced from answers by id. |
@@ -212,7 +212,7 @@ On a contradiction: *«was X, now Y»* — the latest wins, out loud, with the p
 | `history` | string | no | The previous conversation, when the caller has one. |
 | `prior` | string | no | What has already been found before this question. |
 | `want_chain` | boolean | no | Return the steps of the search. |
-| `features` | array | no | Feature keys the question is about, from `GET /v1/features` — sending them skips the model call. An unknown key is refused with the nearest keys memory does have. |
+
 | `scope` | array | no | Where and when the question is asked. Accepted, validated and reported back; **retrieval does not use the coordinates yet** (note *⁹). |
 
 Returns `known` (each value with `from_table`, `claim`, `basis`), `not_yet_known`, `used_model`,
@@ -286,69 +286,63 @@ curl -s $MEM/recall -H "Content-Type: application/json" -H "x-memory-key: $MEMOR
 
 ## How a request travels
 
-Described as finished, so it is clear what memory does and how to build it. What is still in
-development is marked with an asterisk and explained in the notes below.
+The chain from the request to the answer, in the order it actually happens. Anything not built yet
+says so on the spot.
 
-1. **Input: what the caller sent**
-   1. Required: who is speaking (`who`) and the person's phrase (`text`).
-   2. The verb — optional.
-      1. With a verb, the request comes to `/v1/remember` (add) or `/v1/recall` (retrieve).
-      2. Without one, it comes to a single address and memory decides itself\*¹.
-   3. Features from the registry — optional, for both verbs.
-      1. A list of key and value; keys come from `GET /v1/features`.
-      2. Retrieval accepts them as well as writing\*².
-   4. Links to earlier messages — optional.
-      1. The caller names earlier messages by their numbers in memory's journal\*³.
-      2. Or sends a reasoning thread (`thread`), earlier turns (`history`) and what was already found (`prior`).
-2. **Preliminary phase: memory works out what was not sent**
-   1. The verb, the features and the links were all sent — no model is called at all.
-   2. Something is missing — **one** model call covers everything missing at once, with no conversation kept\*⁴.
-      1. The model receives the phrase and candidates: the 8 registry features closest in meaning, and this person's latest messages closest in meaning and time\*³.
-      2. It returns the verb, the features with values, the numbers of related messages, and what the registry lacks.
-      3. Code checks all of it: the verb is one of two; every key is among the candidates and every value has the right type; the message numbers exist and belong to this person.
-   3. A meaning the registry does not have yet.
-      1. An existing kind that fits the meaning is reused — records stay different from each other\*⁴.
-      2. Nothing fits — memory creates a new kind by the column-or-table rules: a column for a single value, a table when a second value is added or the thing will grow.
-      3. The registry catches up: a kind without a feature is work for the development agent, who adds the feature in a step\*⁵.
-3. **Main phase: two scenarios and the learning loop**
-   1. **Adding a record — in order**
-      1. **Receiving the message.** It gets a number in the journal of incoming messages (`messages_that_came_into_memory`) — a phrase, a file, a link or a video — with who sent it, from where and when\*⁸. Its scope is recorded alongside: the calendar (when the thing happened, not when it arrived) and the geotag (latitude, longitude, radius, place), each with its source — said, from the file, from the device, inferred; an empty scope means «I don't know where or when»\*⁹. A link to earlier messages is recorded as «this message → that message»\*³.
-      2. **Attachments become objects — all four records, or none.** Reading goes by kind (audio — `whisper-1` then a description; video — sound track and six frames; image, PDF, Markdown, HTML, text — read whole; source code — analysed, never run; a page — the AI browser; a YouTube video — the official API) → a full description, a ~50-word summary, title, tags, anchors. Record 1: the object with its full description → object store, id. Record 2: a search card (title + summary) → vector store, `memory-objects`. Record 3: a graph document with description, tags, id, summary and an origin line. Record 4: the journal row links the three; any failure rolls back what was written, and the row stays `failed` with the reason.
-      3. **Values about the person — tables.** First, what is already known. The kind and form come from the registry and its 8 candidates\*⁴; an existing kind is reused letter for letter\*⁵. Every value is said or inferred with grounds. The depth rule: depth 0 and 1 may go to a table, depth 2+ only to the graph with an anchor; the year of birth, not the age. **A column:** the kind exists without a value — the value goes in; no such kind — the root table gains three columns (value, said-or-inferred, grounds), named by a phrase of at least four English words. **A second value:** a correction replaces it, the old one goes to history; an addition gives birth to a table for the kind, the first value moves in with its own time and the column is left empty on purpose; unclear — both kept as an addition, said aloud. **A table at once:** when what arrived will keep growing (a friend is a name; a teammate has a role and tomorrow a schedule) or on `need_table`; raising the form loses nothing, lowering it always loses. Exact and countable values accumulate within their scope\*¹⁰.
-      4. **The knowledge graph — everything said.** An introduction with the person's name, channel, first-level anchors and feature keys, no service words · pointers to table rows · what stayed only in the graph, each with its reason · a record without an anchor is refused.
-      5. **The result** goes into the answer and memory's work journal: what landed where, what was refused and why, whether a model was called.
-   2. **Retrieving from memory**
-      1. Related messages narrow the search: their anchors and features join the question\*³.
-      2. A named feature is answered from the table; sums are computed by code.
-      3. Nothing in the table — names from the question are looked up in the graph, which answers about the links with no model call.
-      4. `depth: "deep"` — semantic search in the vector store, when the words of the question and of the record differ\*⁶.
-      5. `depth: "extreme"` — bounded research of up to 10 minutes: hypotheses from the graph, the vectors and the model's knowledge of the world; the result and its chain are kept as an object, so a repeated question is answered from the cheap steps\*⁶\*⁷.
-      6. Nothing found — «I don't know», with what is missing.
-      7. A request with no question returns everything known about the person, with no model.
-   3. **The learning loop — an expensive result becomes cheap knowledge**
-      1. When: after deep research\*⁶, and after a computation over tables whose answer is a document\*¹¹.
-      2. One order: result obtained → artefact to the object store, id → a text summary → summary to the vector store, id → summary to the graph, id → the entity's link table, if one exists (last, may be skipped) → the summary and id go out, and a repeated question is answered cheaply\*⁷.
-      3. Denial of a conclusion (`deny`) is a separate input: an extra loop extends the earlier summary with «the architect rejected this»\*¹²; the conclusion is cancelled, not the fact; the refuted hypothesis is kept.
-      4. Patterns the model works out become skill candidates, tested in the shadow against the current skill.
-4. **Final phase: the answer**
-   1. For both: `ok`, `what_happened`, `text`, `objects`; which verb was executed and who decided it\*¹; the fate of every feature; which messages the request is linked to\*³.
-   2. For a write: `kept_whole`, `used_model`, `thread`.
-   3. For a read: `found_by`, `depth_used`, `not_yet_known`, the chain on `want_chain`.
+**1. Is this adding something, or asking something?**
+Sent with a verb, the request goes to `POST /v1/remember` (add) or `POST /v1/recall` (ask). Sent
+without one, memory decides for itself which it is\*¹.
 
-**\* In development — what exists today and what remains to build**
+**2. Earlier related messages are pulled into the context.**
+The caller can hand over the earlier conversation (`history`), what it has already found (`prior`) and
+the thread of an earlier reasoning (`thread`). Memory finding the related messages by itself — by
+meaning and by time — is in development\*².
 
-- **\*¹ A request without a verb.** Today the verb is set only by the address; the parse returns an `action` field that routes nothing. To build: a single address in the contract, routing by `action`, an answer field naming the verb and who decided.
-- **\*² Features on retrieval — built.** `recall` accepts `features`, the model call is skipped when they are sent, and an unknown key comes back with the nearest keys memory does have. The mark stays here so the change is visible against the previous edition of this list.
-- **\*³ Links to messages.** Today the journal can link one message to another, but only saving a link uses it (a snippet to its page); `thread`, `history` and `prior` do not point at stored messages. To build: message numbers in the contract, candidates by meaning and time, links for every phrase, their use when reading.
-- **\*⁴ One call for all three determinations.** Today the call determines only features, in two ways: writing shows the model every registry kind, reading shows 8 candidates. To build: one shared parse for both verbs.
-- **\*⁵ The registry catches up.** Today kinds without a feature are visible only to a probe; 27 kinds created by the model wait for their features. To build: the list on the panel page and features added by development steps.
-- **\*⁶ Depth `deep` and `extreme`.** Today both are declared in the contract, and reading stops at the graph. To build: vectors inside reading and bounded research with its chain.
-- **\*⁷ Keeping an expensive answer.** Today the agent can keep an answer object (`keep_object`); reading does not keep its own result. To build: the result of `extreme` kept as an object, a vector card and a graph document.
-- **\*⁸ A journal row for every message.** Today only files and links get a row in `messages_that_came_into_memory`; a plain phrase goes only to the work journal. To build: a journal row for every phrase, as the first record.
-- **\*⁹ The scope of a phrase and search by place.** Today scope columns and a coordinate index exist on an object's row; a phrase's scope goes only into the model prompt, and reading never uses coordinates. To build: scope in every phrase's row and radius search when reading.
-- **\*¹⁰ Accumulation within scope.** Today a sum is computed over all rows of a feature, with no scope. To build: sums and histories grouped by scope.
-- **\*¹¹ The learning loop after a computation.** Today only the agent can keep an answer object; reading does not assemble a document over tables or run the loop.
-- **\*¹² Denial of a conclusion.** Today `deny` works only inside the same reasoning thread, as words in the model prompt; the summary is not extended and the refuted hypothesis is not kept separately.
+**3. Memory compares the phrase with the tables it already has.**
+It shows the model **this person's own tables and columns** — never the whole schema — and one short
+call decides what the phrase is about. Everything after that is code:
+
+- a fitting place exists → the value goes there;
+- no fitting place → a new one is created: **a column** for a single value, **a table** when a second
+  value is added or the thing will keep growing;
+- a **correction** replaces the value and the old one goes to history; an **addition** turns the column
+  into a table and carries the first value over with its own timestamp;
+- a **story** rather than a value — an explanation, a circumstance, a plan — never goes into a table:
+  its place is the knowledge graph, with an anchor;
+- the depth rule holds throughout: the person and those directly connected to them may go into tables;
+  an attribute of someone else's entity is graph-only. The year of birth, never the age.
+- everything said reaches the knowledge graph in any case, with the person's name and the channel it
+  arrived by.
+
+**4. A file or a link goes to the object store.**
+A picture, voice note, video, PDF, document, source code, a web page or a YouTube video: memory reads
+it by its kind, writes a full description and a ~50-word summary, and it lands **in four places at once
+or in none** — the file in the object store, a search card in the vector store, the description with
+its origin in the graph, and a journal row tying the three together. If any of the four fails, what was
+written is rolled back and the row keeps the reason.
+
+**5. The answer.**
+`ok`, what happened in words a person can be told, `text` and the object ids. For adding: what was
+recorded and what was refused, with the reason. For asking: what was found, how it was found
+(`found_by`), the depth actually reached (`depth_used`) and what is missing — «I don't know» is an
+answer, not a failure.
+
+**\* In development**
+
+- **\*¹ A request without a verb.** Today the verb is set by the address only.
+- **\*² Earlier related messages.** Today only what the caller hands over is used; memory does not find
+  them by itself yet.
+- **\*³ Depth.** `deep` and `extreme` are declared in the contract and reading stops at the knowledge
+  graph; the vector store and bounded research are still to come.
+- **\*⁴ Adding up.** The knowledge «this is money, and money adds up» lived in the feature registry,
+  which was removed on 2026-09-15 by the owner's decision. Values come back one by one until a new
+  strategy says where that knowledge comes from.
+- **\*⁵ Scope on retrieval.** Coordinates are stored and validated with a record; searching by radius
+  and grouping totals by scope are still to come.
+- **\*⁶ A journal row for every message.** Today only files and links get a row; a plain phrase goes
+  only to the work journal.
+- **\*⁷ Keeping an expensive answer.** Today the caller keeps an answer object with `keep_object`;
+  reading does not fold its own result back.
 
 ## Four stores, one black box
 
@@ -495,7 +489,7 @@ built on a different philosophy.
 |---|---|---|
 | System classification | An autonomous memory engine behind an API, for any front-end | An end-to-end Telegram assistant tied to an Obsidian vault |
 | Architecture | A decoupled microservice; the Telegram bot is an optional client | A monolith: Telegram, userbot and vault manager in one codebase |
-| Cost optimisation | One short model call over 8 registry candidates, never the whole schema; the table and the graph answer without further model turns | Every operation leans on model passes, BM25 and vector lookups |
+| Cost optimisation | One short model call over this person's own tables, never the whole schema; the table and the graph answer without further model turns | Every operation leans on model passes, BM25 and vector lookups |
 | Multimodality | Built-in object storage; audio transcribed with timestamps; images, PDF, pages, code and video frames read by a vision model | Audio transcription and plain text handling |
 | Geolocation | lat/lon and radius_m as structured fields of every record; proximity search in development | None; dates and places are unstructured text |
 | Data processing | Dynamic SQL tables, structured artifacts with IDs, knowledge graph | Markdown cards written to a folder for Obsidian to sync |
@@ -520,7 +514,7 @@ built on a different philosophy.
 
 **Does every request cost tokens?**
 Almost every one — and exactly one short call. To understand what a person means, memory makes one
-model call over 8 candidate features from its registry, with no conversation kept. After that the
+model call over this person's own tables and columns, with no conversation kept. After that the
 table and the graph answer without further model turns, and sums are computed by code. Only a request
 with no question is answered with no model at all. The answer reports `depth_used`, the depth actually
 reached.
