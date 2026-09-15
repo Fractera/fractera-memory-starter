@@ -158,9 +158,10 @@ Full texts live in `LAWS.md` and the passport; read them, never copy them here.
 - **`CLAUDE.md` holds only what is true now** — no tombstones; history belongs to the passport.
 - **Instructions and skills stay compact:** the result wanted and the tools available; the model
   finds the way.
-- **Memory is described whole, as if built; what is not built carries an asterisk and a note** saying
-  what exists today and what remains (PASSPORT §0.5). Describe how memory works only after reading the
-  passport and the skills — never from your own recollection.
+- **Describe memory whole, as if built; unbuilt parts get an asterisk and a note** (PASSPORT §0.5) — and
+  only after reading the passport and skills, never from recollection.
+- **Memory grows by itself; the registry catches up** (PASSPORT §23): new kinds are allowed, a feature for
+  each is added by a development step, a duplicate is retired with its replacement.
 
 ## Delivery
 
@@ -172,8 +173,8 @@ reload, check that the port holder is a child of pm2 and its uptime grows. **A d
 
 ## Skills and helpers
 
-New or changed skills follow the `skill-creator` pattern only: `name` and a slightly pushy
-`description` saying what and when, a body that explains why instead of shouting, under 500 lines.
+New or changed skills follow the `skill-creator` pattern only: a pushy `description` (what and
+when), a body that explains why, under 500 lines.
 **Its evaluation runs, benchmarks, description optimisation and split tests are forbidden, and the
 `Agent` tool is never called.** A skill is checked cheaply: a probe, logs already written, the
 architect's live work. You work alone.

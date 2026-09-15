@@ -290,10 +290,10 @@ development is marked with an asterisk and explained in the notes below.
       1. The model receives the phrase and candidates: the 8 registry features closest in meaning, and this person's latest messages closest in meaning and time\*³.
       2. It returns the verb, the features with values, the numbers of related messages, and what the registry lacks.
       3. Code checks all of it: the verb is one of two; every key is among the candidates and every value has the right type; the message numbers exist and belong to this person.
-   3. A meaning the registry does not have.
-      1. What was said still goes into the graph.
-      2. A proposal for a new feature is kept for the architect: what it would be and which phrase called for it\*⁵.
-      3. When a fitting feature exists, it is reused instead of creating a near-twin\*⁵.
+   3. A meaning the registry does not have yet.
+      1. An existing kind that fits the meaning is reused — records stay different from each other\*⁴.
+      2. Nothing fits — memory creates a new kind by the column-or-table rules: a column for a single value, a table when a second value is added or the thing will grow.
+      3. The registry catches up: a kind without a feature is work for the development agent, who adds the feature in a step\*⁵.
 3. **Main phase: two scenarios and the learning loop**
    1. **Adding a record — in order**
       1. **Receiving the message.** It gets a number in the journal of incoming messages (`messages_that_came_into_memory`) — a phrase, a file, a link or a video — with who sent it, from where and when\*⁸. Its scope is recorded alongside: the calendar (when the thing happened, not when it arrived) and the geotag (latitude, longitude, radius, place), each with its source — said, from the file, from the device, inferred; an empty scope means «I don't know where or when»\*⁹. A link to earlier messages is recorded as «this message → that message»\*³.
@@ -325,7 +325,7 @@ development is marked with an asterisk and explained in the notes below.
 - **\*² Features on retrieval.** Today only writing accepts `features`. To build: the parameter on `recall`, and skipping the model call when features are sent.
 - **\*³ Links to messages.** Today the journal can link one message to another, but only saving a link uses it (a snippet to its page); `thread`, `history` and `prior` do not point at stored messages. To build: message numbers in the contract, candidates by meaning and time, links for every phrase, their use when reading.
 - **\*⁴ One call for all three determinations.** Today the call determines only features, in two ways: writing shows the model every registry kind, reading shows 8 candidates. To build: one shared parse for both verbs.
-- **\*⁵ Registry rules.** Today the registry's 21 features are edited by hand; a phrase with no fitting feature stays only in the graph. To build: stored proposals for new features and the rules for reuse — agreed with the architect first.
+- **\*⁵ The registry catches up.** Today kinds without a feature are visible only to a probe; 27 kinds created by the model wait for their features. To build: the list on the panel page and features added by development steps.
 - **\*⁶ Depth `deep` and `extreme`.** Today both are declared in the contract, and reading stops at the graph. To build: vectors inside reading and bounded research with its chain.
 - **\*⁷ Keeping an expensive answer.** Today the agent can keep an answer object (`keep_object`); reading does not keep its own result. To build: the result of `extreme` kept as an object, a vector card and a graph document.
 - **\*⁸ A journal row for every message.** Today only files and links get a row in `messages_that_came_into_memory`; a plain phrase goes only to the work journal. To build: a journal row for every phrase, as the first record.

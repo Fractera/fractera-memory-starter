@@ -476,20 +476,20 @@ const EN: LandingWords = {
             "plan": "understand-incoming-request"
           },
           {
-            "text": "A meaning the registry does not have.",
+            "text": "A meaning the registry does not have yet.",
             "items": [
               {
-                "text": "What was said still goes into the graph.",
+                "text": "An existing kind that fits the meaning is reused — records stay different from each other*⁴.",
                 "skills": [
                   "use-knowledge-graph"
                 ]
               },
               {
-                "text": "A proposal for a new feature is kept for the architect: what it would be and which phrase called for it*⁵.",
+                "text": "Nothing fits — memory creates a new kind by the column-or-table rules: a column for a single value, a table when a second value is added or the thing will grow.",
                 "plan": "use-feature-registry"
               },
               {
-                "text": "When a fitting feature exists, it is reused instead of creating a near-twin*⁵.",
+                "text": "The registry catches up: a kind without a feature is work for the development agent, who adds the feature in a step*⁵.",
                 "plan": "use-feature-registry"
               }
             ],
@@ -824,7 +824,7 @@ const EN: LandingWords = {
       },
       {
         "mark": "*⁵",
-        "text": "Registry rules. Today the registry's 21 features are edited by hand; a phrase with no fitting feature gets «no such feature» and stays only in the graph. To build: stored proposals for new features and the rules for reuse — agreed with the architect first."
+        "text": "The registry catches up. Today kinds without a feature are visible only to a probe; 27 kinds created by the model wait for their features. To build: the list on the panel page and features added by development steps."
       },
       {
         "mark": "*⁶",
@@ -1244,20 +1244,20 @@ const RU: LandingWords = {
             "plan": "understand-incoming-request"
           },
           {
-            "text": "Смысл, которого в реестре нет.",
+            "text": "Смысл, которого в реестре ещё нет.",
             "items": [
               {
-                "text": "Сказанное всё равно ложится в граф.",
+                "text": "Подходящий уже заведённый род берётся он — записи остаются разнородными*⁴.",
                 "skills": [
                   "use-knowledge-graph"
                 ]
               },
               {
-                "text": "Архитектору сохраняется предложение нового признака: чем он был бы и какая фраза его вызвала*⁵.",
+                "text": "Не подходит ни один — память заводит новый род по правилам колонки и таблицы: колонка под одно значение, таблица, когда пришло второе значение-добавление или пришедшее будет расти.",
                 "plan": "use-feature-registry"
               },
               {
-                "text": "Подходящий признак уже есть — берётся он, а не заводится похожий второй*⁵.",
+                "text": "Реестр догоняет хранилище: род без признака — работа для агента разработки, который заводит признак шагом*⁵.",
                 "plan": "use-feature-registry"
               }
             ],
@@ -1592,7 +1592,7 @@ const RU: LandingWords = {
       },
       {
         "mark": "*⁵",
-        "text": "Правила реестра. Сегодня 21 признак правится руками; фраза без подходящего признака получает «нет такого признака» и остаётся только в графе. Строить: хранение предложений нового признака и правила переиспользования — сначала согласовать с архитектором."
+        "text": "Реестр догоняет хранилище. Сегодня роды без признака видит только прибор; 27 родов, заведённых моделью, ждут признаков. Строить: список на странице панели и признаки шагами агента разработки."
       },
       {
         "mark": "*⁶",

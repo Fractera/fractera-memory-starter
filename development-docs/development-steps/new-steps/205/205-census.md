@@ -131,27 +131,51 @@
 
 ## 9. Дополнение после 205-1: 27 родов живой памяти вне реестра (найдено прибором 2026-09-15)
 
-Корневая таблица памяти на сервере несёт **46 родов**, реестр покрывает **19**. Остальные 27 заведены моделью при записи в обход реестра
-(в 201-3 было 14 из 14). **Сколько в них значений, не измерено:** дверь `/v1/tables/{имя}` отдаёт описание родов, а не счёт значений.
-Решения ниже — **предложение, не утверждено**; живые данные не трогались.
+Корневая таблица памяти на сервере несёт **46 родов**, реестр покрывает **19**; 27 заведены моделью при записи. **Сколько в них значений,
+не измерено:** дверь `/v1/tables/{имя}` отдаёт описание родов, а не счёт значений — счёт делает 205-10.
 
-| Род в памяти | Предложение | Почему |
-|---|---|---|
-| `money_he_spent_on_purchases_by_item` | **слить** → `money.spent-on-a-purchase` | дубль смысла |
-| `currency_he_counts_his_money_in` | **слить** → `person.currency-he-counts-money-in` | дубль смысла (одно слово разницы) |
-| `time_after_which_he_stops_answering_work_messages` | **слить** → `person.work-hours-he-keeps-each-day` | та же фраза «когда можно писать» |
-| `plans_he_wrote_down_for_the_month` | **слить** → новый `person.tasks-he-plans-to-do` (205-2) | задачи с горизонтом |
-| `rules_he_asks_us_to_follow_when_writing_him` · `rules_he_asks_us_to_follow_in_food_advice` · `file_formats_he_asks_us_to_use` | **новый признак** `person.rules-he-asks-us-to-follow` (list) | правила для нас — не запреты «никогда» |
-| `rules_he_keeps_about_working_on_weekends` · `rules_he_keeps_about_what_he_packs_for_trips` | **новый признак** `person.rules-he-keeps-for-himself` (list) | его собственные правила |
-| `food_allergies_he_says_he_has` · `foods_that_are_safe_for_him` · `precautions_he_takes_with_his_food` | **новый признак** `person.food-allergies-he-has` (object list: что · чем опасно · что можно) | один предмет в трёх местах |
-| `trips_he_is_planning_to_take` | **новый признак** `person.trips-he-is-planning` (object list, охват time · place) | таблица рода уже родилась |
-| `cars_that_belong_to_him` | **новый признак** `person.cars-that-belong-to-him` (object list, глубина 1) | вещь первого круга |
-| `how_long_he_has_known_his_friend_denis` · `rules_he_keeps_about_feeding_his_dog` | **только граф** с якорем | глубина 2: атрибут друга и собаки (§21.2) |
-| `reason_he_gives_for_his_language_choice` · `reason_he_gives_for_telling_us_about_his_dog` · `reason_he_gives_for_keeping_this_plan` · `reason_he_gives_for_keeping_his_packing_list_in_markdown` | **только граф** | причина — рассказ, не значение |
-| `what_the_product_he_builds_does` · `side_work_he_does_besides_the_platform` · `how_he_divides_his_time_between_his_projects` | **граф**; проект — в `person.projects-he-is-working-on` | описание проекта — рассказ |
-| `topics_he_says_will_come_up_with_us_often` | **граф** | тема разговора — не факт о человеке |
-| `packing_list_items_he_takes_on_a_trip` · `format_he_keeps_his_packing_list_in` · `when_he_reviews_his_packing_list_before_departure` | **граф** или объект-документ | один эпизод со списком — вещь целиком |
+**Решения — по правилам владельца 205-4 (паспорт §23):** хранилище растёт само, и так должно быть; **реестр догоняет хранилище** —
+признак заводит агент разработки шагом; дубль **помечается снятым с заменой**; значения не переносятся и не удаляются.
+🪦 Первая редакция этого раздела предлагала сливать роды и переносить 12 в граф — отменена ответом владельца на правило 1.
 
-**Итог предложения:** 4 рода сливаются в существующие признаки · 11 родов → 5 новых признаков · 12 родов → только граф. Реестр памяти
-вырос бы с 23 до 28 признаков. **Главное:** без правила 205-4 модель продолжит заводить роды в обход реестра — эта таблица через месяц
-снова вырастет.
+### 9.1 Действующий признак — 21 род
+
+Ключ выводится из рода, чтобы признак и живой род совпали без переноса значений.
+
+| Род в памяти | Ключ признака |
+|---|---|
+| `reason_he_gives_for_his_language_choice` | `person.reason-he-gives-for-his-language-choice` |
+| `reason_he_gives_for_telling_us_about_his_dog` | `person.reason-he-gives-for-telling-us-about-his-dog` |
+| `food_allergies_he_says_he_has` | `person.food-allergies-he-says-he-has` |
+| `foods_that_are_safe_for_him` | `person.foods-that-are-safe-for-him` |
+| `precautions_he_takes_with_his_food` | `person.precautions-he-takes-with-his-food` |
+| `rules_he_asks_us_to_follow_in_food_advice` | `person.rules-he-asks-us-to-follow-in-food-advice` |
+| `rules_he_keeps_about_working_on_weekends` | `person.rules-he-keeps-about-working-on-weekends` |
+| `rules_he_asks_us_to_follow_when_writing_him` | `person.rules-he-asks-us-to-follow-when-writing-him` |
+| `what_the_product_he_builds_does` | `person.what-the-product-he-builds-does` |
+| `side_work_he_does_besides_the_platform` | `person.side-work-he-does-besides-the-platform` |
+| `how_he_divides_his_time_between_his_projects` | `person.how-he-divides-his-time-between-his-projects` |
+| `topics_he_says_will_come_up_with_us_often` | `person.topics-he-says-will-come-up-with-us-often` |
+| `file_formats_he_asks_us_to_use` | `person.file-formats-he-asks-us-to-use` |
+| `reason_he_gives_for_keeping_this_plan` | `person.reason-he-gives-for-keeping-this-plan` |
+| `trips_he_is_planning_to_take` | `person.trips-he-is-planning-to-take` |
+| `cars_that_belong_to_him` | `person.cars-that-belong-to-him` |
+| `packing_list_items_he_takes_on_a_trip` | `person.packing-list-items-he-takes-on-a-trip` |
+| `format_he_keeps_his_packing_list_in` | `person.format-he-keeps-his-packing-list-in` |
+| `reason_he_gives_for_keeping_his_packing_list_in_markdown` | `person.reason-he-gives-for-keeping-his-packing-list-in-markdown` |
+| `rules_he_keeps_about_what_he_packs_for_trips` | `person.rules-he-keeps-about-what-he-packs-for-trips` |
+| `when_he_reviews_his_packing_list_before_departure` | `person.when-he-reviews-his-packing-list-before-departure` |
+
+### 9.2 Признак, снятый с заменой — 6 родов
+
+| Род в памяти | Ключ снятого признака | Замена | Почему |
+|---|---|---|---|
+| `money_he_spent_on_purchases_by_item` | `person.money-he-spent-on-purchases-by-item` | `money.spent-on-a-purchase` | дубль смысла |
+| `currency_he_counts_his_money_in` | `person.currency-he-counts-his-money-in` | `person.currency-he-counts-money-in` | дубль смысла (одно слово разницы) |
+| `time_after_which_he_stops_answering_work_messages` | `person.time-after-which-he-stops-answering-work-messages` | `person.work-hours-he-keeps-each-day` | тот же смысл «когда можно писать» |
+| `plans_he_wrote_down_for_the_month` | `person.plans-he-wrote-down-for-the-month` | `person.tasks-he-plans-to-do` | задачи с горизонтом — признак 205-2 |
+| `how_long_he_has_known_his_friend_denis` | `person.how-long-he-has-known-his-friend-denis` | граф с якорем «Денис» | глубина 2: атрибут друга (§21.2) |
+| `rules_he_keeps_about_feeding_his_dog` | `person.rules-he-keeps-about-feeding-his-dog` | граф с якорем на животное | глубина 2: атрибут собаки (§21.2) |
+
+**Итог:** реестр — **51 запись: 44 действующих, 7 снятых** (было 24: 23 и 1). Разнородность новых записей — сверка нового рода с кандидатами
+(паспорт §23.2, сноска *⁴) — в этот шаг не входит.

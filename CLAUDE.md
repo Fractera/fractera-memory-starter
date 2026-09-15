@@ -65,11 +65,16 @@ matching what you do.
 
 ## The feature registry
 
-Memory keeps a dictionary of what a caller may mean — `AGI-CONFIG/agi-config.json`, maintained by the
-architect. Everything said reaches the knowledge graph; exact, countable and current values also land
-in tables. Rules for reusing features and adding new ones are still being set with the architect:
-until then, reuse an existing kind whenever one fits, never create a near-duplicate, and when nothing
-fits, say so plainly.
+Memory keeps a dictionary of what a caller may mean — `AGI-CONFIG/agi-config.json`. Everything said
+reaches the knowledge graph; exact, countable and current values also land in tables. The rules
+(PASSPORT §23):
+
+- **Reuse first.** When an existing kind fits the meaning, the value goes there — keep records different
+  from each other; a second kind for the same meaning is a defect.
+- **Memory grows.** When nothing fits, a new kind is created: a column for a single value, a table when a
+  second value is added or the thing will keep growing (`use-tables`).
+- **The registry catches up.** A kind without a feature is work for the development agent, not an error.
+- **A retired feature** takes no new values; its reason names the replacement.
 
 ## What you never do
 
