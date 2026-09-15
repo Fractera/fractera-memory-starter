@@ -1,6 +1,6 @@
 {
   "generated_from": "AGI-CONFIG/agi-config.json",
-  "count": 21,
+  "count": 24,
   "features": [
     {
       "key": "person.name-he-is-called",
@@ -127,6 +127,24 @@
       "title": "Траты человека: на что и сколько",
       "valueType": "money",
       "aggregate": "sum-able"
+    },
+    {
+      "key": "person.tasks-he-plans-to-do",
+      "title": "Задачи, которые человек собирается сделать",
+      "valueType": "object",
+      "aggregate": "list"
+    },
+    {
+      "key": "person.places-he-marked-for-himself",
+      "title": "Места, которые человек отметил для себя",
+      "valueType": "object",
+      "aggregate": "list"
+    },
+    {
+      "key": "person.ideas-he-had-for-the-future",
+      "title": "Идеи и замыслы человека на будущее",
+      "valueType": "text",
+      "aggregate": "list"
     }
   ]
 }
