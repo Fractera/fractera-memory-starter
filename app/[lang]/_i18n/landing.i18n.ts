@@ -410,7 +410,7 @@ const EN: LandingWords = {
       {
         "title": "Earlier related messages are pulled into the context",
         "items": [
-          { "text": "The caller can hand over the earlier conversation, what it has already found, and the thread of an earlier reasoning." },
+          { "text": "Memory no longer expects a flag saying this continues an earlier message: the input is text and objects." },
           { "text": "Memory finds the related earlier messages by itself, by meaning and by time*².", "plan": "link-messages" }
         ]
       },
