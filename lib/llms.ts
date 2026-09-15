@@ -43,7 +43,7 @@ ${w.hero.lead}
 ## What it is
 ${w.problem.body}
 
-## Cost ladder
+## ${w.ladder.title}
 ${ladder}
 
 ## Storage tiers
