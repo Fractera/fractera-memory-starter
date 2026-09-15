@@ -12,7 +12,8 @@
 //
 // Запуск на сервере из корня службы:  node scripts/probe/build-page-202.mjs
 
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
+import { join } from "node:path"
 import { listSkills, listSteps } from "../../lib/build-docs.mjs"
 
 const BASE = process.env.MEMORY_URL ?? "http://127.0.0.1:3700"
@@ -119,6 +120,37 @@ const ins = await page("?section=instruction")
 say(attr(ins.html, "data-build-instruction") === 1 && /Кто ты и где ты/.test(ins.html), "главная инструкция: текст CLAUDE.md на странице")
 const insZone = ins.html.slice(ins.html.indexOf(' data-build-section="instruction"'))
 say(!/<textarea|<form/.test(insZone), "НЕГАТИВ: в разделе инструкции нет формы правки")
+
+// ── 202-8: путь в проекте под заголовком каждого раздела, кроме терминала ────
+//
+// 🔒 ОЖИДАНИЕ ЗАПИСАНО ЗДЕСЬ, А НЕ ВЗЯТО ИЗ `BUILD_PATHS`: прибор, читающий ответ из того же места, что и страница, проверял бы код самим
+// собой. Это ТЗ 202-8, переписанное в числа.
+const EXPECT = {
+  current: ["development-docs/development-steps/current-steps.md"],
+  instruction: ["CLAUDE.md"],
+  skills: [".claude/skills/"],
+  steps: ["development-docs/development-steps/"],
+  "steps-done": ["development-docs/development-steps/completed-steps/"],
+  "steps-new": ["development-docs/development-steps/new-steps/"],
+  task: ["development-docs/development-steps/pre-steps/", "development-docs/development-steps/pre-steps/README.md"],
+}
+for (const [section, paths] of Object.entries(EXPECT)) {
+  const p = await page(`?section=${section}`)
+  const shown = [...p.html.matchAll(/ data-build-path="([^"]+)"/g)].map((m) => m[1])
+  const onDisk = paths.every((x) => existsSync(join(process.cwd(), x)))
+  say(shown.join("|") === paths.join("|") && onDisk, `путь раздела «${section}»: ${shown.join(" · ") || "НЕТ"} · на диске: ${onDisk}`)
+}
+const termPath = await page("?section=terminal")
+say(attr(termPath.html, "data-build-path") === 0, "НЕГАТИВ: у терминала пути нет (слово владельца «кроме терминал»)")
+const stepPath = await page(`?section=steps-done&doc=step-done:${listSteps("done")[0].n}`)
+const shownStep = stepPath.html.match(/ data-doc-path="true"[^>]*>([^<]+)</)?.[1] ?? ""
+say(shownStep === `development-docs/development-steps/completed-steps/${listSteps("done")[0].n}-*.md`, `окно шага показывает путь открытого шага: ${shownStep}`)
+const skillPath = await page("?section=skills&doc=skill:use-tables")
+const shownSkill = skillPath.html.match(/ data-doc-path="true"[^>]*>([^<]+)</)?.[1] ?? ""
+say(shownSkill === ".claude/skills/use-tables/SKILL.md" && existsSync(join(process.cwd(), shownSkill)), `окно навыка показывает путь навыка: ${shownSkill}`)
+const newPath = await page(`?section=steps-new&doc=step-new:${listSteps("new")[0].n}`)
+const shownNew = newPath.html.match(/ data-doc-path="true"[^>]*>([^<]+)</)?.[1] ?? ""
+say(existsSync(join(process.cwd(), shownNew.replace("-*.md", "-main.md"))) || existsSync(join(process.cwd(), shownNew)), `окно нового шага показывает существующий путь: ${shownNew}`)
 
 console.log(`===PROBE_202_PAGE=== ${bad ? `ПРОВАЛОВ: ${bad}` : "всё сошлось"} ${new Date().toISOString()}`)
 process.exit(bad ? 1 : 0)

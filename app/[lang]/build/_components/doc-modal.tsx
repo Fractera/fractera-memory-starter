@@ -16,11 +16,14 @@ import { PassportBody } from "../../settings/_components/passport-body.client"
 export function DocModal({
   closeHref,
   closeWord,
+  path,
   text,
   title,
 }: {
   closeHref: string
   closeWord: string
+  /** Где документ лежит в проекте (202-8). */
+  path?: string
   text: string
   title: string
 }) {
@@ -29,7 +32,15 @@ export function DocModal({
       <Link aria-label={closeWord} className="absolute inset-0 bg-black/50" href={closeHref} scroll={false} />
       <div className="relative flex max-h-[min(1000px,90dvh)] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
         <div className="flex shrink-0 items-center justify-between gap-3 border-border border-b px-5 py-3">
-          <h2 className="truncate font-medium text-[length:var(--fs-h4)]">{title}</h2>
+          <div className="min-w-0">
+            <h2 className="truncate font-medium text-[length:var(--fs-h4)]">{title}</h2>
+            {/* 🔒 ПУТЬ ДОКУМЕНТА В ПРОЕКТЕ (202-8): окно показывает не только текст, но и где он живёт. */}
+            {path && (
+              <code className="mt-0.5 block truncate font-mono text-[length:var(--fs-small)] text-muted-foreground" data-doc-path>
+                {path}
+              </code>
+            )}
+          </div>
           <Link
             aria-label={closeWord}
             className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"

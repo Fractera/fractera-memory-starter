@@ -16,7 +16,7 @@ import { BuildTasks } from "./_components/build-tasks.client"
 import { BuildTerminal } from "./_components/build-terminal.client"
 import { DocModal } from "./_components/doc-modal"
 import { buildUi, type BuildUi } from "./_i18n/build.i18n"
-import { BUILD_TOP, type BuildSection, hrefOfBuild, inSteps, resolveBuildSection } from "./_lib/build-sections"
+import { BUILD_PATHS, BUILD_TOP, type BuildSection, hrefOfBuild, inSteps, resolveBuildSection } from "./_lib/build-sections"
 
 // МАСТЕРСКАЯ РАЗРАБОТКИ «ПОСТРОЙТЕ ЭТОТ ПРОДУКТ» (189-8 → шаг 202).
 //
@@ -163,7 +163,26 @@ async function BuildBody({
 
         <WorkspaceShell
           id="build"
-          lead={ui.sections[active].lead}
+          lead={
+            <>
+              {ui.sections[active].lead}
+              {/* 🔒 ПУТЬ В ПРОЕКТЕ ПОД ЗАГОЛОВКОМ (202-8, слово владельца: «под заголовком рисуешь путь к файлу»). Лид рисуется внутри
+                  абзаца — поэтому только строчные элементы: блок внутри <p> браузер разорвал бы молча. */}
+              {BUILD_PATHS[active] && (
+                <span className="mt-2 flex flex-wrap gap-2" data-build-path-row>
+                  {BUILD_PATHS[active]!.map((p) => (
+                    <code
+                      className="rounded bg-muted px-2 py-0.5 font-mono text-[length:var(--fs-small)] text-foreground"
+                      data-build-path={p}
+                      key={p}
+                    >
+                      {p}
+                    </code>
+                  ))}
+                </span>
+              )}
+            </>
+          }
           menu={items}
           menuTitle={ui.menuTitle}
           menuWord={ui.menuWord}
@@ -182,7 +201,7 @@ async function BuildBody({
 
       {docParam &&
         (doc ? (
-          <DocModal closeHref={hrefOfBuild(lang, active)} closeWord={ui.modal.close} text={doc.text} title={doc.title} />
+          <DocModal closeHref={hrefOfBuild(lang, active)} closeWord={ui.modal.close} path={doc.path} text={doc.text} title={doc.title} />
         ) : null)}
     </main>
   )
