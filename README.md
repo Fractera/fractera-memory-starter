@@ -3,7 +3,7 @@
 **A self-hosted, open-source memory engine for agents.** Knowledge graph built on write and read
 without a model turn · spatial-temporal scope with `lat`/`lon` validated and stored on every record ·
 native multimodal input — voice, images, video, PDF, pages, links — with its own object store · one
-short model call per request over the tables you already have, after which code and the stores do the rest.
+short model call per phrase, after which the graph, the vector store and the object store do the rest.
 
 > **How to read this document.** The engine is described whole, so it is clear what it does and how it
 > is built. Anything not yet in the code says so on the spot, in **bold, in the same paragraph** — and
@@ -13,7 +13,7 @@ short model call per request over the tables you already have, after which code 
 Built to act as the architect's personal command centre — through a Telegram bot, a web chat or
 anything else that speaks HTTP — it closes the gap between a volatile context window and real
 cognitive continuity. Every request costs **one short model call** that names what the person means;
-the table and the graph then answer without further model turns. Measured on a live server on
+the graph and the vector store then answer without further model turns. Measured on a live server on
 2026-09-15: **5–17 s per question**.
 
 It ships **with its own web console** — passport, API reference with key generation, a live
@@ -111,13 +111,13 @@ instance.
 | What you need | How this engine does it |
 |---|---|
 | **Any front-end — Telegram today, a web chat or mobile app tomorrow** | A working web console comes in the box and is already connected; every other client — a Telegram bot, a web widget, a mobile app, a cron job — attaches to the same REST API as a caller with a key. An agent's tool schema is generated from `GET /v1/contract` over HTTP, so a new front-end is wired in minutes. |
-| **Decisions and actions, not hints** | Answers carry the conclusion, its source table, the kind of claim (said or inferred), the grounds, and — on request — the chain of the search. **Scheduled follow-ups are not built:** memory has no scheduler, and nothing in an answer creates one. |
+| **Decisions and actions, not hints** | Answers carry the conclusion, its source, the kind of claim (said or inferred), the grounds, and — on request — the chain of the search. **Scheduled follow-ups are not built:** memory has no scheduler, and nothing in an answer creates one. |
 | **Video, images, PDF, audio** | Native, with the pipeline and the object store inside — see §1 above. |
 | **Geolocation, and dates when they matter** | Spatial-temporal scope with `lat`/`lon`, `radius_m` and `at`, validated and stored on every record — see §2 above, including what retrieval does not yet do with it. |
 | **Deep reasoning that finds what was never written down** | Partly. Three levels are built — table, one short model call, knowledge graph — and `depth_used` always reports the one actually reached. **Semantic search inside reading and bounded recursive research are in development** (note *⁶). «Who of my contacts could have known that person» is the reference case being built towards. |
-| **Fast with no AI in some cases, a strong model in others** | Partly. Every request costs one short model call over this person's own tables, never the whole schema; the table and the graph then answer without further model turns, and sums are computed by code. Only a request with no question uses no model at all. `depth_used` always reports how far memory actually went. |
-| **The slow answer must become instant next time** | The design, and the order it happens in, is fixed — artefact into the object store, summary into text, into the vector store and into the graph, relation table updated. **Today the loop is driven from outside:** an agent keeps the answer with `keep_object`; reading does not fold its own result back (note *⁷). |
-| **Complex requests should build an entity and come back as a report** | Memory creates the table while answering, and `need_table` forces it at once — that part works. **Assembling a document over the tables inside reading is in development** (note *¹¹); today the agent composes it and hands it over with `keep_object`. |
+| **Fast with no AI in some cases, a strong model in others** | Partly. A phrase costs one short model call; the graph and the vector store then answer without further model turns. No model at all is used for a request with no question and for any text over 2000 words, which is kept whole. `depth_used` always reports how far memory actually went. |
+| **The slow answer must become instant next time** | The design, and the order it happens in, is fixed — artefact into the object store, summary into the vector store and into the graph, the message row tying them together. **Today the loop is driven from outside:** an agent keeps the answer with `keep_object`; reading does not fold its own result back (note *⁷). |
+| **Complex requests should build an entity and come back as a report** | Partly. The answer can be kept as an **object** with an id, a description and a search card. **Building typed tables is no longer memory's work at all** (step 206): specialised tables belong to other applications. |
 | **Its own object storage** | Built in, on your machine, referenced from answers by id. |
 | **An evolution core with split-testing** | Designed, **not built** — champion/challenger shadow testing with an explicit promotion rule, see §3 above. |
 | **Free, on my own server** | Self-hosted on your VPS, deployed by the installer robot. No metered API in the middle; nothing leaves the machine. |
@@ -158,7 +158,7 @@ curl -s $MEM/recall -H "Content-Type: application/json" -H "x-memory-key: $MEMOR
   -d '{ "who": "roman", "lang": "en" }'
 ```
 
-No schema to design, no migration to run, no table to declare.
+No schema to design, no migration to run, no table to declare: memory has exactly one table — the one every incoming message lands in — and everything else is events around it.
 
 ---
 
@@ -192,13 +192,10 @@ understands and names; a non-200 status means the call never reached the verb.
 | `lang` | string | no | Language of the words meant for a person. |
 | `scope` | array | no | Spatial-temporal scope: `{at, place, lat, lon, radius_m}` entries. |
 | `media` | array | no | Attachments: `{url}` file addresses. Each goes the same way as `keep_object`; memory decides the kind. |
-| `thread` | string | no | Continue an earlier line of reasoning. |
-| `deny` | string | no | Overturn an earlier conclusion. |
-| `need_table` | boolean | no | Make what is recorded its own table at once. |
 
 Returns `what_happened` (words you can say straight to a person), `noted` (what was written down,
-with `from_table` and `claim`), `params` (the fate of every optional parameter), `objects` (the fate of every
-attachment) and `thread`.
+with `claim`), `params` (the fate of every optional parameter) and `objects` (the fate of every
+attachment).
 On a contradiction: *«was X, now Y»* — the latest wins, out loud, with the previous value kept.
 
 ## `POST /v1/recall`
@@ -209,8 +206,6 @@ On a contradiction: *«was X, now Y»* — the latest wins, out loud, with the p
 | `text` | string | no | The question in a human sentence; without it everything known comes back. |
 | `lang` | string | no | Language of the words meant for a person. |
 | `depth` | string | no | `standard` · `deep` · `extreme`. **Reading stops at the knowledge graph today**; `depth_used` reports the level actually reached (note \*⁶). |
-| `history` | string | no | The previous conversation, when the caller has one. |
-| `prior` | string | no | What has already been found before this question. |
 | `want_chain` | boolean | no | Return the steps of the search. |
 
 | `scope` | array | no | Where and when the question is asked. Accepted, validated and reported back; **retrieval does not use the coordinates yet** (note *⁹). |
@@ -294,25 +289,16 @@ Sent with a verb, the request goes to `POST /v1/remember` (add) or `POST /v1/rec
 without one, memory decides for itself which it is\*¹.
 
 **2. Earlier related messages are pulled into the context.**
-The caller can hand over the earlier conversation (`history`), what it has already found (`prior`) and
-the thread of an earlier reasoning (`thread`). Memory finding the related messages by itself — by
-meaning and by time — is in development\*².
+Memory no longer expects a "this continues an earlier message" flag from the caller: the input is
+text and objects. Finding related earlier messages by itself — by meaning and by time — is in
+development*².
 
-**3. Memory compares the phrase with the tables it already has.**
-It shows the model **this person's own tables and columns** — never the whole schema — and one short
-call decides what the phrase is about. Everything after that is code:
-
-- a fitting place exists → the value goes there;
-- no fitting place → a new one is created: **a column** for a single value, **a table** when a second
-  value is added or the thing will keep growing;
-- a **correction** replaces the value and the old one goes to history; an **addition** turns the column
-  into a table and carries the first value over with its own timestamp;
-- a **story** rather than a value — an explanation, a circumstance, a plan — never goes into a table:
-  its place is the knowledge graph, with an anchor;
-- the depth rule holds throughout: the person and those directly connected to them may go into tables;
-  an attribute of someone else's entity is graph-only. The year of birth, never the age.
-- everything said reaches the knowledge graph in any case, with the person's name and the channel it
-  arrived by.
+**3. How long is it, and where can it go at all.**
+Under 2000 words the phrase is parsed by one short model call and lands in the knowledge graph **and**
+the vector store; every parsed fact becomes an anchor the phrase is later found by. Over 2000 words
+the text goes to the object store whole and is not parsed at all — what has nowhere to land is not
+worth a model call. Memory creates no tables and no columns of its own: its single table is the one
+every incoming message lands in.
 
 **4. A file or a link goes to the object store.**
 A picture, voice note, video, PDF, document, source code, a web page or a YouTube video: memory reads
@@ -380,22 +366,21 @@ and hands it over with `keep_object`, and it comes back by id with its file, des
 findable by meaning. **Assembling the document over the tables inside `recall` is in development**
 (note \*¹¹): today reading does not build the report by itself.
 
-## Threads of reasoning — and why continuing one is cheaper
+## Threads of reasoning — measured, and no longer part of the contract
 
-Every answer in which the engine thought carries `thread`; send it back and the same chain continues,
-with the model seeing its own earlier conclusion.
+Continuing an earlier line of reasoning is **eight times cheaper** than restating context in a fresh
+call — measured on this server:
 
 | Turn | cache created | cache read | cost |
 |---|---|---|---|
 | first — the thread is born | 6362 | 8204 | `0.0289` |
-| second — `thread` sent back | 843 | 15305 | `0.0065` |
+| second — the thread continued | 843 | 15305 | `0.0065` |
 | third | — | 16148 | `0.0036` |
 
-Continuing a thread is **eight times cheaper** than restating context in a fresh call.
-
-This is what makes `deny` meaningful: overturning a conclusion only matters if you can return to the
-reasoning that produced it. The conclusion is withdrawn, the grounds are kept, and the refuted
-hypothesis stays on record so the same search does not reproduce it tomorrow.
+🪦 **The caller no longer passes a thread, and no answer returns one** (step 206, the architect's
+decision of 2026-09-15: the input is text and objects, nothing about what came before). The mechanism
+is alive inside memory; deciding whether something continues an earlier message is memory's own work,
+not the caller's claim.
 
 ## The memoization loop: the slow answer becomes the fast one
 

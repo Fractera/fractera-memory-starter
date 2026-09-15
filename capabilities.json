@@ -127,7 +127,7 @@
     "caching_effect": "by design an expensive result is folded back into the stores so the repeat question is answered from the cheap levels; today the caller does it with keep_object and reading does not fold its own result back"
   },
   "reports": {
-    "entity_creation": "a second value of a kind promotes a column into its own table; need_table forces it at once",
+    "entity_creation": "not memory's work: specialised tables belong to other applications (step 206). Memory keeps one message table and events around it",
     "artefact_plus_summary": true
   },
   "security": {

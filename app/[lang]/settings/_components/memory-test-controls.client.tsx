@@ -256,13 +256,8 @@ export function BenchControls({
   const set = [
     params.depth !== "standard" && words.depth.label,
     params.who !== "bench-1" && words.who.label,
-    params.historyOn && params.history.trim() && words.history.label,
-    params.priorOn && params.prior.trim() && words.prior.label,
     params.wantChain && words.chain.label,
-    params.thread.trim() && words.thread.label,
     params.scope.some((e) => e.at || e.place) && words.scope.label,
-    params.deny.trim() && words.deny.label,
-    params.needTable && words.needTable.label,
     (params.files.length > 0 || params.links.some((u) => u.trim()) || params.youtube.some((u) => u.trim())) &&
       words.attach.label,
   ].filter(Boolean) as string[];
@@ -326,24 +321,6 @@ export function BenchControls({
       {/* ③ ИСТОРИЯ РАЗГОВОРА — ПЕРЕКЛЮЧАТЕЛЬ И ПОЛЕ.
           🔒 Стоит ВЫШЕ основного поля в раскладке стенда — так в паспорте §12:
           это контекст вопроса, а не сам вопрос. */}
-      <Row hint={words.history.hint} label={words.history.label} ok={has("history")} words={words}>
-        <label className="flex items-center gap-2 text-[length:var(--fs-small)]">
-          <input
-            checked={params.historyOn}
-            onChange={(e) => onChange({ historyOn: e.target.checked })}
-            type="checkbox"
-          />
-          {words.history.label}
-        </label>
-        {params.historyOn ? (
-          <textarea
-            className={`${boxClass} h-20 resize-y`}
-            onChange={(e) => onChange({ history: e.target.value })}
-            placeholder={words.history.placeholder}
-            value={params.history}
-          />
-        ) : null}
-      </Row>
 
       {/* ④ ПРЕЖНИЙ ПОИСК — ДВЕ РАЗНЫЕ ВЕЩИ В ОДНОМ ОРГАНЕ, И РАЗНИЦА НАЗВАНА.
           🔒 НИТЬ — НАША СОБСТВЕННАЯ ЦЕПОЧКА РАЗМЫШЛЕНИЯ (184-4). У `claude -p`
@@ -355,49 +332,8 @@ export function BenchControls({
           зовущего, у которого нашей нити нет вовсе — чужой модели или службы.
           Слить их в одно поле значило бы потребовать идентификатор там, где его
           неоткуда взять. */}
-      <Row hint={words.thread.hint} label={words.thread.label} ok={has("thread")} words={words}>
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            aria-label={words.thread.label}
-            className={`${boxClass} max-w-[26rem] font-mono`}
-            onChange={(e) => onChange({ thread: e.target.value })}
-            placeholder={words.thread.placeholder}
-            value={params.thread}
-          />
-          {/* 🔒 КНОПКА СУЩЕСТВУЕТ ПОТОМУ, ЧТО ИДЕНТИФИКАТОР НИКТО НЕ НАБИРАЕТ
-              РУКАМИ: это 36 знаков из ответа службы. Нечего взять — кнопки нет,
-              и это честнее, чем кнопка, которая ничего не делает. */}
-          {lastThread ? (
-            <button
-              className="rounded-md border border-muted-foreground/30 px-2 py-1 text-[length:var(--fs-small)] hover:bg-muted"
-              onClick={() => onChange({ thread: lastThread })}
-              type="button"
-            >
-              {words.thread.take}
-            </button>
-          ) : null}
-        </div>
-      </Row>
 
       {/* ⑤ РЕЗУЛЬТАТЫ ПРЕДЫДУЩИХ ПОИСКОВ — СВОБОДНЫМ ТЕКСТОМ */}
-      <Row hint={words.prior.hint} label={words.prior.label} ok={has("prior")} words={words}>
-        <label className="flex items-center gap-2 text-[length:var(--fs-small)]">
-          <input
-            checked={params.priorOn}
-            onChange={(e) => onChange({ priorOn: e.target.checked })}
-            type="checkbox"
-          />
-          {words.prior.label}
-        </label>
-        {params.priorOn ? (
-          <textarea
-            className={`${boxClass} h-20 resize-y`}
-            onChange={(e) => onChange({ prior: e.target.value })}
-            placeholder={words.prior.placeholder}
-            value={params.prior}
-          />
-        ) : null}
-      </Row>
 
       {/* ⑤ ЦЕПОЧКА РАЗМЫШЛЕНИЙ — ДА ИЛИ НЕТ.
           🔒 Умолчание «нет» (паспорт §4): переполнять свой контекст или нет
@@ -483,26 +419,8 @@ export function BenchControls({
       </Row>
 
       {/* ⑦ ОТРИЦАНИЕ ОТВЕТА */}
-      <Row hint={words.deny.hint} label={words.deny.label} ok={has("deny")} words={words}>
-        <textarea
-          className={`${boxClass} h-16 resize-y`}
-          onChange={(e) => onChange({ deny: e.target.value })}
-          placeholder={words.deny.placeholder}
-          value={params.deny}
-        />
-      </Row>
 
       {/* ⑧ ТРЕБУЕТСЯ СОЗДАТЬ ТАБЛИЦУ */}
-      <Row hint={words.needTable.hint} label={words.needTable.label} ok={has("need_table")} words={words}>
-        <label className="flex items-center gap-2 text-[length:var(--fs-small)]">
-          <input
-            checked={params.needTable}
-            onChange={(e) => onChange({ needTable: e.target.checked })}
-            type="checkbox"
-          />
-          {words.needTable.label}
-        </label>
-      </Row>
 
       {/* ⑨ ВЛОЖЕНИЯ — ВКЛЮЧЕНИЕ В «СКАЗАТЬ», А НЕ ОТДЕЛЬНАЯ ДВЕРЬ (200-5).
           🔒 Слово владельца 2026-09-14: «кнопку загрузить аудио кнопку загрузить видео кнопка загрузить и так далее и

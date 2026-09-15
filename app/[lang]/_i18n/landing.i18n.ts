@@ -206,7 +206,7 @@ const EN: LandingWords = {
     lead:
       "Asked to summarise complex data — last month's spending, a project's state — memory does not hand back a wall of text. It builds the thing you asked for:",
     steps: [
-      "Instantiates a structured entity: a typed table with the columns the answer needs.",
+      "Keeps the whole thing in the object store: it has an id, a description and a search card.",
       "Compiles, sorts and formats a clean Markdown artifact with its own Object ID.",
       "Returns a short executive summary next to the artifact, so the answer reads well and the detail stays referenceable.",
     ],
@@ -287,12 +287,12 @@ const EN: LandingWords = {
           },
           {
             feature: "Cost optimisation",
-            ours: "One short model call over this person's own tables, never the whole schema; the table and the graph then answer without further model turns",
+            ours: "One short model call per phrase; the graph, the vector store and the message table then answer without further model turns",
             rivals: ["Every operation leans on model passes, BM25 and vector lookups"],
           },
           {
             feature: "Data processing",
-            ours: "Dynamic SQL tables grown from phrases, a knowledge graph, objects with ids",
+            ours: "One message table with events around it: a knowledge graph, a vector store, objects with ids",
             rivals: ["Markdown cards written to a folder for Obsidian to sync"],
           },
           {
@@ -333,7 +333,7 @@ const EN: LandingWords = {
   faq: {
     items: [
       {
-        a: "Almost every one — and exactly one short call. To understand what a person means, memory shows the model this person's own tables and columns, with no conversation kept. After that the table and the graph answer without further model turns. Only a request with no question is answered with no model at all. The answer reports depth_used, the depth actually reached.",
+        a: "Almost every one — and exactly one short call. It parses the phrase: what was said, and whether it was stated or inferred. After that the graph, the vector store and the message table answer without further model turns. No model at all is used for a request with no question, and for any text over 2000 words — it is kept whole, unparsed. The answer reports depth_used, the depth actually reached.",
         q: "Does every request cost tokens?",
       },
       {
@@ -345,7 +345,7 @@ const EN: LandingWords = {
         q: "What can I send besides text?",
       },
       {
-        a: "None. You send a sentence. The engine adds columns as new kinds of fact appear and generates typed relational tables when a kind grows into an entity. There are no migrations to write.",
+        a: "None. You send a sentence. Memory creates no tables and no columns of its own: it has one table — the one every incoming message lands in — and knowledge lives as events around it, in the graph, the vector store and the object store. There are no migrations to write.",
         q: "What schema do I have to design first?",
       },
       {
@@ -375,14 +375,14 @@ const EN: LandingWords = {
   },
   seo: {
     description:
-      "Self-hosted memory engine for AI agents: knowledge graph, vector and relational stores, built-in object storage, spatial-temporal scope with lat/lon on every record, native voice, image, video, PDF, Markdown, HTML, source-code and link input, and one short model call per request over the tables you already have. One REST API, open source.",
+      "Self-hosted memory engine for AI agents: a knowledge graph, vector and object stores, one table of incoming messages, spatial-temporal scope with lat/lon on every record, native voice, image, video, PDF, Markdown, HTML, source-code and link input, and one short model call per phrase. One REST API, open source.",
     title: "Fractera Memory — self-hosted memory engine for AI agents",
   },
   toc: { heading: "On this page", label: "Contents" },
   hero: {
     badges: ["No metered per-request fees", "Zero vendor lock-in", "Full privacy on your server"],
     body:
-      "The engine ingests raw, unstructured real-world input — text, images, voice notes, video, whole PDF documents, Markdown and HTML pages, source code, links, and spatial-temporal coordinates and dates — and turns it into an indexed knowledge graph and structured relational stores. One short model call per request understands what is meant; after it the tables and the graph answer without further model turns, and a request with no question costs no model call at all.",
+      "The engine ingests raw, unstructured real-world input — text, images, voice notes, video, whole PDF documents, Markdown and HTML pages, source code, links, and spatial-temporal coordinates and dates — and turns it into events around a single message table: an indexed knowledge graph, a vector store and objects. One short model call per phrase understands what is meant; after it the graph and the vector store answer without further model turns, and a request with no question costs no model call at all.",
     eyebrow: "Fractera Memory Starter",
     lead:
       "An autonomous, self-hosted long-term memory engine and the cognitive core for AI agents. Built to work as the architect's personal command centre through Telegram and a unified REST API, it closes the gap between a volatile context window and real cognitive continuity.",
@@ -415,14 +415,13 @@ const EN: LandingWords = {
         ]
       },
       {
-        "title": "Memory compares the phrase with the tables it already has",
+        "title": "Memory turns what was said into events around one table",
         "items": [
-          { "text": "It shows the model this person's own tables and columns — never the whole schema — and one short call decides what the phrase is about.", "skills": ["use-tables"] },
-          { "text": "A fitting place exists → the value goes there.", "skills": ["use-tables"] },
-          { "text": "No fitting place → a new one is created: a column for a single value, a table when a second value is added or the thing will keep growing.", "skills": ["use-tables"] },
-          { "text": "A correction replaces the value and the old one goes to history; an addition turns the column into a table and carries the first value over with its own timestamp.", "skills": ["use-tables"] },
-          { "text": "A story rather than a value — an explanation, a circumstance, a plan — never goes into a table: its place is the knowledge graph, with an anchor." },
-          { "text": "Everything said reaches the knowledge graph in any case, with the person's name and the channel it arrived by." }
+          { "text": "Under 2000 words, the phrase is parsed by one short model call: what was said, and whether it was stated or inferred." },
+          { "text": "Every parsed fact becomes an event and an anchor — the name the phrase is later found by." },
+          { "text": "Memory creates no tables and no columns of its own: its single table is the one every incoming message lands in." },
+          { "text": "Over 2000 words, the text goes to the object store whole and is not parsed at all: what has nowhere to land is not worth a model call." },
+          { "text": "Either way everything said goes into the knowledge graph and the vector store, with the person's name and the channel it arrived through." }
         ]
       },
       {
@@ -472,7 +471,7 @@ const EN: LandingWords = {
     chain: [
       "An expensive computation or research loop runs at the deep levels",
       "An artifact is created with its ID, alongside a concise conclusion",
-      "The conclusion is indexed into the vector store, the knowledge graph and the tables",
+      "The conclusion is indexed into the vector store and the knowledge graph, and the message row ties them to the object",
       "The repeat question is then answered from the cheap levels",
     ],
     building:
@@ -507,7 +506,7 @@ const EN: LandingWords = {
     title: "The architect's operating system",
   },
   router: {
-    "cheapBranch": "1.0 Adding a record · the table for the exact, the graph for everything said",
+    "cheapBranch": "1.0 Adding a record · graph and vector for what was said, the object store for the long",
     "cheapCost": "No further model turns: code checks values and writes rows; the graph builds its links in the background",
     "deepBranch": "2.0 Retrieving · table → graph → vectors (deep) → research (extreme)*⁶",
     "deepCost": "The table and the graph answer with no model turn; deep and extreme spend more time and model turns",
@@ -518,8 +517,8 @@ const EN: LandingWords = {
   },
   schema: {
     body:
-      "No manual migrations, no static schema design. The engine adapts its schema on the fly — adding columns, and generating fully typed relational SQL tables whenever new structured entities and relationships appear.",
-    title: "End-to-end schema adaptability",
+      "No migrations and no schema design — because there is no schema to design. Memory has one table, the one every incoming message lands in; everything a person says lives as events around it, in the knowledge graph, the vector store and the object store.",
+    title: "One table, everything else is events",
   },
   scope: {
     items: [
@@ -573,7 +572,7 @@ const RU: LandingWords = {
     lead:
       "Память не просто пишет текстом цифры или факты. При запросах на сведение данных — отчёт по финансам, состояние проекта — система:",
     steps: [
-      "Автоматически создаёт сущность или таблицу с теми колонками, которые нужны ответу.",
+      "Кладёт вещь целиком в объектное хранилище: у неё есть идентификатор, описание и карточка поиска.",
       "Собирает, сортирует и сводит Markdown-структуру, присваивая уникальный ID артефакта.",
       "Отдаёт короткое резюме вместе с готовым объектом: ответ читается, подробность остаётся адресуемой.",
     ],
@@ -654,12 +653,12 @@ const RU: LandingWords = {
           },
           {
             feature: "Управление расходами",
-            ours: "Один короткий вызов модели по таблицам самого человека, а не по всей схеме; дальше таблица и граф отвечают без новых ходов модели",
+            ours: "Один короткий вызов модели на фразу; дальше связи, вектор и таблица сообщений отвечают без новых ходов модели",
             rivals: ["Каждая операция опирается на вызовы модели, BM25 и векторы"],
           },
           {
             feature: "Работа с данными",
-            ours: "Авто-создание SQL-таблиц, артефакты-отчёты с ID, граф связей",
+            ours: "Одна таблица сообщений, события вокруг неё: граф связей, вектор, объекты с идентификаторами",
             rivals: ["Markdown-карточки в папку для синхронизации Obsidian"],
           },
           {
@@ -700,7 +699,7 @@ const RU: LandingWords = {
   faq: {
     items: [
       {
-        a: "Почти каждый — и ровно одного короткого вызова. Чтобы понять, что имеет в виду человек, память показывает модели таблицы и колонки самого человека, без сохранения разговора. Дальше таблица и граф отвечают без новых ходов модели. Вовсе без модели отвечается только запрос без вопроса. Ответ называет depth_used — глубину, достигнутую на деле.",
+        a: "Почти каждый — и ровно одного короткого вызова. Один вызов разбирает фразу: что сказано, сказано это прямо или выведено. Дальше отвечают связи, вектор и таблица сообщений без новых ходов модели. Вовсе без модели отвечается запрос без вопроса и любой текст длиннее 2000 слов — он сохраняется целиком, не разбираясь. Ответ называет depth_used — глубину, достигнутую на деле.",
         q: "Каждый запрос стоит токенов?",
       },
       {
@@ -712,7 +711,7 @@ const RU: LandingWords = {
         q: "Что можно присылать, кроме текста?",
       },
       {
-        a: "Никакую. Вы присылаете фразу. Память добавляет колонки, когда появляются новые роды фактов, и порождает типизированные таблицы, когда род вырастает в сущность. Миграции писать не нужно.",
+        a: "Никакую. Вы присылаете фразу. Своих таблиц и колонок память не заводит вовсе: у неё одна таблица — та, куда попадают все входящие сообщения, а знание живёт событиями вокруг неё, в связях, векторе и объектном хранилище. Миграции писать не нужно.",
         q: "Какую схему нужно спроектировать заранее?",
       },
       {
@@ -742,14 +741,14 @@ const RU: LandingWords = {
   },
   seo: {
     description:
-      "Автономная память для ИИ-агентов на вашем сервере: граф знаний, векторное и реляционное хранилища, встроенное объектное хранилище, охват записи с координатами и датой, приём голоса, изображений, видео, PDF, Markdown, HTML, исходного кода и ссылок, один короткий вызов модели на запрос по тем таблицам, которые у вас уже есть. Один REST API, открытый код.",
+      "Автономная память для ИИ-агентов на вашем сервере: граф знаний, векторное и объектное хранилища, одна таблица входящих сообщений, охват записи с координатами и датой, приём голоса, изображений, видео, PDF, Markdown, HTML, исходного кода и ссылок, один короткий вызов модели на фразу. Один REST API, открытый код.",
     title: "Fractera Memory — автономная память для ИИ-агентов на вашем сервере",
   },
   toc: { heading: "На этой странице", label: "Оглавление" },
   hero: {
     badges: ["Ноль комиссий за запрос", "Ноль зависимости от поставщика", "Полная приватность на вашем сервере"],
     body:
-      "Память превращает необработанные мультимодальные данные — текст, изображения, голосовые заметки, видео, PDF-документы, страницы Markdown и HTML, исходный код, ссылки, геолокацию и временные метки — в индексированный граф знаний и реляционные структуры. Один короткий вызов модели на запрос понимает, о чём речь; дальше отвечают таблицы и граф без новых ходов модели, а запрос без вопроса не стоит вызова вовсе.",
+      "Память превращает необработанные мультимодальные данные — текст, изображения, голосовые заметки, видео, PDF-документы, страницы Markdown и HTML, исходный код, ссылки, геолокацию и временные метки — в события вокруг одной таблицы сообщений: индексированный граф знаний, вектор и объекты. Один короткий вызов модели на фразу понимает, о чём речь; дальше отвечают связи и вектор без новых ходов модели, а запрос без вопроса не стоит вызова вовсе.",
     eyebrow: "Fractera Memory Starter",
     lead:
       "Автономная система долгосрочной памяти и когнитивный мозг для ИИ-агентов, служащая персональным пультом управления архитектора через Telegram и REST API. Она ликвидирует разрыв между ограниченным контекстным окном модели и полноценной когнитивной непрерывностью.",
@@ -777,19 +776,18 @@ const RU: LandingWords = {
       {
         "title": "Связанные прежние сообщения подтягиваются в контекст",
         "items": [
-          { "text": "Зовущий может передать прежний разговор, уже найденное и нить прежнего разбора." },
+          { "text": "Присланного признака «это продолжение разговора» память больше не ждёт: вход — текст и объекты." },
           { "text": "Память сама находит связанные прежние сообщения — по смыслу и по времени*².", "plan": "link-messages" }
         ]
       },
       {
-        "title": "Память сопоставляет фразу с теми таблицами, которые у неё уже есть",
+        "title": "Память превращает сказанное в события вокруг одной таблицы",
         "items": [
-          { "text": "Она показывает модели таблицы и колонки именно этого человека — никогда всю схему — и один короткий вызов решает, о чём фраза.", "skills": ["use-tables"] },
-          { "text": "Подходящее место есть → значение ложится туда.", "skills": ["use-tables"] },
-          { "text": "Подходящего места нет → заводится новое: колонка, когда значение одно, таблица, когда добавляется второе или когда вещь будет расти.", "skills": ["use-tables"] },
-          { "text": "Исправление заменяет значение, прежнее уходит в историю; добавление превращает колонку в таблицу и переносит первое значение со своим временем.", "skills": ["use-tables"] },
-          { "text": "Рассказ, а не значение — объяснение, обстоятельство, план — в таблицу не идёт вовсе: его место в связях, с якорем." },
-          { "text": "Всё сказанное в любом случае попадает в связи, вместе с именем человека и каналом, которым пришло сообщение." }
+          { "text": "Короче 2000 слов — фраза разбирается одним коротким вызовом модели: что именно сказано, сказано это прямо или выведено." },
+          { "text": "Каждый разобранный факт становится событием и якорем — именем, по которому фраза потом находится." },
+          { "text": "Своих таблиц и колонок под факты память не заводит: единственная её таблица — та, куда попадают все входящие сообщения." },
+          { "text": "Длиннее 2000 слов — текст уходит целиком в объектное хранилище и не разбирается вовсе: то, чему некуда лечь, не стоит вызова модели." },
+          { "text": "Всё сказанное в любом случае попадает в связи и в вектор — вместе с именем человека и каналом, которым пришло сообщение." }
         ]
       },
       {
@@ -839,7 +837,7 @@ const RU: LandingWords = {
     chain: [
       "Дорогой расчёт или исследование проходит на глубоких ступенях",
       "Создаётся артефакт с ID и саммари вывода рядом с ним",
-      "Саммари записывается в векторную базу, граф связей и таблицы",
+      "Саммари записывается в векторную базу и граф связей, а строка сообщения связывает их с объектом",
       "Повторный вопрос отвечается с дешёвых ступеней",
     ],
     building:
@@ -874,7 +872,7 @@ const RU: LandingWords = {
     title: "Операционная система архитектора",
   },
   router: {
-    "cheapBranch": "1.0 Добавление записи · таблица для точного, граф для всего сказанного",
+    "cheapBranch": "1.0 Добавление записи · связи и вектор для сказанного, объект для длинного",
     "cheapCost": "Без дальнейших ходов модели: код проверяет значения и пишет строки, граф строит связи в фоне",
     "deepBranch": "2.0 Извлечение · таблица → граф → векторы (deep) → исследование (extreme)*⁶",
     "deepCost": "Таблица и граф отвечают без хода модели; deep и extreme тратят больше времени и ходов модели",
@@ -885,8 +883,8 @@ const RU: LandingWords = {
   },
   schema: {
     body:
-      "Вам не нужно вручную создавать SQL-миграции или закладывать фиксированную структуру данных. Память трансформирует структуру хранилища на лету: от добавления новых колонок до автоматического создания реляционных таблиц при появлении новых типов сущностей.",
-    title: "Сквозная адаптивность схемы",
+      "Ни миграций, ни проектирования схемы — потому что проектировать нечего. У памяти одна таблица, та, куда попадают все входящие сообщения; всё сказанное живёт событиями вокруг неё — в графе связей, в векторе и в объектном хранилище.",
+    title: "Одна таблица, всё остальное — события",
   },
   scope: {
     items: [

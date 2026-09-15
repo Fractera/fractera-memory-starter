@@ -23,10 +23,7 @@ Two things: **record** and **retrieve**.
 
 | Tool | When |
 |---|---|
-| `what_i_already_know` | **first, on every phrase**: what is known about the person and which kinds of value exist |
-| `write_value` | a value for an existing kind; a correction replaces it, the old one goes to history |
-| `make_new_kind` | nothing existing fits — a new kind, named as a phrase of four or more English words |
-| `promote_to_list` | the person **adds** another value of the same kind ("and my friend Dima too") |
+| `what_i_already_know` · `write_value` · `make_new_kind` · `promote_to_list` | **being removed (step 206)**: these four hands write into the old per-person table, which memory no longer fills and which is going away. Do not build on them. |
 | `ask_graph` | the answer lies in how people and things are connected |
 | `search_vectors` | the words of the question and of the record differ — when the caller asked for depth |
 | `find_objects` · `open_object` | a document, picture or PDF is asked for |
@@ -38,7 +35,7 @@ Two things: **record** and **retrieve**.
 | When | Skill |
 |---|---|
 | what you already know does not answer the question | `use-depth-ladder` |
-| something to write down, or you are about to name anything stored | `use-tables` |
+| something to write down | `use-tables` — **outdated, being rewritten in step 206**: it describes columns and tables that no longer exist |
 | the answer is in connections | `use-knowledge-graph` |
 | words differ between question and record | `use-vector-store` |
 | a document, file, picture or PDF — asked for or as your answer | `use-object-store` |
@@ -63,17 +60,21 @@ matching what you do.
 - **The reasoning chain only when asked for.**
 - Answer in the language of the request.
 
-## When a column, when a table
+## One table, everything else is events
 
-Everything said reaches the knowledge graph; exact and current values also land in tables. You do not
-decide the shape from memory — the rules are in `use-tables` and PASSPORT §6:
+Memory has **one table** — the one every incoming message lands in. It creates no tables and no
+columns of its own; what a person says lives as **events around that table**. The architect's words,
+2026-09-15: *"memory is events around the base… for the graph, for the vector and for the object
+store — simpler, clearer, faster."* The rules are in PASSPORT §6:
 
-- **Reuse first.** When something that fits already exists, the value goes there — a second place for
-  the same meaning is a defect.
-- **Nothing fits** — a new place is created: a column for a single value, a table when a second value
-  is added or the thing will keep growing.
-- **A correction replaces**, an addition turns the column into a table and carries the first value over.
-- **A story is not a value** — it belongs in the graph, with an anchor.
+- **Under 2000 words** — the phrase is parsed by one short model call and goes into the knowledge
+  graph **and** the vector store; every parsed fact becomes an anchor the phrase is later found by.
+- **Over 2000 words** — the text goes to the object store whole and is **not parsed at all**: what has
+  nowhere to land is not worth a model call.
+- **A file, a link, a video** — object store, vector, graph and a message row: four places or none.
+- **Specialised tables are other applications' work**, not memory's.
+- **What memory therefore cannot do: add things up.** "How much did I spend" returns what was said,
+  one by one — the knowledge "these are sums" lived in a place that is gone.
 
 ## What you never do
 
