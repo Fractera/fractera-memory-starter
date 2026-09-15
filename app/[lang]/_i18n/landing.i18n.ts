@@ -235,62 +235,62 @@ const EN: LandingWords = {
     title: "API quickstart",
   },
   features: {
-    title: "Named things memory understands",
+    title: "Labels: so memory can count, not just remember",
     lead:
-      "Memory writes down anything you tell it, whether or not it has a name for it. A named thing — we call it a feature — is what lets memory do more than store the sentence: count it, be asked about it in one word, know what to ask you back, and show who depends on it.",
-    whyTitle: "What a name buys you, and nothing else",
+      "You say «spent 12 euros on a taxi». Memory writes that sentence down either way. But to answer «taxis cost you 168 this month» a sentence is not enough: it has to know that 12 is money, and that money adds up. That knowledge is the label. A label is not for remembering — it is for doing something with what was remembered.",
+    whyTitle: "What a label gives you",
     why: [
       {
-        title: "Counting and keeping up to date",
-        body: "A name says how values pile up: the newest one wins, or they make a list, or they add up. Without it, «how much did I spend this month» has nothing to add — the amounts are just sentences.",
+        title: "Adding up",
+        body: "«How much did I spend this month?» Without a label memory holds three separate sentences about money. With one it knows they should be added, and adds them itself — no guessing.",
       },
       {
-        title: "One word instead of a model call",
-        body: "A caller that already knows what it is talking about sends the name, and memory skips working the sentence out. Same answer, one model turn cheaper.",
+        title: "Not paying for work twice",
+        body: "If whoever writes to memory has already understood the message, it sends the label along. Then memory does not work the sentence out again — one exchange with the model saved, every message.",
       },
       {
-        title: "Knowing what to ask you",
-        body: "A name carries what to do when the value is missing: ask, ask later, or stay quiet — and an example of a good answer. Without it memory can only be silent about what it lacks.",
+        title: "Knowing what is missing",
+        body: "«I have an allergy» — to what, you did not say. The label already holds what to ask back and what a good answer looks like. Without it memory can only stay silent.",
       },
       {
-        title: "Seeing who depends on it",
-        body: "Parts of your project subscribe to the names they use. Change or retire one, and you see in advance whose work it breaks instead of finding out afterwards.",
+        title: "Not breaking other things quietly",
+        body: "The bot and the site mark which labels they rely on. Decide to drop a label and you see up front whose work stops — instead of finding out once it has stopped.",
       },
     ],
-    caseTitle: "What happens in practice",
+    caseTitle: "Four ordinary cases",
     cases: [
       {
-        q: "«My name is Roman» — nobody sent a name for it",
-        a: "Memory works the sentence out itself with one short model call, records it, and answers about it. A name is not needed to remember.",
+        q: "«My name is Roman»",
+        a: "Nobody sent a label. Memory worked out by itself that this is a name, and wrote it down. To remember, a label is never needed.",
       },
       {
-        q: "A bot sends the value together with the name it means",
-        a: "No model call at all: memory checks the name exists and the value fits its type, and writes it. This is the cheapest path there is.",
+        q: "A bot understood the message and sent the label with it",
+        a: "Memory works nothing out: it checks that it has such a label and that 12 really is a number, and writes it. This is the cheapest and fastest path.",
       },
       {
         q: "«How much did I spend on taxis this month?»",
-        a: "Adding up is only possible for a named thing that is declared to add up. This is the clearest case where a name is the difference between an answer and a shrug.",
+        a: "Only things labelled as money can be added up. The difference between «168» and «here are your three sentences about taxis» is the label.",
       },
       {
-        q: "«What do I feed the dog?» — written down, never named",
-        a: "Today memory stores it and cannot find it when asked, because retrieval goes through names only. That is the one thing being fixed — see the note below.",
+        q: "«What do I feed the dog?»",
+        a: "You told memory, and it wrote it down — but there is no label, and today it cannot find it. That is wrong: if it wrote it, it must find it. We are fixing this — see the grey box below.",
       },
     ],
-    useTitle: "How names are used",
+    useTitle: "The rules: how labels are used",
     use: [
-      "Sending a name is always optional. Without it memory does the same work itself — longer, and one model turn dearer, but to the same quality.",
-      "A name means the meaning, never a place: where the value is kept is memory's business, and it changes as the thing grows.",
-      "A name you send is checked, not trusted: an unknown one comes back with the closest names memory does have, a retired one with its replacement, and a value of the wrong type is refused.",
-      "Not having a name never hides your data: memory writes freely, so it must be able to read back everything it wrote.",
+      "Sending a label is optional. If you don't, memory works it out itself — a bit slower, a bit dearer. The answer is the same.",
+      "A label says WHAT the thing is, not WHERE it is kept. Where it is kept is memory's business, and it may move it later.",
+      "Send a label that does not exist and memory won't stay quiet: it says so and offers the closest ones it does have.",
+      "No label does not mean hidden data. Memory wrote it down, so it must be able to find it.",
     ],
-    addTitle: "How a new name appears",
+    addTitle: "How a new label appears",
     add: [
-      "You say something new — memory makes room for it by itself, with no name yet. This is normal, not an error.",
-      "When the thing stops being accidental — it repeats, piles up, or you ask about it — memory proposes a name with a draft of everything it needs: type, how it accumulates, the words people use for it, an example.",
-      "A person approves it, and from then on it can be counted, asked for in one word, and subscribed to. Names live as files in the repository, so any change is visible and revertible.",
+      "You say something new — memory simply writes it down. There is no label yet, and that is fine.",
+      "The thing repeats, or you ask about it — memory offers: «this looks worth labelling like so», with a ready draft.",
+      "A person agrees. From then on the thing can be added up, asked about in one word, and relied on. Labels are ordinary files: you can see who changed what, and put it back.",
     ],
     building:
-      "In development: retrieval over everything written, named or not (today a question is answered only through names, and things stored without one are not found), and memory proposing new names by itself. Until both land, a name also decides what can be retrieved — which is exactly why the list of unnamed things is kept in plain sight.",
+      "Two things are unfinished, and we are not hiding them. First: if a thing has no label, memory keeps it but cannot find it when asked — that is how the dog's feeding rules go missing. Second: new labels are still spotted by a person, not offered by memory. Both are being fixed; until then a label also decides what can be retrieved at all.",
   },
   artifacts: {
     building:
@@ -1071,62 +1071,62 @@ const RU: LandingWords = {
     title: "Быстрый старт и примеры API",
   },
   features: {
-    title: "Названные вещи, которые память понимает",
+    title: "Пометки: чтобы память умела считать, а не только помнить",
     lead:
-      "Память записывает всё, что ей говорят, — есть у этого название или нет. Название (мы зовём его признаком) нужно не для записи, а для того, чтобы память умела с этим работать: считать, отвечать на вопрос в одно слово, знать, о чём переспросить человека, и показывать, кто на это опирается.",
-    whyTitle: "Что даёт название — и больше ничего",
+      "Вы говорите: «потратил 300 рублей на такси». Память запишет эту фразу в любом случае. Но чтобы через месяц ответить «на такси ушло 4200», одной записи мало: надо знать, что 300 — это деньги и что деньги складывают. Вот такая пометка и есть признак. Пометка нужна не для того, чтобы запомнить, а для того, чтобы потом что-то с этим сделать.",
+    whyTitle: "Что даёт пометка",
     why: [
       {
-        title: "Считать и держать актуальным",
-        body: "У названия сказано, как копятся значения: побеждает последнее, копится списком или складывается. Без него «сколько я потратил за месяц» нечего складывать — суммы лежат просто фразами.",
+        title: "Складывать",
+        body: "«Сколько я потратил за месяц?» Без пометки у памяти лежат три отдельные фразы про деньги. С пометкой она знает, что их надо сложить, и складывает их сама, без выдумывания.",
       },
       {
-        title: "Одно слово вместо вызова модели",
-        body: "Тот, кто и так знает, о чём речь, присылает название — и память не разбирает фразу заново. Ответ тот же, а ход модели сэкономлен.",
+        title: "Не платить за лишнюю работу",
+        body: "Если тот, кто пишет памяти, уже понял, о чём речь, он присылает готовую пометку. Тогда память не разбирает фразу заново — экономит один обмен с моделью на каждом сообщении.",
       },
       {
-        title: "Знать, о чём вас переспросить",
-        body: "В названии записано, что делать, когда значения нет: спросить, спросить позже или промолчать, — и пример хорошего ответа. Без этого память может только молчать о том, чего ей не хватает.",
+        title: "Понимать, чего не хватает",
+        body: "«У меня аллергия» — а на что, не сказано. В пометке заранее записано, о чём переспросить и как выглядит нормальный ответ. Без неё память просто промолчит.",
       },
       {
-        title: "Видеть, кто на это опирается",
-        body: "Части проекта подписываются на названия, которыми пользуются. Меняете или снимаете — заранее видно, чью работу это сломает, а не после того, как сломалось.",
+        title: "Не ломать чужое молча",
+        body: "Бот и сайт отмечают, какими пометками пользуются. Решите убрать пометку — сразу видно, у кого перестанет работать. Иначе это выясняется, когда уже сломалось.",
       },
     ],
-    caseTitle: "Как это выглядит на деле",
+    caseTitle: "Четыре обычных случая",
     cases: [
       {
-        q: "«Меня зовут Рома» — названия никто не присылал",
-        a: "Память разбирает фразу сама одним коротким вызовом модели, записывает и потом об этом отвечает. Чтобы запомнить, название не нужно.",
+        q: "«Меня зовут Рома»",
+        a: "Пометку никто не прислал. Память сама поняла, что это имя, и записала. Чтобы запомнить, пометка не нужна — никогда.",
       },
       {
-        q: "Бот прислал значение вместе с названием",
-        a: "Вызова модели нет вовсе: память проверяет, что такое название есть и значение ему по типу, и записывает. Это самый дешёвый путь из возможных.",
+        q: "Бот сам разобрал сообщение и прислал пометку",
+        a: "Память ничего не разбирает: проверяет, что такая пометка у неё есть и что 300 — действительно число, и записывает. Это самый дешёвый и быстрый путь.",
       },
       {
         q: "«Сколько я потратил на такси за месяц?»",
-        a: "Сложить можно только то, у чего есть название и сказано, что оно складывается. Это самый наглядный случай, где название — разница между ответом и разведёнными руками.",
+        a: "Сложить можно только то, что помечено как деньги. Здесь разница между ответом «4200» и ответом «вот три ваши фразы про такси» — это и есть пометка.",
       },
       {
-        q: "«Чем я кормлю собаку?» — записано, но не названо",
-        a: "Сегодня память это хранит и по вопросу не находит: поиск идёт только по названиям. Ровно это и исправляется — см. пометку ниже.",
+        q: "«Чем я кормлю собаку?»",
+        a: "Вы это рассказывали, память записала — но пометки нет, и сегодня она это не находит. Так быть не должно: раз записала, обязана и найти. Это мы чиним, см. серую плашку ниже.",
       },
     ],
-    useTitle: "Как названиями пользуются",
+    useTitle: "Правила: как пометками пользуются",
     use: [
-      "Присылать название всегда необязательно. Без него память делает ту же работу сама — дольше и на один ход модели дороже, но тем же качеством.",
-      "Название означает смысл, а не место: где лежит значение — дело памяти, и форма меняется по мере того, как вещь растёт.",
-      "Присланное название проверяют, а не принимают на веру: неизвестное вернётся вместе с ближайшими, которые у памяти есть, снятое — с заменой, а значение не того типа не примут.",
-      "Отсутствие названия никогда не прячет ваши данные: память пишет свободно — значит и прочитать обязана всё, что записала.",
+      "Присылать пометку необязательно. Не прислали — память разберётся сама, просто чуть дольше и чуть дороже. Ответ будет тот же.",
+      "Пометка говорит, ЧТО это за вещь, а не ГДЕ она лежит. Где лежит — дело памяти, и со временем она может переложить.",
+      "Прислали пометку, которой нет, — память не промолчит: скажет об этом и предложит похожие, какие у неё есть.",
+      "Нет пометки — данные всё равно ваши и всё равно доступны. Память записала — значит обязана и найти.",
     ],
-    addTitle: "Как появляется новое название",
+    addTitle: "Как появляется новая пометка",
     add: [
-      "Вы сказали новое — память сама завела под это место, ещё без названия. Это нормальное состояние, а не ошибка.",
-      "Когда вещь перестала быть случайной — повторяется, копится или о ней уже спрашивали, — память предлагает название и черновик всего, что к нему нужно: тип, как копится, какими словами об этом говорят, пример.",
-      "Человек его утверждает, и с этого момента вещь можно считать, спрашивать одним словом и подписываться на неё. Названия живут файлами в репозитории: любая правка видна и откатывается.",
+      "Вы сказали что-то новое — память просто записала. Пометки ещё нет, и это нормально.",
+      "Вещь повторилась или вы о ней спросили — память сама предлагает: «похоже, это стоит помечать вот так» — и показывает готовый черновик.",
+      "Человек соглашается. С этого момента вещь можно складывать, спрашивать про неё одним словом и подписываться на неё. Пометки лежат обычными файлами: видно, кто и что менял, и всегда можно вернуть как было.",
     ],
     building:
-      "В разработке: чтение всего записанного, а не только названного (сегодня вопрос отвечается только через названия, и записанное без названия по нему не находится), и предложение новых названий самой памятью. Пока и то и другое не построено, название решает ещё и что вообще можно достать, — поэтому список безымянного держится на виду.",
+      "Сейчас есть две недоделки, и мы их не прячем. Первая: если у вещи нет пометки, память её хранит, но по вопросу не находит — так пропадают, например, правила кормления собаки. Вторая: новые пометки пока предлагает не память, а человек замечает их руками. Обе чиним; до этого пометка решает ещё и что вообще можно достать.",
   },
   artifacts: {
     building:
