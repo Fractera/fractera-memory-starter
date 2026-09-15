@@ -13,7 +13,7 @@
 // Запуск на сервере из корня службы:  node scripts/probe/features-201-3.mjs
 
 import { readFileSync } from "node:fs"
-import { kindOf, problemsOf, readFeatures } from "../../lib/features.mjs"
+import { kindOf, problemsOf, readFeatures, skillProblemsOf } from "../../lib/features.mjs"
 import { ROOT } from "../../lib/naming.mjs"
 
 const MARK = "===PROBE_201_3==="
@@ -69,8 +69,19 @@ const broken = [
   ["пустые триггеры", (f) => { f.triggers = [] }],
   ["метка вне словаря", (f) => { f.tags = ["цвета"] }],
   ["субъект вне словаря", (f) => { f.subject = "misha" }],
+  // 205-1: поля «что делаю с названием»
+  ["при отсутствии вне словаря", (f) => { f.onMissing = "maybe" }],
+  ["порядок вопроса без «ask»", (f) => { f.onMissing = "silent"; f.askOrder = 2 }],
+  ["охват вне словаря", (f) => { f.scope = ["weather"] }],
+  ["зависимость от несуществующего признака", (f) => { f.requires = ["person.teleport-he-owns"] }],
+  ["навыки без have и plan", (f) => { f.skills = {} }],
 ]
 say(problemsOf([GOOD]).length === 0, `эталонная запись сторожем принята (нарушений ${problemsOf([GOOD]).length})`)
+const FULL = { ...structuredClone(GOOD), onMissing: "ask", askOrder: 1, example: "синий", lost: "—", scope: ["time"], skills: { have: ["use-tables"] } }
+say(problemsOf([FULL]).length === 0, `205-1: запись со всеми новыми полями принята (нарушений ${problemsOf([FULL]).length})`)
+const ghostSkill = skillProblemsOf([{ ...FULL, skills: { have: ["use-teleport"] } }], ["use-tables"])
+say(ghostSkill.length > 0, `205-1: сторож видит выдуманный навык: ${ghostSkill[0] ?? "НЕ УВИДЕЛ"}`)
+say(skillProblemsOf([FULL], ["use-tables"]).length === 0, "205-1: существующий навык принят")
 for (const [what, spoil] of broken) {
   const f = structuredClone(GOOD)
   spoil(f)
@@ -114,6 +125,15 @@ const missing = kinds.filter((k) => !covered.has(k))
 say(kinds.length > 0 && missing.length === 0, `живых родов ${kinds.length}, покрыто признаками ${kinds.length - missing.length}${missing.length ? ` · НЕ ПОКРЫТО: ${missing.join(", ")}` : ""}`)
 const invented = ["color_he_hates_most", "car_he_drives"].filter((k) => covered.has(k))
 say(invented.length === 0, `НЕГАТИВ: выдуманные роды в покрытии не числятся (найдено ${invented.length})`)
+
+// ── 205-1: живая дверь отдаёт «что делаю с названием» ─────────────────────────
+const nameFeature = await get("/v1/features/person.name-he-is-called")
+const nf = nameFeature.body?.feature ?? {}
+say(nameFeature.status === 200 && nf.onMissing === "ask" && nf.askOrder === 2 && typeof nf.example === "string",
+  `205-1: GET /v1/features/person.name-he-is-called → ${nameFeature.status}, при отсутствии «${nf.onMissing}», порядок ${nf.askOrder}, пример «${nf.example}»`)
+say(Array.isArray(nf.skills?.have) && nf.skills.have.includes("use-tables"), `205-1: навык у признака: ${JSON.stringify(nf.skills)}`)
+const chatKey = await get("/v1/features/person.name")
+say(chatKey.status === 404, `205-1 НЕГАТИВ: ключ чата person.name → ${chatKey.status} (ожидалось 404)`)
 
 console.log(`${MARK} ${bad ? `ПРОВАЛОВ: ${bad}` : "всё сошлось"} ${new Date().toISOString()}`)
 process.exit(bad ? 1 : 0)

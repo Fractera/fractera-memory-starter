@@ -12,8 +12,9 @@
 //
 // Починить указатель: `node scripts/build-features-index.mjs`.
 
-import { readFileSync, writeFileSync } from "node:fs"
-import { INDEX_FILE, indexOf, problemsOf, readFeatures } from "../lib/features.mjs"
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
+import { join } from "node:path"
+import { INDEX_FILE, indexOf, problemsOf, readFeatures, skillProblemsOf } from "../lib/features.mjs"
 
 const MARK = "===CHECK_FEATURES==="
 const fix = process.argv[2] === "--fix"
@@ -27,6 +28,13 @@ try {
 }
 
 const problems = problemsOf(features)
+
+// ④ (205-1) навык, названный в записи, существует: иначе метка «навык есть» зелёная на пустоте.
+const skillsDir = join(process.cwd(), ".claude", "skills")
+const skillNames = existsSync(skillsDir)
+  ? readdirSync(skillsDir).filter((d) => existsSync(join(skillsDir, d, "SKILL.md")))
+  : []
+problems.push(...skillProblemsOf(features, skillNames))
 
 const want = JSON.stringify(indexOf(features), null, 2) + "\n"
 let have = null
