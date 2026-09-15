@@ -59,6 +59,15 @@ async function call(verb, body, form) {
 }
 
 const words = (s) => String(s).trim().split(/\s+/).length
+
+// 🔒 ОТКАЗ КВОТЫ — НЕ ОЦЕНКА ПАМЯТИ, И ПРИБОР ОБЯЗАН ЭТО РАЗЛИЧАТЬ.
+// ✗ Оплачено первым прогоном 2026-09-15 00:40: квота подписки кончилась в 00:45 UTC, и 48 строк из 60
+// получили «абсолютно неправильно» за отказ `think-quota-exhausted` — то есть прибор измерил пустой
+// счёт и выдал это за качество памяти. Теперь такой отказ ОСТАНАВЛИВАЕТ прогон, а строка получает
+// отметку «не измерено», и сводка считает только измеренное.
+const QUOTA = new Set(["think-quota-exhausted", "think-subscription-off", "think-not-authorized"])
+const quotaRefusal = (j) => (QUOTA.has(String(j?.refusal ?? "")) ? String(j.refusal) : null)
+let stoppedBy = null
 const valuesOf = (j) => (j?.known ?? []).map((k) => `${k.what}=${k.value}`)
 const notedOf = (j) => (j?.noted ?? []).map((n) => `${n.what}=${n.added ?? n.became ?? n.value}`)
 const hasValue = (j, re) => (j?.known ?? []).some((k) => re.test(String(k.value)))
@@ -449,13 +458,18 @@ for (const s of SAID) {
   const payload = { lang: "ru", text: s.text, via: "Telegram", who: WHO }
   const r = s.files ? await call("remember", null, formFor(payload, s.files)) : await call("remember", payload)
   for (const o of r.json?.objects ?? []) if (o.ok && o.id && !o.existing) created.push(o.id)
+  if (quotaRefusal(r.json)) {
+    stoppedBy = `${s.id}: ${quotaRefusal(r.json)} — ${String(r.json.what_happened ?? "").slice(0, 80)}`
+    break
+  }
   const verdict = !r.json?.ok ? WORST : s.judge(r.json) ? OK : BAD
   record({
     id: s.id,
     kind: "сказать",
     means: r.json?.used_model === false ? "без модели" : "ход модели",
     ms: r.ms,
-    note: `${s.want} → ${notedOf(r.json).slice(0, 3).join(" | ") || "ничего"}${(r.json?.objects ?? []).length ? ` · объектов ${(r.json.objects ?? []).filter((o) => o.ok).length}` : ""}`,
+    note: `${s.want} → ${notedOf(r.json).slice(0, 3).join(" | ") || (r.json?.refusal ? `отказ ${r.json.refusal}` : "ничего")}${(r.json?.objects ?? []).length ? ` · объектов ${(r.json.objects ?? []).filter((o) => o.ok).length}` : ""}`,
+    refusal: r.json?.refusal ?? null,
     verdict,
     words: words(s.text),
   })
@@ -469,8 +483,12 @@ for (let i = 0; i < 40; i++) {
 }
 
 // ── прогон извлечений ────────────────────────────────────────────────────────
-for (const a of ASKED) {
+for (const a of stoppedBy ? [] : ASKED) {
   const r = await call("recall", { lang: "ru", who: WHO, ...a.ask })
+  if (quotaRefusal(r.json)) {
+    stoppedBy = `${a.id}: ${quotaRefusal(r.json)} — ${String(r.json.what_happened ?? "").slice(0, 80)}`
+    break
+  }
   let verdict
   if (!r.json?.ok) verdict = WORST
   else if (a.judge(r.json)) verdict = OK
@@ -491,7 +509,11 @@ for (const a of ASKED) {
 // ── сводка ───────────────────────────────────────────────────────────────────
 const count = (k, verdict) => rows.filter((r) => r.kind === k && r.verdict === verdict).length
 const all = (verdict) => rows.filter((r) => r.verdict === verdict).length
-console.log("\nСВОДКА")
+if (stoppedBy) {
+  console.log(`\n🛑 ПРОГОН ОСТАНОВЛЕН ОТКАЗОМ ПОДПИСКИ, А НЕ ПАМЯТИ: ${stoppedBy}`)
+  console.log(`   измерено ${rows.length} строк из ${SAID.length + ASKED.length}; остальные НЕ оценивались и в сводку не входят`)
+}
+console.log("\nСВОДКА (только измеренное)")
 console.log(`записи:      правильно ${count("сказать", OK)} · неправильно ${count("сказать", BAD)} · абсолютно неправильно ${count("сказать", WORST)}`)
 console.log(`извлечения:  правильно ${count("спросить", OK)} · неправильно ${count("спросить", BAD)} · абсолютно неправильно ${count("спросить", WORST)}`)
 console.log(`всего:       правильно ${all(OK)} · неправильно ${all(BAD)} · абсолютно неправильно ${all(WORST)} из ${rows.length}`)
@@ -500,7 +522,7 @@ if (misses.length) {
   console.log("\nПРОМАХИ ПОИМЁННО")
   for (const m of misses) console.log(`  ${m.id} ${m.kind}: ${m.verdict} — ${m.note}`)
 }
-writeFileSync(OUT, JSON.stringify({ at: new Date().toISOString(), rows, who: WHO }, null, 2))
+writeFileSync(OUT, JSON.stringify({ at: new Date().toISOString(), rows, stoppedBy, who: WHO }, null, 2))
 console.log(`\nполная таблица: ${OUT}`)
 
 // ── уборка ───────────────────────────────────────────────────────────────────
@@ -520,4 +542,4 @@ if (!KEEP) {
 }
 
 console.log(`===PROBE_201_9=== end ${new Date().toISOString()}`)
-process.exit(all(WORST) > 0 ? 1 : 0)
+process.exit(stoppedBy ? 3 : all(WORST) > 0 ? 1 : 0)
