@@ -99,7 +99,19 @@ export async function POST(request: Request) {
   const answer = (await remember(payload as never)) as Record<string, unknown>
   const objects = [...fates, ...(Array.isArray(answer.objects) ? answer.objects : [])]
   // 🔒 ФАЙЛЫ ЛЕГЛИ ДО `remember()` И В ЕГО ТЕКСТЕ ИХ НЕТ — текст пересобирается тем же помощником по всем объектам (200-6).
+  // 🔒 ЯЗЫК И СЛОВА О МЕСТЕ ПЕРЕДАЮТСЯ И ЗДЕСЬ: форма ответа одна на все входы (206-10), и дверь
+  // формы не имеет права отвечать иначе, чем сам глагол.
+  const keptWhole = answer.kept_whole as { ok?: boolean; where?: string } | undefined
+  const kept = keptWhole?.ok
+    ? keptWhole.where === "objects"
+      ? lang === "en" ? "the text was long — kept whole as one thing." : "текст длинный — сохранён целиком отдельной вещью."
+      : keptWhole.where === "graph+vector"
+        ? lang === "en" ? "everything said — in the graph and in semantic search." : "сказанное целиком — в связях и в поиске по смыслу."
+        : lang === "en" ? "everything said — in the knowledge graph." : "сказанное целиком — в связях."
+    : ""
   const text = rememberText({
+    kept: kept as never,
+    lang: lang as never,
     noted: answer.noted as never,
     objects: objects as never,
     what_happened: answer.what_happened as string | undefined,
