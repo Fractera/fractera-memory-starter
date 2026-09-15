@@ -5,17 +5,40 @@ import { LandingToc } from "./landing-toc";
 import { breadcrumbSchema, faqSchema, FRACTERA_PROJECT_URL, softwareSchema, urlFor, webSiteSchema } from "@/lib/seo";
 
 /** Пункт схемы обработки запроса: номер выводится из места, а не пишется в словаре — иначе он разошёлся бы при вставке пункта. */
-type FlowItem = { text: string; items?: FlowItem[] };
+type FlowItem = { text: string; items?: FlowItem[]; skills?: string[]; plan?: string };
+type SkillLabels = { have: string; plan: string };
 
-function FlowList({ items, prefix }: { items: FlowItem[]; prefix: string }) {
+/**
+ * Метка навыка у пункта (слово владельца 2026-09-15): зелёная — навык есть, при наведении его имя; красная — навыка нет,
+ * при наведении имя навыка, который предстоит создать. Подсказка — `title`, без скриптов; `aria-label` для экранного диктора.
+ */
+function SkillMark({ item, labels }: { item: { skills?: string[]; plan?: string }; labels: SkillLabels }) {
+  const have = item.skills?.length ? item.skills : null;
+  if (!have && !item.plan) return null;
+  const tip = have ? `${labels.have} ${have.join(", ")}` : `${labels.plan} ${item.plan}`;
+  return (
+    <span
+      aria-label={tip}
+      className={`mt-[0.5em] inline-block size-2.5 shrink-0 cursor-help rounded-full outline-offset-2 focus-visible:outline-2 ${
+        have ? "bg-green-600 dark:bg-green-400" : "bg-red-600 dark:bg-red-400"
+      }`}
+      role="img"
+      tabIndex={0}
+      title={tip}
+    />
+  );
+}
+
+function FlowList({ items, prefix, labels }: { items: FlowItem[]; prefix: string; labels: SkillLabels }) {
   return (
     <ol className="mt-2 space-y-1.5">
       {items.map((item, i) => (
         <li className="flex gap-2 leading-relaxed" key={`${prefix}${i}`}>
+          <SkillMark item={item} labels={labels} />
           <span className="shrink-0 font-mono text-muted-foreground tabular-nums">{`${prefix}${i + 1}.`}</span>
           <div className="min-w-0">
             {item.text}
-            {item.items?.length ? <FlowList items={item.items} prefix={`${prefix}${i + 1}.`} /> : null}
+            {item.items?.length ? <FlowList items={item.items} labels={labels} prefix={`${prefix}${i + 1}.`} /> : null}
           </div>
         </li>
       ))}
@@ -223,11 +246,12 @@ export function Landing({ base, lang }: { base: string; lang: string }) {
           {w.ladder.phases.map((phase, i) => (
             <li key={phase.title}>
               <div className="flex gap-2 font-medium">
+                <SkillMark item={phase} labels={w.ladder.skillLabels} />
                 <span className="font-mono text-primary tabular-nums">{`${i + 1}.`}</span>
                 <span>{phase.title}</span>
               </div>
               <div className="pl-5">
-                <FlowList items={phase.items} prefix={`${i + 1}.`} />
+                <FlowList items={phase.items} labels={w.ladder.skillLabels} prefix={`${i + 1}.`} />
               </div>
             </li>
           ))}

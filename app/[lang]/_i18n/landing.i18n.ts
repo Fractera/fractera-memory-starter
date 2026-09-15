@@ -19,22 +19,35 @@ export type ComparisonTable = {
   rows: Array<{ feature: string; ours: string; rivals: string[] }>;
 };
 
-type FlowText = { text: string; items?: FlowText[] };
+/** Навык у пункта схемы: `skills` — существующие навыки памяти, `plan` — навык, который предстоит создать. */
+export type FlowMark = { skills?: string[]; plan?: string };
+export type FlowText = FlowMark & { text: string; items?: FlowText[] };
 
 /**
- * Схема «как память обрабатывает запрос» простым текстом: нумерация 1. / 1.2. / 1.2.1. и сноски.
+ * Схема «как память обрабатывает запрос» простым текстом: нумерация 1. / 1.2. / 1.2.1., навык у пункта и сноски.
  * 🔒 ОДНА РЕАЛИЗАЦИЯ НА ДВУХ ЧИТАТЕЛЕЙ — `llms.txt` и зеркало страницы в Markdown; нумерация выводится из места, как на странице.
  */
-export function flowLines(ladder: { phases: Array<{ title: string; items: FlowText[] }>; notesTitle: string; notes: Array<{ mark: string; text: string }> }): string[] {
+export function flowLines(ladder: {
+  phases: Array<FlowMark & { title: string; items: FlowText[] }>;
+  notesTitle: string;
+  notes: Array<{ mark: string; text: string }>;
+  skillLabels: { have: string; plan: string };
+}): string[] {
   const out: string[] = [];
+  const skill = (m: FlowMark) =>
+    m.skills?.length
+      ? ` _(${ladder.skillLabels.have} ${m.skills.join(", ")})_`
+      : m.plan
+        ? ` _(${ladder.skillLabels.plan} ${m.plan})_`
+        : "";
   const walk = (items: FlowText[], prefix: string, depth: number) =>
     items.forEach((item, i) => {
       const no = `${prefix}${i + 1}.`;
-      out.push(`${"   ".repeat(depth)}${no} ${item.text}`);
+      out.push(`${"   ".repeat(depth)}${no} ${item.text}${skill(item)}`);
       if (item.items?.length) walk(item.items, no, depth + 1);
     });
   ladder.phases.forEach((phase, i) => {
-    out.push(`${i + 1}. **${phase.title}**`);
+    out.push(`${i + 1}. **${phase.title}**${skill(phase)}`);
     walk(phase.items, `${i + 1}.`, 1);
   });
   out.push("", `**${ladder.notesTitle}**`, "");
@@ -73,12 +86,17 @@ export type LandingWords = {
   ladder: {
     title: string;
     lead: string;
-    phases: Array<{
-      title: string;
-      items: Array<{ text: string; items?: Array<{ text: string; items?: Array<{ text: string }> }> }>;
-    }>;
+    phases: Array<
+      { title: string } & FlowMark & {
+        items: Array<
+          FlowText & { items?: Array<FlowText & { items?: Array<FlowText & { items?: FlowText[] }> }> }
+        >;
+      }
+    >;
     notesTitle: string;
     notes: Array<{ mark: string; text: string }>;
+    /** Подписи метки навыка у пункта: зелёная — навык есть, красная — будет создан (слово владельца 2026-09-15). */
+    skillLabels: { have: string; plan: string };
   };
   scope: { title: string; lead: string; items: Array<{ title: string; body: string }> };
   artifacts: { title: string; lead: string; steps: string[] };
@@ -380,146 +398,410 @@ const EN: LandingWords = {
         "title": "Input: what the caller sent",
         "items": [
           {
-            "text": "Required: who is speaking (who) and the person's phrase (text)."
+            "text": "Required: who is speaking (who) and the person's phrase (text).",
+            "plan": "understand-incoming-request"
           },
           {
             "text": "The verb — optional.",
             "items": [
               {
-                "text": "With a verb, the request comes to /v1/remember (add) or /v1/recall (retrieve)."
+                "text": "With a verb, the request comes to /v1/remember (add) or /v1/recall (retrieve).",
+                "plan": "understand-incoming-request"
               },
               {
-                "text": "Without one, it comes to a single address and memory decides itself*¹."
+                "text": "Without one, it comes to a single address and memory decides itself*¹.",
+                "plan": "understand-incoming-request"
               }
-            ]
+            ],
+            "plan": "understand-incoming-request"
           },
           {
             "text": "Features from the registry — optional, for both verbs.",
             "items": [
               {
-                "text": "A list of key and value; keys come from GET /v1/features."
+                "text": "A list of key and value; keys come from GET /v1/features.",
+                "plan": "use-feature-registry"
               },
               {
-                "text": "Retrieval accepts them as well as writing*²."
+                "text": "Retrieval accepts them as well as writing*².",
+                "plan": "use-feature-registry"
               }
-            ]
+            ],
+            "plan": "use-feature-registry"
           },
           {
             "text": "Links to earlier messages — optional.",
             "items": [
               {
-                "text": "The caller names earlier messages by their numbers in memory's journal*³."
+                "text": "The caller names earlier messages by their numbers in memory's journal*³.",
+                "plan": "link-related-messages"
               },
               {
-                "text": "Or sends a reasoning thread (thread), earlier turns (history) and what was already found (prior)."
+                "text": "Or sends a reasoning thread (thread), earlier turns (history) and what was already found (prior).",
+                "plan": "link-related-messages"
               }
-            ]
+            ],
+            "plan": "link-related-messages"
+          },
+          {
+            "text": "Calendar and geotag — optional: when it happened and where (at, lat, lon, radius_m, place)*⁹.",
+            "plan": "use-scope-calendar-and-place"
           }
-        ]
+        ],
+        "plan": "understand-incoming-request"
       },
       {
         "title": "Preliminary phase: memory works out what was not sent",
         "items": [
           {
-            "text": "The verb, the features and the links were all sent — no model is called at all."
+            "text": "The verb, the features and the links were all sent — no model is called at all.",
+            "plan": "understand-incoming-request"
           },
           {
             "text": "Something is missing — one model call covers everything missing at once, with no conversation kept*⁴.",
             "items": [
               {
-                "text": "The model receives the phrase and candidates: the 8 registry features closest in meaning, and this person's latest messages closest in meaning and time*³."
+                "text": "The model receives the phrase and candidates: the 8 registry features closest in meaning, and this person's latest messages closest in meaning and time*³.",
+                "plan": "understand-incoming-request"
               },
               {
-                "text": "It returns the verb, the features with values, the numbers of related messages, and what the registry lacks."
+                "text": "It returns the verb, the features with values, the numbers of related messages, and what the registry lacks.",
+                "plan": "understand-incoming-request"
               },
               {
-                "text": "Code checks all of it: the verb is one of two; every key is among the candidates and every value has the right type; the message numbers exist and belong to this person."
+                "text": "Code checks all of it: the verb is one of two; every key is among the candidates and every value has the right type; the message numbers exist and belong to this person.",
+                "plan": "understand-incoming-request"
               }
-            ]
+            ],
+            "plan": "understand-incoming-request"
           },
           {
             "text": "A meaning the registry does not have.",
             "items": [
               {
-                "text": "What was said still goes into the graph."
+                "text": "What was said still goes into the graph.",
+                "skills": [
+                  "use-knowledge-graph"
+                ]
               },
               {
-                "text": "A proposal for a new feature is kept for the architect: what it would be and which phrase called for it*⁵."
+                "text": "A proposal for a new feature is kept for the architect: what it would be and which phrase called for it*⁵.",
+                "plan": "use-feature-registry"
               },
               {
-                "text": "When a fitting feature exists, it is reused instead of creating a near-twin*⁵."
+                "text": "When a fitting feature exists, it is reused instead of creating a near-twin*⁵.",
+                "plan": "use-feature-registry"
               }
-            ]
+            ],
+            "plan": "use-feature-registry"
           }
-        ]
+        ],
+        "plan": "understand-incoming-request"
       },
       {
-        "title": "Main phase: two scenarios",
+        "title": "Main phase: two scenarios and the learning loop",
         "items": [
           {
-            "text": "Adding a record",
+            "text": "Adding a record — in order",
             "items": [
               {
-                "text": "Every value is checked against its feature type; an unknown key is rejected with a reason."
+                "text": "Receiving the message",
+                "items": [
+                  {
+                    "text": "The message gets a number in the journal of incoming messages — a phrase, a file, a link or a video — with who sent it, from where (API, Telegram, the stand) and when*⁸.",
+                    "plan": "keep-incoming-journal"
+                  },
+                  {
+                    "text": "Its scope is recorded alongside: the calendar — when the thing it is about happened, not when it arrived; the geotag — latitude, longitude, radius and place; every mark names its source — said by the person, taken from the file, sent by the device, or inferred. An empty scope means «I don't know where or when», never «everywhere, always»*⁹.",
+                    "plan": "use-scope-calendar-and-place"
+                  },
+                  {
+                    "text": "A link to earlier messages is recorded as «this message → that message»*³.",
+                    "plan": "link-related-messages"
+                  }
+                ],
+                "plan": "keep-incoming-journal"
               },
               {
-                "text": "Related messages become links in the graph: continuation, clarification, reply to*³."
+                "text": "Attachments become objects — every file, link and video: all four records, or none",
+                "items": [
+                  {
+                    "text": "Reading goes by kind: audio — whisper-1 transcription, then a description; video — the sound track and six frames; image, PDF, Markdown, HTML, text — the model reads the whole file; source code — analysed, never run; a web page — the AI browser; a YouTube video — the official YouTube API.",
+                    "skills": [
+                      "describe-incoming-object",
+                      "use-links"
+                    ]
+                  },
+                  {
+                    "text": "A full description is born — enough to rebuild the object from text — and a summary of about 50 words, with a title, tags and anchors; a model answer of the wrong shape is refused whole.",
+                    "skills": [
+                      "describe-incoming-object"
+                    ]
+                  },
+                  {
+                    "text": "Record 1 — the object with its full description goes to the object store; an id comes back.",
+                    "skills": [
+                      "describe-incoming-object",
+                      "use-object-store"
+                    ]
+                  },
+                  {
+                    "text": "Record 2 — a search card (title and summary) goes to the vector store, collection memory-objects.",
+                    "skills": [
+                      "describe-incoming-object"
+                    ]
+                  },
+                  {
+                    "text": "Record 3 — a graph document: description, tags, id, summary and an origin line «where this is known from».",
+                    "skills": [
+                      "describe-incoming-object"
+                    ]
+                  },
+                  {
+                    "text": "Record 4 — the journal row links the three. If any step fails, what was written is rolled back; the row stays with status failed and the reason.",
+                    "skills": [
+                      "describe-incoming-object"
+                    ]
+                  }
+                ],
+                "skills": [
+                  "describe-incoming-object",
+                  "use-links"
+                ]
               },
               {
-                "text": "A value that corrects one from a related message replaces it; the old one goes to history, and the answer says so."
+                "text": "Values about the person — tables",
+                "items": [
+                  {
+                    "text": "First, what is already known: which kinds exist and which of them are already tables.",
+                    "skills": [
+                      "use-tables"
+                    ]
+                  },
+                  {
+                    "text": "The kind and its form are chosen from the feature registry and its 8 candidates, not from the whole schema*⁴; when a fitting kind exists, its name is taken letter for letter*⁵.",
+                    "plan": "use-feature-registry"
+                  },
+                  {
+                    "text": "Every value carries its origin: said by the person, or inferred with its grounds; an inference without grounds is refused.",
+                    "skills": [
+                      "use-tables"
+                    ]
+                  },
+                  {
+                    "text": "The depth rule: a table may hold attributes of the person himself (depth 0) and of entities with a direct edge to him — a daughter, a friend, my car (depth 1); attributes of someone else's entity — Misha's car, Denis's service — go only to the graph, with an anchor. Age is never stored, the year of birth is.",
+                    "plan": "use-tables — add the depth rule"
+                  },
+                  {
+                    "text": "When a column is added: the kind exists and has no value — the value goes into its column; the kind does not exist — the root table gains three columns: the value, «said or inferred», and the grounds. A kind's name is a phrase of at least four English words saying whose it is and what it is.",
+                    "skills": [
+                      "use-tables"
+                    ]
+                  },
+                  {
+                    "text": "A second value of the same kind: a correction («not Madrid, Barcelona») replaces the value, the old one goes to history; an addition («and Anya too») gives birth to a table for the kind — the first value moves into it as the first row with its own original time, and the column is left empty on purpose; unclear — both are kept as an addition, and the answer says so.",
+                    "skills": [
+                      "use-tables"
+                    ]
+                  },
+                  {
+                    "text": "When a table is born at once: when what arrived will keep growing — a friend is a name, a teammate has a role and tomorrow a schedule; or when the caller demands it (need_table). Raising the form loses nothing, lowering it always loses — so when in doubt, the form grows.",
+                    "skills": [
+                      "use-tables"
+                    ]
+                  },
+                  {
+                    "text": "Exact and countable values accumulate within their scope: taxi rides in Madrid never add up with those in London*¹⁰.",
+                    "plan": "use-scope-calendar-and-place"
+                  }
+                ],
+                "skills": [
+                  "use-tables"
+                ]
               },
               {
-                "text": "Exact, countable and current values — sums, quantities, a city — become table rows."
+                "text": "The knowledge graph — everything said",
+                "items": [
+                  {
+                    "text": "The document of the phrase opens with its introduction: the person's name rather than a technical key, the channel, first-level anchors, feature keys; no service words — the graph turns everything written there into entities.",
+                    "skills": [
+                      "use-knowledge-graph"
+                    ]
+                  },
+                  {
+                    "text": "The document carries pointers to the table rows where the values landed.",
+                    "skills": [
+                      "use-knowledge-graph"
+                    ]
+                  },
+                  {
+                    "text": "What stayed only in the graph is listed, each with its reason.",
+                    "skills": [
+                      "use-knowledge-graph"
+                    ]
+                  },
+                  {
+                    "text": "A record without an anchor is refused: it would exist and be unreachable.",
+                    "skills": [
+                      "use-knowledge-graph"
+                    ]
+                  }
+                ],
+                "skills": [
+                  "use-knowledge-graph"
+                ]
               },
               {
-                "text": "Everything said goes into the knowledge graph with its introduction: who said it, the channel, anchors, features and a pointer to the table row."
-              },
-              {
-                "text": "Files, pages and videos become objects with a description."
+                "text": "The result of the write goes into the answer and into memory's work journal: what landed where, what was refused and why, whether a model was called.",
+                "plan": "compose-memory-answer"
               }
+            ],
+            "skills": [
+              "use-tables",
+              "use-knowledge-graph",
+              "describe-incoming-object"
             ]
           },
           {
             "text": "Retrieving from memory",
             "items": [
               {
-                "text": "Related messages narrow the search: their anchors and features join the question*³."
+                "text": "Related messages narrow the search: their anchors and features join the question*³.",
+                "plan": "link-related-messages"
               },
               {
-                "text": "A named feature is answered from the table; sums are computed by code."
+                "text": "A named feature is answered from the table; sums are computed by code.",
+                "skills": [
+                  "use-tables",
+                  "use-depth-ladder"
+                ]
               },
               {
-                "text": "Nothing in the table — names from the question are looked up in the graph, which answers about the links with no model call."
+                "text": "Nothing in the table — names from the question are looked up in the graph, which answers about the links with no model call.",
+                "skills": [
+                  "use-knowledge-graph"
+                ]
               },
               {
-                "text": "depth: deep — semantic search in the vector store, when the words of the question and of the record differ*⁶."
+                "text": "depth: deep — semantic search in the vector store, when the words of the question and of the record differ*⁶.",
+                "skills": [
+                  "use-vector-store"
+                ]
               },
               {
-                "text": "depth: extreme — bounded research of up to 10 minutes: hypotheses from the graph, the vectors and the model's knowledge of the world; the result and its chain are kept as an object, so a repeated question is answered from the cheap steps*⁶*⁷."
+                "text": "depth: extreme — bounded research of up to 10 minutes: hypotheses from the graph, the vectors and the model's knowledge of the world*⁶.",
+                "plan": "run-bounded-research"
               },
               {
-                "text": "Nothing found — «I don't know», with what is missing."
+                "text": "Nothing found — «I don't know», with what is missing.",
+                "skills": [
+                  "use-depth-ladder"
+                ]
               },
               {
-                "text": "A request with no question returns everything known about the person, with no model."
+                "text": "A request with no question returns everything known about the person, with no model.",
+                "skills": [
+                  "use-tables"
+                ]
               }
+            ],
+            "skills": [
+              "use-depth-ladder"
             ]
+          },
+          {
+            "text": "The learning loop — an expensive result becomes cheap knowledge",
+            "items": [
+              {
+                "text": "When it runs: after deep research (deep, extreme)*⁶, and after a computation over tables whose answer is a document — «how much did we earn in May–August, in detail»*¹¹.",
+                "plan": "fold-back-learning-loop"
+              },
+              {
+                "text": "One order for both cases",
+                "items": [
+                  {
+                    "text": "The result is obtained — by research or by computation.",
+                    "plan": "fold-back-learning-loop"
+                  },
+                  {
+                    "text": "An artefact — a document, a table, an image — goes to the object store; an id comes back.",
+                    "skills": [
+                      "use-object-store"
+                    ]
+                  },
+                  {
+                    "text": "A text summary is born: what came out and where the detail lies.",
+                    "plan": "fold-back-learning-loop"
+                  },
+                  {
+                    "text": "The summary goes to the vector store; an id comes back.",
+                    "plan": "fold-back-learning-loop"
+                  },
+                  {
+                    "text": "The summary goes to the knowledge graph; an id comes back.",
+                    "plan": "fold-back-learning-loop"
+                  },
+                  {
+                    "text": "The link table of the entity the question was about is updated, if such a table exists; this step is the last and may be skipped.",
+                    "plan": "fold-back-learning-loop"
+                  },
+                  {
+                    "text": "The summary and the id go out, and a repeated question is answered from the cheap steps*⁷.",
+                    "plan": "fold-back-learning-loop"
+                  }
+                ],
+                "plan": "fold-back-learning-loop"
+              },
+              {
+                "text": "Denial of a conclusion — a separate input (deny)",
+                "items": [
+                  {
+                    "text": "It runs an extra loop: the earlier summary is extended with «the architect rejected this hypothesis»*¹².",
+                    "plan": "fold-back-learning-loop"
+                  },
+                  {
+                    "text": "The conclusion is cancelled, not the fact: «Denis served in the regiment» stays, «so he knew the president» is refuted.",
+                    "plan": "fold-back-learning-loop"
+                  },
+                  {
+                    "text": "The refuted hypothesis is kept, not deleted — otherwise the same chain leads to the same conclusion again.",
+                    "plan": "fold-back-learning-loop"
+                  }
+                ],
+                "plan": "fold-back-learning-loop"
+              },
+              {
+                "text": "Patterns the model works out in the loop become skill candidates and are tested in the shadow against the current skill: an untested pattern is a habit, not knowledge.",
+                "plan": "evolve-skill-in-shadow"
+              }
+            ],
+            "plan": "fold-back-learning-loop"
           }
+        ],
+        "skills": [
+          "use-tables",
+          "use-knowledge-graph",
+          "describe-incoming-object",
+          "use-depth-ladder"
         ]
       },
       {
         "title": "Final phase: the answer",
         "items": [
           {
-            "text": "For both scenarios: ok, what_happened, text, objects; which verb was executed and who decided it — the caller or memory*¹; the fate of every feature — taken from the caller, found by memory, or rejected with a reason; which messages the request is linked to*³."
+            "text": "For both scenarios: ok, what_happened, text, objects; which verb was executed and who decided it — the caller or memory*¹; the fate of every feature — taken from the caller, found by memory, or rejected with a reason; which messages the request is linked to*³.",
+            "plan": "compose-memory-answer"
           },
           {
-            "text": "For a write: where things landed (kept_whole), whether a model was called (used_model), the reasoning thread (thread)."
+            "text": "For a write: where things landed (kept_whole), whether a model was called (used_model), the reasoning thread (thread).",
+            "plan": "compose-memory-answer"
           },
           {
-            "text": "For a read: how it was found (found_by), the depth reached (depth_used), what is missing (not_yet_known), the reasoning chain on want_chain."
+            "text": "For a read: how it was found (found_by), the depth reached (depth_used), what is missing (not_yet_known), the reasoning chain on want_chain.",
+            "plan": "compose-memory-answer"
           }
-        ]
+        ],
+        "plan": "compose-memory-answer"
       }
     ],
     "notesTitle": "* In development — what exists today and what remains to build",
@@ -534,7 +816,7 @@ const EN: LandingWords = {
       },
       {
         "mark": "*³",
-        "text": "Links to messages. Today there are thread, history and prior, but no link to specific stored messages. To build: journal message numbers in the contract, candidates from the journal by meaning and time, links in the graph, and their use when reading."
+        "text": "Links to messages. Today the journal can link one message to another, but only saving a link uses it (a snippet is linked to its page); thread, history and prior do not point at specific stored messages. To build: message numbers in the contract, candidates from the journal by meaning and time, links for every phrase, and their use when reading."
       },
       {
         "mark": "*⁴",
@@ -550,9 +832,33 @@ const EN: LandingWords = {
       },
       {
         "mark": "*⁷",
-        "text": "Keeping an expensive answer. Today the agent can keep an answer object (keep_object), but reading does not keep its own result. To build: the result of extreme kept as an object, a vector card and a graph document."
+        "text": "Keeping an expensive answer. Today the agent can keep an answer object (keep_object), but reading does not keep its own result. To build: the result of extreme research kept as an object, a vector card and a graph document."
+      },
+      {
+        "mark": "*⁸",
+        "text": "A journal row for every message. Today only files and links get a row in the journal of incoming messages; a plain phrase is written only to memory's work journal. To build: a journal row for every phrase, as the first record."
+      },
+      {
+        "mark": "*⁹",
+        "text": "The scope of a phrase and search by place. Today the scope columns and the coordinate index exist on an object's row; a phrase's scope goes only into the model prompt, and reading uses coordinates nowhere. To build: scope in the journal row of every phrase, and radius search when reading."
+      },
+      {
+        "mark": "*¹⁰",
+        "text": "Accumulation within scope. Today a sum is computed over all rows of a feature, with no scope. To build: sums and histories grouped by scope."
+      },
+      {
+        "mark": "*¹¹",
+        "text": "The learning loop after a computation. Today only the agent can keep an answer object (keep_object); reading does not assemble a document over tables and does not run the loop. To build: assembling the document and running the loop after it."
+      },
+      {
+        "mark": "*¹²",
+        "text": "Denial of a conclusion. Today deny works only inside the same reasoning thread: the person's words go into the model prompt; the earlier summary is not extended and the refuted hypothesis is not kept separately. To build: recording the refutation next to the hypothesis, and extending the summary."
       }
-    ]
+    ],
+    "skillLabels": {
+      "have": "Skill:",
+      "plan": "Skill to be created:"
+    }
   },
   media: {
     items: [
@@ -860,146 +1166,410 @@ const RU: LandingWords = {
         "title": "Вход: что прислал зовущий",
         "items": [
           {
-            "text": "Обязательное: кто говорит (who) и фраза человека (text)."
+            "text": "Обязательное: кто говорит (who) и фраза человека (text).",
+            "plan": "understand-incoming-request"
           },
           {
             "text": "Глагол — необязательно.",
             "items": [
               {
-                "text": "С глаголом запрос приходит на /v1/remember (добавить) или /v1/recall (извлечь)."
+                "text": "С глаголом запрос приходит на /v1/remember (добавить) или /v1/recall (извлечь).",
+                "plan": "understand-incoming-request"
               },
               {
-                "text": "Без глагола — на один общий адрес, и память решает сама*¹."
+                "text": "Без глагола — на один общий адрес, и память решает сама*¹.",
+                "plan": "understand-incoming-request"
               }
-            ]
+            ],
+            "plan": "understand-incoming-request"
           },
           {
             "text": "Признаки из реестра — необязательно, у обоих глаголов.",
             "items": [
               {
-                "text": "Список «ключ — значение», ключи из GET /v1/features."
+                "text": "Список «ключ — значение», ключи из GET /v1/features.",
+                "plan": "use-feature-registry"
               },
               {
-                "text": "Их принимает не только запись, но и чтение*²."
+                "text": "Их принимает не только запись, но и чтение*².",
+                "plan": "use-feature-registry"
               }
-            ]
+            ],
+            "plan": "use-feature-registry"
           },
           {
             "text": "Связь с предыдущими сообщениями — необязательно.",
             "items": [
               {
-                "text": "Зовущий называет прежние сообщения их номерами в журнале памяти*³."
+                "text": "Зовущий называет прежние сообщения их номерами в журнале памяти*³.",
+                "plan": "link-related-messages"
               },
               {
-                "text": "Или присылает нить разбора (thread), прежние реплики (history) и уже найденное (prior)."
+                "text": "Или присылает нить разбора (thread), прежние реплики (history) и уже найденное (prior).",
+                "plan": "link-related-messages"
               }
-            ]
+            ],
+            "plan": "link-related-messages"
+          },
+          {
+            "text": "Календарь и геометка — необязательно: когда это произошло и где (at, lat, lon, radius_m, place)*⁹.",
+            "plan": "use-scope-calendar-and-place"
           }
-        ]
+        ],
+        "plan": "understand-incoming-request"
       },
       {
         "title": "Предварительная фаза: чего не прислали, память определяет сама",
         "items": [
           {
-            "text": "Прислано всё — глагол, признаки и связи: модель не зовётся вовсе."
+            "text": "Прислано всё — глагол, признаки и связи: модель не зовётся вовсе.",
+            "plan": "understand-incoming-request"
           },
           {
             "text": "Чего-то не хватает — один вызов модели на всё недостающее сразу, без сохранения разговора*⁴.",
             "items": [
               {
-                "text": "Модель получает фразу и кандидатов: 8 ближайших по смыслу признаков реестра и последние сообщения этого человека, ближайшие по смыслу и времени*³."
+                "text": "Модель получает фразу и кандидатов: 8 ближайших по смыслу признаков реестра и последние сообщения этого человека, ближайшие по смыслу и времени*³.",
+                "plan": "understand-incoming-request"
               },
               {
-                "text": "Возвращает глагол, признаки со значениями, номера связанных сообщений и то, чего в реестре нет."
+                "text": "Возвращает глагол, признаки со значениями, номера связанных сообщений и то, чего в реестре нет.",
+                "plan": "understand-incoming-request"
               },
               {
-                "text": "Код проверяет всё: глагол — один из двух; ключ — из кандидатов, значение — нужного типа; номера сообщений существуют и принадлежат этому человеку."
+                "text": "Код проверяет всё: глагол — один из двух; ключ — из кандидатов, значение — нужного типа; номера сообщений существуют и принадлежат этому человеку.",
+                "plan": "understand-incoming-request"
               }
-            ]
+            ],
+            "plan": "understand-incoming-request"
           },
           {
             "text": "Смысл, которого в реестре нет.",
             "items": [
               {
-                "text": "Сказанное всё равно ложится в граф."
+                "text": "Сказанное всё равно ложится в граф.",
+                "skills": [
+                  "use-knowledge-graph"
+                ]
               },
               {
-                "text": "Архитектору сохраняется предложение нового признака: чем он был бы и какая фраза его вызвала*⁵."
+                "text": "Архитектору сохраняется предложение нового признака: чем он был бы и какая фраза его вызвала*⁵.",
+                "plan": "use-feature-registry"
               },
               {
-                "text": "Подходящий признак уже есть — берётся он, а не заводится похожий второй*⁵."
+                "text": "Подходящий признак уже есть — берётся он, а не заводится похожий второй*⁵.",
+                "plan": "use-feature-registry"
               }
-            ]
+            ],
+            "plan": "use-feature-registry"
           }
-        ]
+        ],
+        "plan": "understand-incoming-request"
       },
       {
-        "title": "Основная фаза: два сценария",
+        "title": "Основная фаза: два сценария и цикл дообучения",
         "items": [
           {
-            "text": "Добавление записи",
+            "text": "Добавление записи — по порядку",
             "items": [
               {
-                "text": "Каждое значение проверяется по типу признака; неизвестный ключ отвергается с причиной."
+                "text": "Приём сообщения",
+                "items": [
+                  {
+                    "text": "Сообщение получает номер в журнале входящих — фраза, файл, ссылка или ролик — с тем, кто прислал, откуда (API, Telegram, стенд) и когда*⁸.",
+                    "plan": "keep-incoming-journal"
+                  },
+                  {
+                    "text": "Рядом записывается охват: календарь — когда произошло то, о чём сообщение, а не когда оно пришло; геометка — широта, долгота, радиус и место; у каждой метки назван источник — сказано человеком, взято из файла, пришло с устройства или выведено. Пустой охват значит «не знаю где и когда», а не «везде и всегда»*⁹.",
+                    "plan": "use-scope-calendar-and-place"
+                  },
+                  {
+                    "text": "Связь с прежними сообщениями записывается ссылкой «это сообщение → то сообщение»*³.",
+                    "plan": "link-related-messages"
+                  }
+                ],
+                "plan": "keep-incoming-journal"
               },
               {
-                "text": "Связанные сообщения становятся связью в графе: «продолжение», «уточнение», «ответ на»*³."
+                "text": "Вложения становятся объектами — каждый файл, ссылка и ролик: все четыре записи или ни одной",
+                "items": [
+                  {
+                    "text": "Прочтение по роду: звук — расшифровка whisper-1 и описание; видео — звуковая дорожка и шесть кадров; изображение, PDF, Markdown, HTML, текст — модель читает файл целиком; исходный код — анализ без запуска; страница — ИИ-браузер; ролик — официальный API YouTube.",
+                    "skills": [
+                      "describe-incoming-object",
+                      "use-links"
+                    ]
+                  },
+                  {
+                    "text": "Рождаются полное описание, по которому объект можно восстановить из текста, и саммари около 50 слов, а также название, теги и якоря; ответ модели неправильной формы отвергается целиком.",
+                    "skills": [
+                      "describe-incoming-object"
+                    ]
+                  },
+                  {
+                    "text": "Запись 1 — объект с полным описанием в объектное хранилище, получен идентификатор.",
+                    "skills": [
+                      "describe-incoming-object",
+                      "use-object-store"
+                    ]
+                  },
+                  {
+                    "text": "Запись 2 — карточка поиска (название и саммари) в векторное хранилище, коллекция memory-objects.",
+                    "skills": [
+                      "describe-incoming-object"
+                    ]
+                  },
+                  {
+                    "text": "Запись 3 — документ графа: описание, теги, идентификатор, саммари и строка происхождения «откуда это известно».",
+                    "skills": [
+                      "describe-incoming-object"
+                    ]
+                  },
+                  {
+                    "text": "Запись 4 — строка журнала входящих связывает три предыдущие. Отказ любого шага откатывает записанное; строка остаётся со статусом failed и причиной.",
+                    "skills": [
+                      "describe-incoming-object"
+                    ]
+                  }
+                ],
+                "skills": [
+                  "describe-incoming-object",
+                  "use-links"
+                ]
               },
               {
-                "text": "Значение, исправляющее значение связанного сообщения, заменяет его; прежнее уходит в историю, и ответ говорит об этом вслух."
+                "text": "Значения о человеке — таблицы",
+                "items": [
+                  {
+                    "text": "Сначала — что о человеке уже известно: какие роды заведены и какие из них уже таблицы.",
+                    "skills": [
+                      "use-tables"
+                    ]
+                  },
+                  {
+                    "text": "Род и форма выбираются по реестру признаков и 8 кандидатам, а не по всей схеме*⁴; подходящий род уже есть — берётся его имя буква в букву*⁵.",
+                    "plan": "use-feature-registry"
+                  },
+                  {
+                    "text": "У каждого значения записано происхождение: сказал человек или выведено с основанием; вывод без основания отвергается.",
+                    "skills": [
+                      "use-tables"
+                    ]
+                  },
+                  {
+                    "text": "Правило глубины: в таблицу ложатся атрибуты самого человека (глубина 0) и сущностей с прямым ребром к нему — дочь, друг, моя машина (глубина 1); атрибуты чужой сущности — машина Миши, служба Дениса — только в граф, с якорем. Возраст не хранится, хранится год рождения.",
+                    "plan": "use-tables — add the depth rule"
+                  },
+                  {
+                    "text": "Когда добавляется колонка: род есть, а значения нет — значение ложится в его колонку; рода нет — у корневой таблицы появляются три колонки: значение, «сказал или вывел» и основание. Имя рода — фраза не короче четырёх английских слов о том, чьё это и что это.",
+                    "skills": [
+                      "use-tables"
+                    ]
+                  },
+                  {
+                    "text": "Второе значение того же рода: исправление («не Мадрид, а Барселона») заменяет значение, прежнее уходит в историю; добавление («и Аня тоже») рождает таблицу рода — прежнее значение переезжает в неё первой строкой со своим исходным временем, а колонка пустеет намеренно; если неясно — оба сохраняются как добавление, и ответ говорит это вслух.",
+                    "skills": [
+                      "use-tables"
+                    ]
+                  },
+                  {
+                    "text": "Когда таблица рождается сразу: если пришедшее будет расти — друг это имя, а у члена команды есть роль и завтра появится график; или по требованию зовущего (need_table). Повысить форму можно без потерь, понизить — всегда потеря, поэтому при сомнении форма растёт.",
+                    "skills": [
+                      "use-tables"
+                    ]
+                  },
+                  {
+                    "text": "Точное и счётное накапливается с учётом охвата: траты в Мадриде не складываются с лондонскими*¹⁰.",
+                    "plan": "use-scope-calendar-and-place"
+                  }
+                ],
+                "skills": [
+                  "use-tables"
+                ]
               },
               {
-                "text": "Точное, счётное и текущее — суммы, количества, город — строкой в таблицу."
+                "text": "Граф знаний — всё сказанное",
+                "items": [
+                  {
+                    "text": "Документ фразы начинается вводной частью: имя человека, а не технический ключ, канал, якоря первого уровня, ключи признаков; служебных слов в ней нет — всё написанное там граф превращает в сущности.",
+                    "skills": [
+                      "use-knowledge-graph"
+                    ]
+                  },
+                  {
+                    "text": "В документе стоят указатели на строки таблиц, куда легли значения.",
+                    "skills": [
+                      "use-knowledge-graph"
+                    ]
+                  },
+                  {
+                    "text": "То, что осталось только в графе, перечислено с причиной у каждого пункта.",
+                    "skills": [
+                      "use-knowledge-graph"
+                    ]
+                  },
+                  {
+                    "text": "Запись без якоря отвергается: она существовала бы, но найти её было бы нельзя.",
+                    "skills": [
+                      "use-knowledge-graph"
+                    ]
+                  }
+                ],
+                "skills": [
+                  "use-knowledge-graph"
+                ]
               },
               {
-                "text": "В граф знаний — всё сказанное с вводной частью: кто сказал, каким каналом, якоря, признаки и указатель на строку таблицы."
-              },
-              {
-                "text": "Файлы, страницы и ролики — объектами с описанием."
+                "text": "Итог записи — в ответ и в рабочий журнал памяти: что куда легло, что отвергнуто и почему, звалась ли модель.",
+                "plan": "compose-memory-answer"
               }
+            ],
+            "skills": [
+              "use-tables",
+              "use-knowledge-graph",
+              "describe-incoming-object"
             ]
           },
           {
             "text": "Извлечение из памяти",
             "items": [
               {
-                "text": "Связанные сообщения сужают поиск: их якоря и признаки добавляются к вопросу*³."
+                "text": "Связанные сообщения сужают поиск: их якоря и признаки добавляются к вопросу*³.",
+                "plan": "link-related-messages"
               },
               {
-                "text": "Признак назван — ответ из таблицы, сумму считает код."
+                "text": "Признак назван — ответ из таблицы, сумму считает код.",
+                "skills": [
+                  "use-tables",
+                  "use-depth-ladder"
+                ]
               },
               {
-                "text": "В таблице нет — имена из вопроса ищутся в графе, и граф отвечает о связях без вызова модели."
+                "text": "В таблице нет — имена из вопроса ищутся в графе, и граф отвечает о связях без вызова модели.",
+                "skills": [
+                  "use-knowledge-graph"
+                ]
               },
               {
-                "text": "Глубина deep — поиск по смыслу в векторном хранилище, когда слова вопроса и записи разные*⁶."
+                "text": "Глубина deep — поиск по смыслу в векторном хранилище, когда слова вопроса и записи разные*⁶.",
+                "skills": [
+                  "use-vector-store"
+                ]
               },
               {
-                "text": "Глубина extreme — ограниченное исследование до 10 минут: гипотезы из графа, векторов и знания модели о мире; итог и цепочка сохраняются объектом, и повторный вопрос отвечается из дешёвых ступеней*⁶*⁷."
+                "text": "Глубина extreme — ограниченное исследование до 10 минут: гипотезы из графа, векторов и знания модели о мире*⁶.",
+                "plan": "run-bounded-research"
               },
               {
-                "text": "Не нашлось ничего — «не знаю» с перечнем того, чего не хватает."
+                "text": "Не нашлось ничего — «не знаю» с перечнем того, чего не хватает.",
+                "skills": [
+                  "use-depth-ladder"
+                ]
               },
               {
-                "text": "Запрос без вопроса возвращает всё известное о человеке, без модели."
+                "text": "Запрос без вопроса возвращает всё известное о человеке, без модели.",
+                "skills": [
+                  "use-tables"
+                ]
               }
+            ],
+            "skills": [
+              "use-depth-ladder"
             ]
+          },
+          {
+            "text": "Цикл дообучения — дорогой результат становится дешёвым знанием",
+            "items": [
+              {
+                "text": "Когда запускается: после глубокого исследования (deep, extreme)*⁶ и после вычисления по таблицам, если ответом стал документ — «сколько заработали в мае–августе, с детализацией»*¹¹.",
+                "plan": "fold-back-learning-loop"
+              },
+              {
+                "text": "Порядок один на оба случая",
+                "items": [
+                  {
+                    "text": "Результат добыт — исследованием или вычислением.",
+                    "plan": "fold-back-learning-loop"
+                  },
+                  {
+                    "text": "Артефакт — документ, таблица, изображение — в объектное хранилище, получен идентификатор.",
+                    "skills": [
+                      "use-object-store"
+                    ]
+                  },
+                  {
+                    "text": "Рождается текстовое саммари: что получилось и где лежит подробное.",
+                    "plan": "fold-back-learning-loop"
+                  },
+                  {
+                    "text": "Саммари — в векторное хранилище, получен идентификатор.",
+                    "plan": "fold-back-learning-loop"
+                  },
+                  {
+                    "text": "Саммари — в граф знаний, получен идентификатор.",
+                    "plan": "fold-back-learning-loop"
+                  },
+                  {
+                    "text": "Обновляется таблица связи с сущностью, о которой шла речь, если такая таблица есть; этот шаг последний и может быть пропущен.",
+                    "plan": "fold-back-learning-loop"
+                  },
+                  {
+                    "text": "Наружу уходит саммари с идентификатором, а повторный вопрос отвечается из дешёвых ступеней*⁷.",
+                    "plan": "fold-back-learning-loop"
+                  }
+                ],
+                "plan": "fold-back-learning-loop"
+              },
+              {
+                "text": "Отрицание вывода — отдельный вход (deny)",
+                "items": [
+                  {
+                    "text": "Запускает дополнительный цикл: прежнее саммари расширяется словами «архитектор отверг эту гипотезу»*¹².",
+                    "plan": "fold-back-learning-loop"
+                  },
+                  {
+                    "text": "Отменяется вывод, а не факт: «Денис служил в полку» остаётся, «значит, знал президента» опровергнуто.",
+                    "plan": "fold-back-learning-loop"
+                  },
+                  {
+                    "text": "Опровергнутая гипотеза хранится, а не удаляется — иначе та же цепочка снова приведёт к тому же выводу.",
+                    "plan": "fold-back-learning-loop"
+                  }
+                ],
+                "plan": "fold-back-learning-loop"
+              },
+              {
+                "text": "Паттерны, выработанные моделью в цикле, становятся кандидатами навыка и проверяются в тени против действующего: непроверенный паттерн — привычка, а не знание.",
+                "plan": "evolve-skill-in-shadow"
+              }
+            ],
+            "plan": "fold-back-learning-loop"
           }
+        ],
+        "skills": [
+          "use-tables",
+          "use-knowledge-graph",
+          "describe-incoming-object",
+          "use-depth-ladder"
         ]
       },
       {
         "title": "Завершающая фаза: ответ",
         "items": [
           {
-            "text": "У обоих сценариев: ok, what_happened, text, objects; какой глагол выполнен и кто его определил — зовущий или память*¹; судьба каждого признака — взят от зовущего, определён памятью, отвергнут с причиной; с какими сообщениями связан запрос*³."
+            "text": "У обоих сценариев: ok, what_happened, text, objects; какой глагол выполнен и кто его определил — зовущий или память*¹; судьба каждого признака — взят от зовущего, определён памятью, отвергнут с причиной; с какими сообщениями связан запрос*³.",
+            "plan": "compose-memory-answer"
           },
           {
-            "text": "У записи: где что легло (kept_whole), звалась ли модель (used_model), нить разбора (thread)."
+            "text": "У записи: где что легло (kept_whole), звалась ли модель (used_model), нить разбора (thread).",
+            "plan": "compose-memory-answer"
           },
           {
-            "text": "У чтения: чем достали (found_by), какой глубины достигли (depth_used), чего не хватает (not_yet_known), цепочка рассуждения по want_chain."
+            "text": "У чтения: чем достали (found_by), какой глубины достигли (depth_used), чего не хватает (not_yet_known), цепочка рассуждения по want_chain.",
+            "plan": "compose-memory-answer"
           }
-        ]
+        ],
+        "plan": "compose-memory-answer"
       }
     ],
     "notesTitle": "* В разработке — что есть сегодня и что осталось построить",
@@ -1014,7 +1584,7 @@ const RU: LandingWords = {
       },
       {
         "mark": "*³",
-        "text": "Связь с сообщениями. Сегодня есть thread, history и prior, но нет связи с конкретными сохранёнными сообщениями. Строить: номера сообщений журнала в договоре, кандидатов из журнала по смыслу и времени, связи в графе и их учёт при чтении."
+        "text": "Связь с сообщениями. Сегодня журнал умеет связать одно сообщение с другим, но пользуется этим только сохранение ссылки (сниппет связывается со страницей); thread, history и prior не указывают на конкретные сохранённые сообщения. Строить: номера сообщений в договоре, кандидатов из журнала по смыслу и времени, связи для каждой фразы и их учёт при чтении."
       },
       {
         "mark": "*⁴",
@@ -1030,9 +1600,33 @@ const RU: LandingWords = {
       },
       {
         "mark": "*⁷",
-        "text": "Сохранение дорогого ответа. Сегодня объект-ответ умеет сохранять агент (keep_object), но чтение само свой итог не сохраняет. Строить: итог extreme — объектом, векторной карточкой и документом графа."
+        "text": "Сохранение дорогого ответа. Сегодня объект-ответ умеет сохранять агент (keep_object), но чтение само свой итог не сохраняет. Строить: итог глубокого исследования — объектом, векторной карточкой и документом графа."
+      },
+      {
+        "mark": "*⁸",
+        "text": "Строка журнала для каждого сообщения. Сегодня строку в журнале входящих получают только файлы и ссылки; обычная фраза пишется лишь в рабочий журнал памяти. Строить: строку журнала для каждой фразы первой записью."
+      },
+      {
+        "mark": "*⁹",
+        "text": "Охват фразы и поиск по месту. Сегодня колонки охвата и индекс по координатам есть у строки объекта; охват фразы уходит только в подсказку модели, а при чтении координаты не используются нигде. Строить: охват в строке журнала каждой фразы и поиск по радиусу при чтении."
+      },
+      {
+        "mark": "*¹⁰",
+        "text": "Накопление с учётом охвата. Сегодня сумма считается по всем строкам признака без учёта охвата. Строить: группировку сумм и историй по охвату."
+      },
+      {
+        "mark": "*¹¹",
+        "text": "Цикл дообучения после вычисления. Сегодня объект-ответ может сохранить только агент (keep_object); чтение само не собирает документ по таблицам и цикл не запускает. Строить: сборку документа и цикл дообучения после неё."
+      },
+      {
+        "mark": "*¹²",
+        "text": "Отрицание вывода. Сегодня deny действует только внутри той же нити разбора: слова человека уходят модели в подсказку; прежнее саммари не расширяется, опровергнутая гипотеза отдельно не хранится. Строить: запись опровержения рядом с гипотезой и расширение саммари."
       }
-    ]
+    ],
+    "skillLabels": {
+      "have": "Навык:",
+      "plan": "Навык будет создан:"
+    }
   },
   media: {
     items: [

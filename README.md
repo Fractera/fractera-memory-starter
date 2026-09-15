@@ -294,14 +294,13 @@ development is marked with an asterisk and explained in the notes below.
       1. What was said still goes into the graph.
       2. A proposal for a new feature is kept for the architect: what it would be and which phrase called for it\*⁵.
       3. When a fitting feature exists, it is reused instead of creating a near-twin\*⁵.
-3. **Main phase: two scenarios**
-   1. **Adding a record**
-      1. Every value is checked against its feature type; an unknown key is rejected with a reason.
-      2. Related messages become links in the graph: continuation, clarification, reply to\*³.
-      3. A value that corrects one from a related message replaces it; the old one goes to history, and the answer says so.
-      4. Exact, countable and current values — sums, quantities, a city — become table rows.
-      5. Everything said goes into the knowledge graph with its introduction: who, channel, anchors, features and a pointer to the table row.
-      6. Files, pages and videos become objects with a description.
+3. **Main phase: two scenarios and the learning loop**
+   1. **Adding a record — in order**
+      1. **Receiving the message.** It gets a number in the journal of incoming messages (`messages_that_came_into_memory`) — a phrase, a file, a link or a video — with who sent it, from where and when\*⁸. Its scope is recorded alongside: the calendar (when the thing happened, not when it arrived) and the geotag (latitude, longitude, radius, place), each with its source — said, from the file, from the device, inferred; an empty scope means «I don't know where or when»\*⁹. A link to earlier messages is recorded as «this message → that message»\*³.
+      2. **Attachments become objects — all four records, or none.** Reading goes by kind (audio — `whisper-1` then a description; video — sound track and six frames; image, PDF, Markdown, HTML, text — read whole; source code — analysed, never run; a page — the AI browser; a YouTube video — the official API) → a full description, a ~50-word summary, title, tags, anchors. Record 1: the object with its full description → object store, id. Record 2: a search card (title + summary) → vector store, `memory-objects`. Record 3: a graph document with description, tags, id, summary and an origin line. Record 4: the journal row links the three; any failure rolls back what was written, and the row stays `failed` with the reason.
+      3. **Values about the person — tables.** First, what is already known. The kind and form come from the registry and its 8 candidates\*⁴; an existing kind is reused letter for letter\*⁵. Every value is said or inferred with grounds. The depth rule: depth 0 and 1 may go to a table, depth 2+ only to the graph with an anchor; the year of birth, not the age. **A column:** the kind exists without a value — the value goes in; no such kind — the root table gains three columns (value, said-or-inferred, grounds), named by a phrase of at least four English words. **A second value:** a correction replaces it, the old one goes to history; an addition gives birth to a table for the kind, the first value moves in with its own time and the column is left empty on purpose; unclear — both kept as an addition, said aloud. **A table at once:** when what arrived will keep growing (a friend is a name; a teammate has a role and tomorrow a schedule) or on `need_table`; raising the form loses nothing, lowering it always loses. Exact and countable values accumulate within their scope\*¹⁰.
+      4. **The knowledge graph — everything said.** An introduction with the person's name, channel, first-level anchors and feature keys, no service words · pointers to table rows · what stayed only in the graph, each with its reason · a record without an anchor is refused.
+      5. **The result** goes into the answer and memory's work journal: what landed where, what was refused and why, whether a model was called.
    2. **Retrieving from memory**
       1. Related messages narrow the search: their anchors and features join the question\*³.
       2. A named feature is answered from the table; sums are computed by code.
@@ -310,6 +309,11 @@ development is marked with an asterisk and explained in the notes below.
       5. `depth: "extreme"` — bounded research of up to 10 minutes: hypotheses from the graph, the vectors and the model's knowledge of the world; the result and its chain are kept as an object, so a repeated question is answered from the cheap steps\*⁶\*⁷.
       6. Nothing found — «I don't know», with what is missing.
       7. A request with no question returns everything known about the person, with no model.
+   3. **The learning loop — an expensive result becomes cheap knowledge**
+      1. When: after deep research\*⁶, and after a computation over tables whose answer is a document\*¹¹.
+      2. One order: result obtained → artefact to the object store, id → a text summary → summary to the vector store, id → summary to the graph, id → the entity's link table, if one exists (last, may be skipped) → the summary and id go out, and a repeated question is answered cheaply\*⁷.
+      3. Denial of a conclusion (`deny`) is a separate input: an extra loop extends the earlier summary with «the architect rejected this»\*¹²; the conclusion is cancelled, not the fact; the refuted hypothesis is kept.
+      4. Patterns the model works out become skill candidates, tested in the shadow against the current skill.
 4. **Final phase: the answer**
    1. For both: `ok`, `what_happened`, `text`, `objects`; which verb was executed and who decided it\*¹; the fate of every feature; which messages the request is linked to\*³.
    2. For a write: `kept_whole`, `used_model`, `thread`.
@@ -319,11 +323,16 @@ development is marked with an asterisk and explained in the notes below.
 
 - **\*¹ A request without a verb.** Today the verb is set only by the address; the parse returns an `action` field that routes nothing. To build: a single address in the contract, routing by `action`, an answer field naming the verb and who decided.
 - **\*² Features on retrieval.** Today only writing accepts `features`. To build: the parameter on `recall`, and skipping the model call when features are sent.
-- **\*³ Links to messages.** Today there are `thread`, `history` and `prior`, but no link to specific stored messages. To build: journal message numbers in the contract, candidates by meaning and time, links in the graph, their use when reading.
+- **\*³ Links to messages.** Today the journal can link one message to another, but only saving a link uses it (a snippet to its page); `thread`, `history` and `prior` do not point at stored messages. To build: message numbers in the contract, candidates by meaning and time, links for every phrase, their use when reading.
 - **\*⁴ One call for all three determinations.** Today the call determines only features, in two ways: writing shows the model every registry kind, reading shows 8 candidates. To build: one shared parse for both verbs.
 - **\*⁵ Registry rules.** Today the registry's 21 features are edited by hand; a phrase with no fitting feature stays only in the graph. To build: stored proposals for new features and the rules for reuse — agreed with the architect first.
 - **\*⁶ Depth `deep` and `extreme`.** Today both are declared in the contract, and reading stops at the graph. To build: vectors inside reading and bounded research with its chain.
 - **\*⁷ Keeping an expensive answer.** Today the agent can keep an answer object (`keep_object`); reading does not keep its own result. To build: the result of `extreme` kept as an object, a vector card and a graph document.
+- **\*⁸ A journal row for every message.** Today only files and links get a row in `messages_that_came_into_memory`; a plain phrase goes only to the work journal. To build: a journal row for every phrase, as the first record.
+- **\*⁹ The scope of a phrase and search by place.** Today scope columns and a coordinate index exist on an object's row; a phrase's scope goes only into the model prompt, and reading never uses coordinates. To build: scope in every phrase's row and radius search when reading.
+- **\*¹⁰ Accumulation within scope.** Today a sum is computed over all rows of a feature, with no scope. To build: sums and histories grouped by scope.
+- **\*¹¹ The learning loop after a computation.** Today only the agent can keep an answer object; reading does not assemble a document over tables or run the loop.
+- **\*¹² Denial of a conclusion.** Today `deny` works only inside the same reasoning thread, as words in the model prompt; the summary is not extended and the refuted hypothesis is not kept separately.
 
 ## Four stores, one black box
 
