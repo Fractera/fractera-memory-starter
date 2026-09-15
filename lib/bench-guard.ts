@@ -51,7 +51,7 @@ function machineSecret(): string {
 }
 
 /** Постоянное по времени сравнение: обычное выдаёт секрет по времени ответа. */
-function sameSecret(given: string): boolean {
+export function sameSecret(given: string): boolean {
   const real = machineSecret()
   if (!real || !given || given.length !== real.length) return false
   let diff = 0

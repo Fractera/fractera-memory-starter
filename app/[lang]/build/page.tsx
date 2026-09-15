@@ -1,5 +1,7 @@
 import Link from "next/link"
+import { headers } from "next/headers"
 import { redirect } from "next/navigation"
+import { sameSecret } from "@/lib/bench-guard"
 import { Suspense } from "react"
 import { AlertTriangle, BookOpen, FileText, GitFork } from "lucide-react"
 import { PageCrumbs } from "@/components/nav/page-crumbs.server"
@@ -63,9 +65,13 @@ async function BuildBody({
   const ui = buildUi(lang)
 
   // 🔒 ЗАМОК ДО ПЕРВОГО ЧТЕНИЯ ДИСКА: заявки, шаги и инструкции — рабочие документы архитектора, как и терминал.
-  const session = await fracteraSession()
-  if (!session) redirect(`/${lang}/welcome`)
-  if (!session.roles.includes("architect")) redirect("/")
+  // Секрет машины пропускается тем же правилом, что у дверей стенда (`benchGuard`): так мастерскую проверяет прибор.
+  const machine = sameSecret((await headers()).get("x-data-secret") ?? "")
+  if (!machine) {
+    const session = await fracteraSession()
+    if (!session) redirect(`/${lang}/welcome`)
+    if (!session.roles.includes("architect")) redirect("/")
+  }
 
   const active = resolveBuildSection(typeof sp.section === "string" ? sp.section : undefined)
   const docParam = typeof sp.doc === "string" ? sp.doc : ""

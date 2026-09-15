@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { sameSecret } from "@/lib/bench-guard";
 
 // ПРИВРАТНИК СЛУЖБЫ ПАМЯТИ (178-2).
 //
@@ -177,6 +178,14 @@ const SUPPORTED = ["ru", "en"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = new URL(request.url);
+
+  // 🔒 МАСТЕРСКАЯ ОТКРЫТА СЕКРЕТУ МАШИНЫ ПО ДВУМ ТОЧНЫМ АДРЕСАМ (202-7) — ЧТОБЫ ЕЁ ПРОВЕРЯЛ ПРИБОР, А НЕ ТОЛЬКО ГЛАЗ.
+  // Страница сама повторяет эту проверку (`BuildBody`): привратник лишь не уводит на вход того, кто её прошёл.
+  // 🛑 Это не ослабление: секрет лежит в файле этой машины, и прочитавший его и так владеет ею целиком. Адресом, а не
+  // префиксом: всё прочее за замком остаётся за ним.
+  if ((pathname === "/ru/build" || pathname === "/en/build") && sameSecret(request.headers.get("x-data-secret") ?? "")) {
+    return NextResponse.next();
+  }
 
   if (SELF_GUARDED.has(pathname)) {
     return NextResponse.next();
