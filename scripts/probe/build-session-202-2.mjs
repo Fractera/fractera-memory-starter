@@ -145,7 +145,11 @@ st = await door("GET", "/api/fractera/build-session")
 say(stopped.json?.was === true && st.json?.running === false, `остановка: was=${stopped.json?.was}, статус running=${st.json?.running}`)
 say(!alive(pid), `   процесс ${pid} мёртв: ${!alive(pid)}`)
 say(back.closed?.reason === "stopped", `   подключённый сокет узнал причину: «${back.closed?.reason}»`)
-say(builders() === "0", `процессов строителя после остановки: ${builders()}`)
+// ✗ ПРОГОН 2026-09-15 09:51 ДАЛ «1» ЧЕРЕЗ 2,5 С, А МИНУТУ СПУСТЯ — «0»: Claude Code выходит по обрыву терминала не мгновенно. Фиксированная
+// пауза меряла скорость выхода, а не факт. Ждём по факту до 20 с и печатаем, сколько ушло.
+const stopAt = Date.now()
+while (builders() !== "0" && Date.now() - stopAt < 20000) await sleep(500)
+say(builders() === "0", `процессов строителя после остановки: ${builders()} (вышел за ${((Date.now() - stopAt) / 1000 + 2.5).toFixed(1)} с после «Остановить»)`)
 
 console.log(`===PROBE_202_2=== ${bad ? `ПРОВАЛОВ: ${bad}` : "всё сошлось"} ${new Date().toISOString()}`)
 process.exit(bad ? 1 : 0)
