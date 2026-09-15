@@ -8,7 +8,7 @@
 прячет сделанное.
 
 **Соседние документы, чтобы не искать:**
-`MEMORY-AGENT.md` — инструкция агента памяти · `CLAUDE.md` — инструкция строителя продукта · `development-docs/LAWS.md` — законы, по которым здесь строят · `development-docs/INTENT-REGISTRY.md` — реестр
+`CLAUDE.md` — инструкция управляющего памятью · навык `memory-development` — как память разрабатывают · `development-docs/LAWS.md` — законы, по которым здесь строят · `development-docs/INTENT-REGISTRY.md` — реестр
 замыслов: всё, что приходит в голову, до того как станет шагом.
 
 ---

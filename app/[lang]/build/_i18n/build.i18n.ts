@@ -177,8 +177,8 @@ const EN: BuildUi = {
   },
   instruction: {
     role: [
-      "CLAUDE.md is the main instruction: Claude Code opened in this folder reads it at the start of every session and takes it as its own identity — the builder of this service.",
-      "Next to it lives MEMORY-AGENT.md — the instruction of the memory agent, the one this product runs. It is the subject of the work, not the identity of the builder.",
+      "CLAUDE.md is the main instruction: Claude Code opened in this folder reads it at the start of every session and works as the manager of memory — recording, retrieving, answering.",
+      "Development is the rare case and happens in this terminal: it follows the skill memory-development — how work is planned in steps, proven and delivered.",
     ],
     howToChange:
       "These texts are not edited here. To change them, add a task describing what to optimise, then open the Claude Code terminal and ask it to plan your task.",
@@ -299,8 +299,8 @@ const RU: BuildUi = {
   },
   instruction: {
     role: [
-      "CLAUDE.md — главная инструкция: Claude Code, открытый в этой папке, читает её в начале каждой сессии и принимает как свою личность — строителя этой службы.",
-      "Рядом лежит MEMORY-AGENT.md — инструкция агента памяти, того, кем этот продукт управляет. Это предмет работы, а не личность строителя.",
+      "CLAUDE.md — главная инструкция: Claude Code, открытый в этой папке, читает её в начале каждой сессии и работает управляющим памятью — записывает, находит, отвечает.",
+      "Разработка — редкий случай, и она идёт в этом терминале по навыку memory-development: как работа планируется шагами, доказывается и доставляется.",
     ],
     howToChange:
       "Эти тексты здесь не редактируются. Чтобы их изменить, добавьте задание с описанием того, что оптимизировать, затем откройте терминал Claude Code и попросите запланировать ваше задание.",
