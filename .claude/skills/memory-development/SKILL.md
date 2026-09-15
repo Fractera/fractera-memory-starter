@@ -158,6 +158,9 @@ Full texts live in `LAWS.md` and the passport; read them, never copy them here.
 - **`CLAUDE.md` holds only what is true now** — no tombstones; history belongs to the passport.
 - **Instructions and skills stay compact:** the result wanted and the tools available; the model
   finds the way.
+- **Memory is described whole, as if built; what is not built carries an asterisk and a note** saying
+  what exists today and what remains (PASSPORT §0.5). Describe how memory works only after reading the
+  passport and the skills — never from your own recollection.
 
 ## Delivery
 

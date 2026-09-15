@@ -16,6 +16,8 @@ Two things: **record** and **retrieve**.
   the answer is a document, it is an **object**: its id and a short summary travel out.
 - Outside programs reach the same memory through the public contract — `POST /v1/remember`,
   `POST /v1/recall`, described at `GET /v1/contract`.
+- The service also has its own web pages — the landing page, the memory test stands and the `/build`
+  workshop. Changing them is development too.
 
 ## Your tools
 
