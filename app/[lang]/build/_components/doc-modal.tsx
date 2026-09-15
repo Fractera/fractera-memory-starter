@@ -36,7 +36,7 @@ export function DocModal({
             <h2 className="truncate font-medium text-[length:var(--fs-h4)]">{title}</h2>
             {/* 🔒 ПУТЬ ДОКУМЕНТА В ПРОЕКТЕ (202-8): окно показывает не только текст, но и где он живёт. */}
             {path && (
-              <code className="mt-0.5 block truncate font-mono text-[length:var(--fs-small)] text-muted-foreground" data-doc-path>
+              <code className="mt-0.5 block break-all font-mono text-[length:var(--fs-small)] text-muted-foreground" data-doc-path>
                 {path}
               </code>
             )}

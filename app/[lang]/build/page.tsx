@@ -8,7 +8,7 @@ import { PageCrumbs } from "@/components/nav/page-crumbs.server"
 import { Eyebrow, H1, Lead } from "@/components/ui/typography"
 import { WorkspaceShell, type WorkspaceShellItem } from "@/components/workspace/workspace-shell"
 import { fracteraSession } from "@/lib/fractera/session"
-import { docFor, listSkills, listSteps, readCurrent, readInstruction } from "@/lib/build-docs.mjs"
+import { docFor, fullPath, listSkills, listSteps, readCurrent, readInstruction } from "@/lib/build-docs.mjs"
 import { listTasks } from "@/lib/build-tasks.mjs"
 import { PassportBody } from "../settings/_components/passport-body.client"
 import { SettingsCard } from "../settings/_components/settings-card"
@@ -170,13 +170,15 @@ async function BuildBody({
                   абзаца — поэтому только строчные элементы: блок внутри <p> браузер разорвал бы молча. */}
               {BUILD_PATHS[active] && (
                 <span className="mt-2 flex flex-wrap gap-2" data-build-path-row>
+                  {/* 🔒 ПОЛНЫЙ АДРЕС ОТ КОРНЯ, ИЗ КОТОРОГО РАБОТАЕТ СЛУЖБА (слово владельца: «Это же не полный адрес он же начинается с
+                      opt/fractera…?»). Корень берётся у процесса — на сервере `/opt/fractera/memory`, — а не вписывается руками. */}
                   {BUILD_PATHS[active]!.map((p) => (
                     <code
-                      className="rounded bg-muted px-2 py-0.5 font-mono text-[length:var(--fs-small)] text-foreground"
-                      data-build-path={p}
+                      className="break-all rounded bg-muted px-2 py-0.5 font-mono text-[length:var(--fs-small)] text-foreground"
+                      data-build-path={fullPath(p)}
                       key={p}
                     >
-                      {p}
+                      {fullPath(p)}
                     </code>
                   ))}
                 </span>

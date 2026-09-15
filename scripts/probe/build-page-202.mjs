@@ -134,23 +134,29 @@ const EXPECT = {
   "steps-new": ["development-docs/development-steps/new-steps/"],
   task: ["development-docs/development-steps/pre-steps/", "development-docs/development-steps/pre-steps/README.md"],
 }
+// 🔒 АДРЕС ПОЛНЫЙ (слово владельца: «Это же не полный адрес он же начинается с opt/fractera…?»). Корень ожидания вписан ЗДЕСЬ, в приборе
+// сервера, а не взят у процесса: страница берёт корень у процесса, и сравнение с тем же источником доказало бы только само себя.
+const ROOT = process.env.EXPECT_ROOT ?? "/opt/fractera/memory"
 for (const [section, paths] of Object.entries(EXPECT)) {
   const p = await page(`?section=${section}`)
   const shown = [...p.html.matchAll(/ data-build-path="([^"]+)"/g)].map((m) => m[1])
-  const onDisk = paths.every((x) => existsSync(join(process.cwd(), x)))
-  say(shown.join("|") === paths.join("|") && onDisk, `путь раздела «${section}»: ${shown.join(" · ") || "НЕТ"} · на диске: ${onDisk}`)
+  const want = paths.map((x) => `${ROOT}/${x}`)
+  const onDisk = shown.length > 0 && shown.every((x) => existsSync(x))
+  say(shown.join("|") === want.join("|") && onDisk, `путь раздела «${section}»: ${shown.join(" · ") || "НЕТ"} · на диске: ${onDisk}`)
 }
 const termPath = await page("?section=terminal")
 say(attr(termPath.html, "data-build-path") === 0, "НЕГАТИВ: у терминала пути нет (слово владельца «кроме терминал»)")
+const relative = await page("?section=task")
+say(!/ data-build-path="development-docs\//.test(relative.html), "НЕГАТИВ: ни одного пути от корня проекта без адреса машины")
 const stepPath = await page(`?section=steps-done&doc=step-done:${listSteps("done")[0].n}`)
 const shownStep = stepPath.html.match(/ data-doc-path="true"[^>]*>([^<]+)</)?.[1] ?? ""
-say(shownStep === `development-docs/development-steps/completed-steps/${listSteps("done")[0].n}-*.md`, `окно шага показывает путь открытого шага: ${shownStep}`)
+say(shownStep === `${ROOT}/development-docs/development-steps/completed-steps/${listSteps("done")[0].n}-*.md`, `окно шага показывает полный путь открытого шага: ${shownStep}`)
 const skillPath = await page("?section=skills&doc=skill:use-tables")
 const shownSkill = skillPath.html.match(/ data-doc-path="true"[^>]*>([^<]+)</)?.[1] ?? ""
-say(shownSkill === ".claude/skills/use-tables/SKILL.md" && existsSync(join(process.cwd(), shownSkill)), `окно навыка показывает путь навыка: ${shownSkill}`)
+say(shownSkill === `${ROOT}/.claude/skills/use-tables/SKILL.md` && existsSync(shownSkill), `окно навыка показывает полный путь навыка: ${shownSkill}`)
 const newPath = await page(`?section=steps-new&doc=step-new:${listSteps("new")[0].n}`)
 const shownNew = newPath.html.match(/ data-doc-path="true"[^>]*>([^<]+)</)?.[1] ?? ""
-say(existsSync(join(process.cwd(), shownNew.replace("-*.md", "-main.md"))) || existsSync(join(process.cwd(), shownNew)), `окно нового шага показывает существующий путь: ${shownNew}`)
+say(shownNew.startsWith(`${ROOT}/`) && (existsSync(shownNew.replace("-*.md", "-main.md")) || existsSync(shownNew)), `окно нового шага показывает существующий полный путь: ${shownNew}`)
 
 console.log(`===PROBE_202_PAGE=== ${bad ? `ПРОВАЛОВ: ${bad}` : "всё сошлось"} ${new Date().toISOString()}`)
 process.exit(bad ? 1 : 0)
