@@ -117,6 +117,16 @@ say(st.json?.running === true && alive(pid), `запуск: running=${st.json?.r
 say(first.received.length > 0, `   экран пришёл по сокету: ${first.received.length} байт`)
 // 🔒 КОНТРОЛЬ САМОГО СЧЁТЧИКА: исправленный образец обязан ВИДЕТЬ живого строителя, иначе «0» выше доказывает слепоту.
 say(Number(builders()) >= 1, `   счётчик видит живого строителя: ${builders()}`)
+// 🔒 203-3: строитель запускается с указанием первым открыть навык разработки — проверяется по аргументам ЖИВОГО процесса,
+// а не по коду. Негатив — тот же образец по процессам без флага строителя: там указания быть не должно.
+let builderArgs = ""
+let othersWithSkill = "0"
+try {
+  builderArgs = execSync("pgrep -fa '[s]ettings.build.json'", { encoding: "utf8" })
+  othersWithSkill = execSync("pgrep -fa '[m]emory-development' | grep -v 'settings.build.json' | wc -l", { encoding: "utf8" }).trim()
+} catch { /* нет процесса — проверка ниже провалится */ }
+say(builderArgs.includes("--append-system-prompt") && builderArgs.includes("memory-development"), `   строитель несёт указание навыка: ${builderArgs.includes("memory-development")}`)
+say(othersWithSkill === "0", `   НЕГАТИВ: процессов с указанием навыка без флага строителя: ${othersWithSkill}`)
 // 🔒 202-9: папка, которую называет страница, — это папка, в которой процесс ДЕЙСТВИТЕЛЬНО работает (а не то, что написано в коде).
 let cwd = ""
 try {

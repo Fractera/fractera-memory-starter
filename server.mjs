@@ -261,13 +261,25 @@ const CLOSE_POLICY = 1008
  */
 const BUILDER_SETTINGS = ".claude/settings.build.json"
 
+/**
+ * 🔒 С ШАГА 203 `--append-system-prompt` ВЕРНУЛСЯ — С ДРУГОЙ РАБОТОЙ, И ЭТО НЕ ТА ЗАПЛАТА, ЧТО ОПИСАНА ВЫШЕ.
+ * С 2026-09-15 `CLAUDE.md` этой папки — инструкция УПРАВЛЯЮЩЕГО памятью (99% сессий), а разработка — навык
+ * `memory-development` (1%). Строитель получает `CLAUDE.md` управляющего как любой, кто открыл здесь `claude`;
+ * строка ниже не спорит с ним, а называет, с чего начинается ЭТА сессия: навык разработки и состояние работы.
+ * ✗ Надеяться на самозагрузку навыка по описанию нельзя: описание перестаёт совпадать молча (закон 203-main §8).
+ * 🛑 Текст без апострофов намеренно: команда НАБИРАЕТСЯ в оболочку терминала, одинарные кавычки держат его одним аргументом.
+ * Ищущие процесс строителя по `[s]ettings.build.json` (прибор 202-2, `deliver-memory.sh`) находят его по-прежнему.
+ */
+const BUILDER_START =
+  "This is a development session of the memory service. Before anything else open the skill memory-development, then read development-docs/development-steps/current-steps.md and the requests in development-docs/development-steps/pre-steps."
+
 // 🔒 СПИСОК РЕЖИМОВ ЗАКРЫТЫЙ, СВОБОДНОЙ КОМАНДЫ ПО ПРОВОДУ НЕТ.
 const MODES = {
   // 🔒 СТРОИТЕЛЬ ЗАПУСКАЕТСЯ КОМАНДОЙ, А НЕ НАБИРАЕТСЯ ЧЕЛОВЕКОМ (189-8). Набрать
   // `claude` руками в этом же терминале можно, и получится ДРУГОЙ агент — с
   // правами памяти и её же инструкцией как личностью. Кнопка существует затем,
   // чтобы правильный запуск был одним движением, а не знанием наизусть.
-  build: (bin) => `${bin} --settings ${BUILDER_SETTINGS}\n`,
+  build: (bin) => `${bin} --settings ${BUILDER_SETTINGS} --append-system-prompt '${BUILDER_START}'\n`,
   "claude-check": () => null,
   "claude-login": (bin) => `${bin} auth login\n`,
   system: () => null,
