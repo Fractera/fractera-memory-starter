@@ -3,7 +3,7 @@ import {
   mintPtyTicket,
   PTY_TICKET_TTL_MS,
 } from "@/lib/fractera/pty-ticket.mjs";
-import { fracteraSession } from "@/lib/fractera/session";
+import { benchGuard } from "@/lib/bench-guard";
 
 // ДВЕРЬ БИЛЕТА НА ТЕРМИНАЛ (шаг 114-3).
 //
@@ -24,16 +24,18 @@ import { fracteraSession } from "@/lib/fractera/session";
 // 🛑 ОТВЕТ НЕ КЭШИРУЕТСЯ НИКОГДА. Билет одноразовый: отданный из кэша второму
 // человеку он был бы уже погашен, и терминал не открылся бы у обоих.
 
-export async function POST() {
-  const session = await fracteraSession();
-  if (!session) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+export async function POST(request: Request) {
+  // 🔒 С 202-2 БИЛЕТ ВЫДАЁТСЯ И СЕКРЕТУ МАШИНЫ — ЧТОБЫ МАСТЕРСКУЮ ПРОВЕРЯЛ ПРИБОР, А НЕ ТОЛЬКО ГЛАЗ.
+  // Это не ослабление замка: процесс, читающий файл секретов этой машины, и так может запустить на ней любую
+  // оболочку. Человек по-прежнему входит только ролью `architect`.
+  // 🛑 Без этого доказательство «терминал переживает уход со страницы» было бы недостижимо без сессии владельца.
+  const gate = await benchGuard(request);
+  if (gate.denied) {
+    return gate.denied;
   }
-  if (!session.roles.includes("architect")) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  }
+  const email = gate.who.by === "session" ? (gate.who.email ?? "") : "machine@local";
 
-  const { expiresInMs, ticket } = mintPtyTicket(session.email);
+  const { expiresInMs, ticket } = mintPtyTicket(email);
   return NextResponse.json(
     { expiresInMs, ticket, ttlMs: PTY_TICKET_TTL_MS },
     { headers: { "Cache-Control": "no-store" } }

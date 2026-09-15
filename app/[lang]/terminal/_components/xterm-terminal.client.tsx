@@ -50,10 +50,22 @@ export function XtermTerminal({ onData, onResize, ref }: Props) {
   onDataRef.current = onData;
   onResizeRef.current = onResize;
 
+  // 🔒 ВЫВОД, ПРИШЕДШИЙ РАНЬШЕ ТЕРМИНАЛА, КОПИТСЯ, А НЕ ТЕРЯЕТСЯ (202-2). Терминал поднимается асинхронным
+  // импортом, а мастерская при возврате на вкладку получает накопленный экран сразу после подключения — до
+  // этого исправления первые кадры молча уходили в пустоту. Страница подписки поведения не меняет: у неё
+  // вывод приходит позже.
+  const pendingRef = useRef<string[]>([]);
+
   useImperativeHandle(ref, () => ({
     focus: () => termRef.current?.focus(),
-    reset: () => termRef.current?.reset(),
-    write: (data: string) => termRef.current?.write(data),
+    reset: () => {
+      if (termRef.current) termRef.current.reset();
+      else pendingRef.current = [];
+    },
+    write: (data: string) => {
+      if (termRef.current) termRef.current.write(data);
+      else pendingRef.current.push(data);
+    },
   }));
 
   useEffect(() => {
@@ -88,6 +100,8 @@ export function XtermTerminal({ onData, onResize, ref }: Props) {
       term.loadAddon(fit);
       term.open(host);
       termRef.current = term;
+      for (const chunk of pendingRef.current) term.write(chunk);
+      pendingRef.current = [];
 
       // 🛑 `fit()` МЕНЯЕТ РАЗМЕР ХОЗЯИНА — ЗНАЧИТ НАБЛЮДАТЕЛЬ, ЗОВУЩИЙ ЕГО
       // НАПРЯМУЮ, БУДИТ САМ СЕБЯ. ✗ ОПЛАЧЕНО ДНЁМ ОТЛАДКИ 2026-09-07: вкладка

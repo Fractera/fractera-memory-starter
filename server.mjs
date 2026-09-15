@@ -55,6 +55,7 @@ import next from "next"
 import { WebSocketServer } from "ws"
 import { claudeAuthState, claudeBin } from "./lib/fractera/claude-cli.mjs"
 import { redeemPtyTicket } from "./lib/fractera/pty-ticket.mjs"
+import * as buildSession from "./lib/fractera/build-session.mjs"
 import { contract, CONTRACT_VERSION, METHODS, SERVICE } from "./contract.mjs"
 // 🔒 СЛОВА ОТКАЗОВ — ИЗ ОДНОГО СЛОВАРЯ НА ВСЮ СЛУЖБУ (181-10): дверь и глаголы
 // говорят человеку одними и теми же фразами, и переводятся они в одном месте.
@@ -528,6 +529,9 @@ server.on("upgrade", (req, socket, head) => {
 wss.on("connection", (ws) => {
   let proc = null
   let started = false
+  // 🔒 СЕССИЯ СТРОИТЕЛЯ ЖИВЁТ ДОЛЬШЕ СОКЕТА (202-2). Здесь хранится ссылка на неё, а не на процесс: сокет
+  // только подключён к сессии, и закрытие сокета её не трогает.
+  let build = null
 
   const deadline = setTimeout(() => {
     if (!started) {
@@ -539,6 +543,85 @@ wss.on("connection", (ws) => {
     clearTimeout(deadline)
     process.stderr.write(`[pty] отказ: ${reason}\n`)
     ws.close(CLOSE_POLICY, reason)
+  }
+
+  /**
+   * Мастерская разработки: подключиться к живой сессии строителя или родить её — только по явному запуску.
+   *
+   * 🎯 СЛОВО ВЛАДЕЛЬЦА 2026-09-15: «до того как она будет запущена она не должна расходовать ресурсы компьютера».
+   * 🛑 ПОДКЛЮЧЕНИЕ БЕЗ `start` К СПЯЩЕЙ СЛУЖБЕ НИЧЕГО НЕ РОЖДАЕТ И ЗАКРЫВАЕТСЯ С ПРИЧИНОЙ `not-running`: страница,
+   * открытая «просто посмотреть», не имеет права поднять процесс.
+   */
+  function startBuild(wantStart) {
+    if (!pty) {
+      ws.send(`\r\n[терминал недоступен: node-pty не собран — ${ptyLoadError}]\r\n`)
+      fail("pty-unavailable")
+      return
+    }
+    let session = buildSession.current()
+    if (!session) {
+      if (!wantStart) {
+        started = true
+        clearTimeout(deadline)
+        ws.close(1000, "not-running")
+        return
+      }
+      if (sessions >= MAX_SESSIONS) {
+        ws.send(`\r\n[открыто ${sessions} терминалов из ${MAX_SESSIONS} — закройте лишние]\r\n`)
+        fail("too-many-sessions")
+        return
+      }
+      const shell = shellPath()
+      let child = null
+      try {
+        child = pty.spawn(shell, [], {
+          cols: 120,
+          cwd: workspaceDir(),
+          env: {
+            HOME: process.env.HOME,
+            LANG: process.env.LANG || "C.UTF-8",
+            LOGNAME: process.env.LOGNAME,
+            PATH: process.env.PATH || "/usr/local/bin:/usr/bin:/bin",
+            SHELL: shell,
+            TERM: "xterm-256color",
+            USER: process.env.USER,
+          },
+          name: "xterm-256color",
+          rows: 32,
+        })
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        ws.send(`\r\n[оболочка ${shell} не запустилась: ${message}]\r\n`)
+        fail("spawn-failed")
+        return
+      }
+      session = buildSession.register({ pid: child.pid, proc: child })
+      sessions += 1
+      const born = session
+      child.onData((data) => {
+        buildSession.remember(born, data)
+        for (const client of born.clients) {
+          if (client.readyState === client.OPEN) client.send(data)
+        }
+      })
+      child.onExit(() => {
+        sessions = Math.max(0, sessions - 1)
+        buildSession.exited(born)
+      })
+      const command = MODES.build(claudeBin())
+      setTimeout(() => {
+        try {
+          child.write(command)
+        } catch { /* оболочка уже закрыта — сказать нечему */ }
+      }, 800)
+    } else if (session.buffer) {
+      // 🔒 ВОЗВРАТ НА ВКЛАДКУ ПОКАЗЫВАЕТ ПРЕЖНИЙ ЭКРАН: сначала то, что накопилось, потом живой поток.
+      ws.send(session.buffer)
+    }
+    session.clients.add(ws)
+    build = session
+    started = true
+    clearTimeout(deadline)
   }
 
   function start(mode) {
@@ -643,7 +726,31 @@ wss.on("connection", (ws) => {
         return
       }
       const mode = typeof msg.mode === "string" && msg.mode in MODES ? msg.mode : "system"
+      // 🔒 МАСТЕРСКАЯ ИДЁТ СВОИМ ПУТЁМ (202-2): её сессия переживает сокет, остальные режимы — нет.
+      if (mode === "build") {
+        startBuild(msg.start === true)
+        return
+      }
       start(mode)
+      return
+    }
+    if (build) {
+      if (msg.type === "stdin" && typeof msg.data === "string") {
+        try {
+          build.proc.write(msg.data)
+        } catch { /* процесс уже завершён — сессия закроет сокет сама */ }
+        return
+      }
+      if (msg.type === "resize" && msg.cols && msg.rows) {
+        try {
+          build.proc.resize(Number(msg.cols), Number(msg.rows))
+        } catch { /* процесс уже завершён */ }
+        return
+      }
+      // 🎯 «нужно быть кнопка остановить» (слово владельца): остановка одна на всех подключённых.
+      if (msg.type === "stop") {
+        buildSession.stop("stopped")
+      }
       return
     }
     if (!started || !proc) {
@@ -660,6 +767,11 @@ wss.on("connection", (ws) => {
 
   ws.on("close", () => {
     clearTimeout(deadline)
+    // 🔒 УХОД СО ВКЛАДКИ ОТКЛЮЧАЕТ, НО НЕ УБИВАЕТ (слово владельца: «терминал должен продолжать работать»).
+    if (build) {
+      build.clients.delete(ws)
+      build = null
+    }
     if (proc) {
       sessions = Math.max(0, sessions - 1)
       try {

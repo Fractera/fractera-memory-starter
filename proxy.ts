@@ -93,6 +93,9 @@ const SELF_GUARDED = new Set([
   "/api/fractera/anthropic-key",
   // 🔒 ДВЕРЬ КЛЮЧА YOUTUBE (195-4) — того же класса: сама проверяет роль `architect`, имя стоит до первой сборки.
   "/api/fractera/youtube-key",
+  // 🔒 ДВЕ ДВЕРИ МАСТЕРСКОЙ РАЗРАБОТКИ (202-2, 202-3) — `benchGuard`; имена стоят до первой сборки, иначе «ответом» была бы страница входа.
+  "/api/fractera/build-session",
+  "/api/fractera/build-tasks",
 ]);
 
 /**
