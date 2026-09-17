@@ -1,0 +1,20 @@
+{
+  "id": "object-view",
+  "entry": "client/object-preview.client.tsx",
+  "needs": ["browser"],
+  "npmDeps": ["streamdown", "lucide-react"],
+  "usedBy": ["app/[lang]/settings/_components/object-bench.client.tsx"],
+  "source": "ai-workspace/bridges/app/app/[lang]/media/_components/preview-popup.client.tsx",
+  "en": {
+    "title": "Object preview",
+    "what": "Shows a stored object the way it is actually read: a picture as a picture, audio and video in a player, a PDF in the browser's own viewer, Markdown rendered, and HTML as a sandboxed page that can be switched to its source code.",
+    "how": "A copy of the media library preview from the control panel, adapted: Markdown and code are rendered by streamdown instead of react-markdown and shiki (those packages are not installed in the memory service), audio was added, and the preview can sit inside a block instead of floating over the screen. The file comes through the memory door, so the storage key never reaches the browser.",
+    "value": "One viewer for every kind the memory stores, taken from the panel rather than invented. HTML runs its scripts in a sandbox without same-origin access: the page draws and works, but cannot read the memory's cookies or reach the service."
+  },
+  "ru": {
+    "title": "Просмотр объекта",
+    "what": "Показывает сохранённый объект так, как его действительно читают: картинку картинкой, звук и видео плеером, PDF собственным просмотрщиком браузера, Markdown отрисованным, а HTML страницей в песочнице с переключением на её код.",
+    "how": "Копия просмотра медиатеки из панели управления, адаптированная: Markdown и код рисует streamdown вместо react-markdown и shiki (этих пакетов в службе памяти нет), добавлено аудио, а просмотр умеет стоять внутри блока, а не только всплывать поверх экрана. Файл приходит дверью памяти, и ключ склада до браузера не доходит.",
+    "value": "Один просмотр на все роды, которые хранит память, взятый из панели, а не придуманный заново. HTML выполняет свои скрипты в песочнице без доступа к своему происхождению: страница рисуется и работает, но не читает куки памяти и не дотягивается до службы."
+  }
+}

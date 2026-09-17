@@ -1,0 +1,28 @@
+{
+  "enabledMcpjsonServers": ["memory"],
+  "permissions": {
+    "allow": [
+      "mcp__memory__what_i_already_know",
+      "mcp__memory__remember_said",
+      "mcp__memory__answer",
+      "mcp__memory__ask_graph",
+      "mcp__memory__search_vectors",
+      "mcp__memory__find_objects",
+      "mcp__memory__open_object",
+      "mcp__memory__keep_object",
+
+      "Read",
+      "Glob",
+      "Grep"
+    ],
+    "deny": [
+      "Write",
+      "Edit",
+      "NotebookEdit",
+      "Bash",
+      "WebFetch",
+      "WebSearch",
+      "Task"
+    ]
+  }
+}

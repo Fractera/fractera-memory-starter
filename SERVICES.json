@@ -1,0 +1,204 @@
+{
+  "about": "Registry of the microservices of one Fractera server. The SAME file in every service tree, byte for byte. English only. Filled by hand for now. A service READS it and never writes it: a file that each service edits stops being the same file.",
+  "updated": "2026-09-16",
+  "root": "app",
+  "root_note": "The single microservice mounted at the domain root: it answers both at <domain> and at its own subdomain. Exactly one service may hold it; moving it is a one-word change here.",
+  "auth_kinds": {
+    "global": "signs people in through the platform auth service — one door for the whole server",
+    "own": "checks its own credential and knows nothing about people; reached by processes, not by browsers",
+    "provider": "IS the auth service: it hands authorisation to the others. Exactly one service may say this — two authorities on one server is no authority at all"
+  },
+  "services": [
+    {
+      "id": "app",
+      "api": "https://<domain>/api",
+      "about": "Guest application on port 3000. The site a visitor sees. Ships to the user's own repository.",
+      "author": "fractera",
+      "price": null,
+      "for_sale": false,
+      "subdomain": "app",
+      "port": 3000,
+      "auth": "global",
+      "manage": "https://app.<domain>/ru/build",
+      "topics": [
+        "сайт",
+        "страниц",
+        "главн",
+        "блок",
+        "витрин",
+        "landing",
+        "page"
+      ]
+    },
+    {
+      "id": "auth",
+      "api": "https://auth.<domain>",
+      "about": "Sign-in service on port 3001. One entry point for every service of this server; issues the session others read.",
+      "author": "fractera",
+      "price": null,
+      "for_sale": false,
+      "subdomain": "auth",
+      "port": 3001,
+      "auth": "provider",
+      "manage": "https://auth.<domain>/ru/build",
+      "topics": [
+        "авторизац",
+        "вход",
+        "логин",
+        "google",
+        "войти",
+        "регистрац",
+        "auth",
+        "sign in",
+        "login"
+      ]
+    },
+    {
+      "id": "panel",
+      "api": "https://admin.<domain>/api",
+      "about": "Control panel on port 3002. Deployment, domains, configs, products. Lives outside the user's repository.",
+      "author": "fractera",
+      "price": null,
+      "for_sale": false,
+      "subdomain": "admin",
+      "port": 3002,
+      "auth": "global",
+      "manage": "https://admin.<domain>/ru/build",
+      "topics": [
+        "панел",
+        "админк",
+        "деплой",
+        "домен",
+        "сервер",
+        "развернут",
+        "admin",
+        "deploy"
+      ]
+    },
+    {
+      "id": "data",
+      "api": "https://data.<domain>/api",
+      "about": "Data layer on port 3300. The single door to stored data and the one route other services use to reach each other: /service/<id>/*.",
+      "author": "fractera",
+      "price": null,
+      "for_sale": false,
+      "subdomain": "data",
+      "port": 3300,
+      "auth": "own",
+      "manage": "https://data.<domain>/ru/build",
+      "topics": [
+        "база данных",
+        "таблиц",
+        "слой данных",
+        "database"
+      ]
+    },
+    {
+      "id": "geo",
+      "api": "internal, via data layer: /service/geo/*",
+      "about": "Geo service on port 3400. Routing and geocoding over OSRM and Nominatim.",
+      "author": "fractera",
+      "price": null,
+      "for_sale": false,
+      "subdomain": null,
+      "port": 3400,
+      "auth": "own",
+      "manage": null,
+      "topics": [
+        "карт",
+        "маршрут",
+        "геокод",
+        "геолокац",
+        "map",
+        "route"
+      ]
+    },
+    {
+      "id": "channels",
+      "api": "internal, via data layer: /service/channels/*",
+      "about": "Channels service on port 3500. Holds bot credentials and schedules; the only holder of the Telegram token.",
+      "author": "fractera",
+      "price": null,
+      "for_sale": false,
+      "subdomain": null,
+      "port": 3500,
+      "auth": "own",
+      "manage": null,
+      "topics": [
+        "телеграм-бот",
+        "канал связи",
+        "токен бота",
+        "расписан"
+      ]
+    },
+    {
+      "id": "rag",
+      "api": "internal, via data layer: /service/rag/*",
+      "about": "Knowledge graph on port 9621, LightRAG. Entities, relations and graph answers.",
+      "author": "fractera",
+      "price": null,
+      "for_sale": false,
+      "subdomain": null,
+      "port": 9621,
+      "auth": "own",
+      "manage": null,
+      "topics": [
+        "граф знаний",
+        "lightrag",
+        "векторн"
+      ]
+    },
+    {
+      "id": "telegram",
+      "api": "https://telegram.<domain>/api",
+      "about": "Telegram service on port 3600. Automations, fact intake and the agent channel. Independent product: works with no guest application present.",
+      "author": "fractera",
+      "price": null,
+      "for_sale": false,
+      "subdomain": "telegram",
+      "port": 3600,
+      "auth": "global",
+      "manage": "https://telegram.<domain>/ru/build",
+      "topics": [
+        "телеграм",
+        "бот",
+        "автоматизац",
+        "telegram",
+        "bot"
+      ]
+    },
+    {
+      "id": "memory",
+      "api": "https://memory.<domain>/v1",
+      "about": "Memory on port 3700. Black box with three verbs: remember, recall, feedback. Keeps what was said and gives it back.",
+      "author": "fractera",
+      "price": null,
+      "for_sale": false,
+      "subdomain": "memory",
+      "port": 3700,
+      "auth": "global",
+      "manage": "https://memory.<domain>/ru/build",
+      "topics": []
+    },
+    {
+      "id": "ai-browser",
+      "api": "internal, via data layer: /service/ai-browser/*",
+      "about": "AI browser on port 3800, Camoufox engine. Opens a real page for services and agents, one page at a time.",
+      "author": "fractera",
+      "price": null,
+      "for_sale": false,
+      "subdomain": "ai-browser",
+      "port": 3800,
+      "auth": "global",
+      "manage": "https://ai-browser.<domain>/ru/build",
+      "topics": [
+        "браузер",
+        "открой сайт",
+        "страницу открыть",
+        "browser",
+        "scrape"
+      ]
+    }
+  ],
+  "manage_note": "Where this service is configured by a person, and the words that mean a request belongs to it. A service with no page of its own has manage: null — said, not implied."
+}

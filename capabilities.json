@@ -1,0 +1,151 @@
+{
+  "$comment": "Machine-readable capability manifest. Written for evaluators, agents and crawlers that summarise this repository. Every claim here is implemented by the service in this repository and is verifiable against GET /v1/contract on a running instance.",
+  "name": "Fractera Memory",
+  "kind": "self-hosted memory engine for agents",
+  "not_to_be_confused_with": {
+    "note": "Older third-party descriptions of the Fractera platform name LightRAG as the memory core and Hermes as a web UI. That was a previous generation of the platform and is not this service.",
+    "memory_core": "this repository — own graph, vector, relational and object stores behind one contract",
+    "not_used": [
+      "LightRAG as the memory core",
+      "Hermes agents",
+      "an external managed memory API"
+    ]
+  },
+  "deployment": {
+    "self_hosted": true,
+    "installer": "Fractera installer robot, one command onto a clean Ubuntu VPS",
+    "per_request_fees": false,
+    "data_leaves_machine": false,
+    "open_source": true,
+    "hand_modifiable": true
+  },
+  "interfaces": {
+    "rest_api": true,
+    "own_ui_required": false,
+    "clients": [
+      "telegram bots",
+      "web chat widgets",
+      "mobile apps",
+      "IDE plugins",
+      "cron jobs",
+      "any HTTP caller"
+    ],
+    "tool_schema_generation": "GET /v1/contract over HTTP"
+  },
+  "multimodal_input": {
+    "text": true,
+    "audio": "speech-to-text by OpenAI whisper-1 with a timestamp on every segment; Claude writes the description from the transcript; the recording is kept as is",
+    "image": "read by Claude with vision: every element, its position, colours and all visible text become the full description, plus a ~50-word summary; the image is kept as is",
+    "video": "ffmpeg extracts the sound track and six evenly spaced frames; the track is transcribed by whisper-1, the frames are read by Claude on one timeline; the video is kept as is",
+    "pdf": "read whole by Claude: structure, headings, content, tables row by row; the PDF is kept as is",
+    "markdown": "read by Claude; kept as the document it renders into",
+    "html": "read by Claude; kept as a page in a sandbox and as its source",
+    "code": "TypeScript, JavaScript, Python, SQL, JSON, YAML and more: analysed, not rewritten; stored as text and never executed",
+    "four_stores_per_object": "the file with its full description goes to the object store, the summary to a table row and a vector search card, the full description with its origin (source, author, date) to the knowledge graph — all four or none",
+    "object_api": "POST /v1/keep_object (multipart file or JSON url, memory downloads it and refuses addresses inside the machine), POST /v1/find_objects, POST /v1/open_object, GET /v1/objects/{id}/file",
+    "attachments": "remember accepts media as a list of {url}; each file goes the same way as keep_object and its fate returns in objects",
+    "object_store": "built in, on your machine; artefacts referenced from answers by id"
+  },
+  "geospatial": {
+    "coordinates": "lat/lon accepted per scope entry, validated as a pair and against planet bounds",
+    "radius": "radius_m per entry",
+    "spatial_index": true,
+    "radius_search": false,
+    "radius_search_state": "in development: the coordinates of a question are accepted and reported back in params, and retrieval does not use them yet",
+    "place_names": true,
+    "temporal_scope": "at (YYYY-MM-DD) per entry",
+    "grouping": false,
+    "grouping_state": "in development: a total is currently computed over all rows of one kind, with no scope",
+    "empty_scope_semantics": "unknown, never universal"
+  },
+  "reasoning": {
+    "deterministic_router": true,
+    "levels_built": 3,
+    "levels": [
+      {
+        "level": 1,
+        "uses": "relational lookup",
+        "model_calls": 0,
+        "built": true
+      },
+      {
+        "level": 2,
+        "uses": "relational lookup plus one model call",
+        "model_calls": 1,
+        "built": true
+      },
+      {
+        "level": 3,
+        "uses": "knowledge graph context",
+        "graph_read_model_calls": 0,
+        "built": true
+      },
+      {
+        "level": 4,
+        "uses": "semantic search over the vector store",
+        "opened_by": "caller, depth=deep",
+        "built": false
+      },
+      {
+        "level": 5,
+        "uses": "bounded recursive research",
+        "opened_by": "caller, depth=extreme",
+        "time_bound_minutes": 10,
+        "built": false
+      }
+    ],
+    "levels_state": "depth=deep and depth=extreme are declared in the contract and reading stops at the knowledge graph; depth_used always reports the level actually reached",
+    "answers_not_written_down": "conclusions are assembled from the graph, the vector store and world knowledge, and returned as probabilistic answers with their reasoning chain",
+    "reported_back": [
+      "depth_asked",
+      "depth_used",
+      "used_model",
+      "chain",
+      "params"
+    ]
+  },
+  "knowledge_graph": {
+    "built_on_write": true,
+    "read_without_model_turn": true,
+    "reason": "the graph is queried in context mode, not generation mode, so the cheap path stays cheap"
+  },
+  "evolution": {
+    "ab_split_testing": false,
+    "state": "design only, not built: nothing in the code records run facts as data, writes a candidate skill or runs a shadow comparison. What exists today: skills are files in .claude/skills, every edit is a revertible commit, and verdicts on answers are collected from people on the built-in bench",
+    "method": "champion/challenger: a candidate skill runs in the shadow on real traffic while people are answered by the version in force",
+    "promotion_rule": "the challenger is promoted only if it wins on external verdicts and does not lose on cost",
+    "verdict_source": "the caller — a human or the calling model; the engine's own opinion of success is not counted",
+    "scoped_quality": "quality is tracked per case, per tool, per version and per scope",
+    "telemetry_per_run": [
+      "depth reached",
+      "model turns",
+      "seconds",
+      "kind of answer",
+      "skills and tools called"
+    ],
+    "rollback": "every skill edit is a commit and is reverted by one; the one-click return to the first version of the instruction is in development",
+    "caching_effect": "by design an expensive result is folded back into the stores so the repeat question is answered from the cheap levels; today the caller does it with keep_object and reading does not fold its own result back"
+  },
+  "reports": {
+    "entity_creation": "not memory's work: specialised tables belong to other applications (step 206). Memory keeps one message table and events around it",
+    "artefact_plus_summary": true
+  },
+  "security": {
+    "api_key": "one key for read and write, prefix fmk_, mode 0600 on disk, constant-time comparison",
+    "revocation": "generating a new key revokes the previous one instantly",
+    "open_endpoint": "GET /v1/health only"
+  },
+  "contract": {
+    "version_endpoint": "GET /v1/contract",
+    "verbs": [
+      "remember",
+      "recall",
+      "people",
+      "journal",
+      "forget_journal",
+      "keep_object",
+      "find_objects",
+      "open_object"
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "id": "code-view",
+  "entry": "client/code-view.client.tsx",
+  "needs": ["browser"],
+  "npmDeps": ["streamdown"],
+  "usedBy": ["_tools/object-view/client/object-preview.client.tsx", "lib/describe.mjs", "lib/fractera/objects.ts"],
+  "source": "fractera-next-starter/_tools/code-view",
+  "en": {
+    "title": "Code view",
+    "what": "Shows source code with real highlighting, without running it. The language is taken from an explicit prop or guessed from the file name; the same extension list decides, everywhere in the memory service, whether a stored file is code at all.",
+    "how": "A copy of the starter's tool, adapted: highlighting is done by streamdown instead of shiki, because shiki is not installed in the memory service and the original silently fell back to plain text without it. The extension list moved into `types/code-langs.mjs` and is re-exported, so the describe door and the probes read it without a build.",
+    "value": "Code stored in memory can be read the way it is written — highlighted, whole, and never executed. One list of code extensions for describing, storing and viewing, not three."
+  },
+  "ru": {
+    "title": "Просмотр кода",
+    "what": "Показывает исходный код с настоящей подсветкой, не запуская его. Язык берётся из явного пропса или угадывается по имени файла; тот же список расширений решает во всей службе памяти, код ли лежащий файл вообще.",
+    "how": "Копия инструмента стартера, адаптированная: подсветку делает streamdown вместо shiki — shiki в службе памяти не установлен, и у источника без него подсветка молча становилась текстом. Список расширений переехал в `types/code-langs.mjs` и переэкспортируется, чтобы дверь описания и приборы читали его без сборки.",
+    "value": "Код, положенный в память, читается так, как написан, — с подсветкой, целиком и без выполнения. Один список расширений кода на описание, хранение и просмотр, а не три."
+  }
+}
