@@ -8,6 +8,10 @@
     "own": "checks its own credential and knows nothing about people; reached by processes, not by browsers",
     "provider": "IS the auth service: it hands authorisation to the others. Exactly one service may say this — two authorities on one server is no authority at all"
   },
+  "channel_kinds": {
+    "telegram": "a Telegram bot of this service: { bot: \"@name\", url: \"https://t.me/name\" }. Both fields are required — a channel without a link sends a person nowhere, and that looks like a broken messenger."
+  },
+  "channels_note": "OPTIONAL per service. A service answering a request that is not its own sends the address in the SAME channel the request arrived by, and falls back to `manage` (the web address) when it has no such channel. The link is stored whole and never assembled from the bot name.",
   "services": [
     {
       "id": "app",

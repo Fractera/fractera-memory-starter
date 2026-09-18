@@ -13,7 +13,7 @@
 // собственной слепоты.
 
 import { pathToFileURL } from "node:url"
-import { ROOT_SERVICE as ROOT, SERVICES, SERVICES_ERROR, SERVICES_PATH } from "../lib/services.mjs"
+import { CHANNEL_KINDS, ROOT_SERVICE as ROOT, SERVICES, SERVICES_ERROR, SERVICES_PATH } from "../lib/services.mjs"
 
 // 🔒 ИМЯ СЛУЖБЫ — СТРОГОЕ: строчные латинские, цифры и дефис. Оно едет в значение
 // колонки и в условие запроса; пробел, кириллица и заглавная буква в нём означают
@@ -69,6 +69,29 @@ export function problemsOf(services, error, root) {
     }
     if (!AUTH.includes(s?.auth)) {
       problems.push(`${name}: род авторизации — одно из ${AUTH.join(" · ")}, а не «${s?.auth}»`)
+    }
+    // 🔒 226-1: КАНАЛЫ СЛУЖБЫ — НЕОБЯЗАТЕЛЬНЫ, НО ЕСЛИ НАЗВАНЫ, ТО ЦЕЛИКОМ.
+    // Необязательность намеренна: каналов сегодня нет у большинства служб, и обязательное поле
+    // сделало бы каждую существующую запись негодной. А вот половина записи хуже её отсутствия:
+    // «канал есть, ссылки нет» уводит человека в пустоту, и выглядит это как поломка мессенджера.
+    if (s?.channels !== undefined) {
+      if (s.channels === null || typeof s.channels !== "object" || Array.isArray(s.channels)) {
+        problems.push(`${name}: channels — объект каналов; нет каналов — не пишите поле вовсе`)
+      } else {
+        for (const [kind, c] of Object.entries(s.channels)) {
+          if (!CHANNEL_KINDS.includes(kind)) {
+            problems.push(`${name}: канал «${kind}» не из списка ${CHANNEL_KINDS.join(" · ")} — открытый ключ разведёт один канал на три написания`)
+            continue
+          }
+          if (typeof c?.bot !== "string" || !c.bot) problems.push(`${name}: канал «${kind}» без имени бота`)
+          if (typeof c?.url !== "string" || !c.url) problems.push(`${name}: канал «${kind}» без прямой ссылки`)
+          // 🛑 ССЫЛКА ПРОВЕРЯЕТСЯ ПО НАЧАЛУ, А НЕ СОБИРАЕТСЯ ИЗ ИМЕНИ: собрать — значит выдумать
+          // адрес за того, кто его знает.
+          else if (kind === "telegram" && !c.url.startsWith("https://t.me/")) {
+            problems.push(`${name}: ссылка канала telegram обязана начинаться с https://t.me/`)
+          }
+        }
+      }
     }
   }
 
