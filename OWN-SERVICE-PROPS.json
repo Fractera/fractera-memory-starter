@@ -1,0 +1,14 @@
+{
+  "id": "memory",
+  "api": "https://memory.<domain>/v1",
+  "about": "Memory on port 3700. Black box with three verbs: remember, recall, feedback. Keeps what was said and gives it back.",
+  "author": "fractera",
+  "price": null,
+  "for_sale": false,
+  "subdomain": "memory",
+  "port": 3700,
+  "auth": "global",
+  "manage": "https://memory.<domain>/ru/build",
+  "topics": [],
+  "channels": {}
+}

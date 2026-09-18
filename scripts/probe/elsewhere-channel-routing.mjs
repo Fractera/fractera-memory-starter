@@ -5,10 +5,18 @@
 // 🎯 СЛУЧАЙ ВЛАДЕЛЬЦА 2026-09-18: «если существует Telegram чат то ссылку надо будет кидать не на
 // сайт а на Telegram чат чтобы внутри телеграмма перейти с одного чата на другой».
 //
-// 🔒 ПРОВЕРЯЕТСЯ НА СВОЁМ РЕЕСТРЕ-ОБРАЗЦЕ (`SERVICES_FILE`), А НЕ НА БОЕВОМ. Боевой заполняется
-// руками и имён ботов в нём пока нет: прибор, который ждёт там живых данных, будет красным по
-// причине незаполненного файла, а не сломанного кода. Тот же приём, что у сторожа реестра, —
-// заведомо подготовленный вход.
+// 🛑 СОСТОЯНИЕ 227-3: СОСЕДЕЙ НЕТ, И ПРИБОР ПРОВЕРЯЕТ ТО, ЧТО ЕСТЬ. Общий реестр из дерева памяти
+// удалён (служба описывает только себя), а карту от панели ещё не построили — значит переадресовать
+// чужую просьбу сегодня НЕКУДА. Это названо в плане 227-3 заранее, а не обнаружено прибором.
+//
+// 🔒 ЗДЕСЬ ПРОВЕРЯЕТСЯ РОВНО ТО, ЧТО ПРОВЕРЯЕМО СЕЙЧАС: правила каналов пришли из ядра и отвергают
+// половинчатую запись · выбор адреса по каналу работает на поданных данных · маршрутизатор МОЛЧИТ о
+// соседях вместо того, чтобы выдумать адрес. Полный набор случаев возвращается в 227-6, когда карта
+// начнёт приходить от панели.
+//
+// 🔒 МАРШРУТИЗАТОР (`lib/elsewhere.mjs`) ПРИ ЭТОМ НЕ ТРОНУТ НИ СТРОКОЙ, И ЭТО ГЛАВНОЕ УТВЕРЖДЕНИЕ
+// ШАГА: способность, построенная 226-м в неправильном месте, переживает переезд источника данных.
+// Подать соседей «в обход» параметром значило бы починить прибор ценой протечки шва.
 
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -29,7 +37,7 @@ const fixture = {
   root: "app",
   services: [
     {
-      about: "Memory service of this probe.",
+      about: "Memory service of this probe, long enough for the core type.",
       api: "https://memory.<domain>",
       auth: "own",
       author: "fractera",
@@ -73,20 +81,31 @@ const fixture = {
   updated: "2026-09-18",
 }
 
-const dir = mkdtempSync(join(tmpdir(), "probe-226-1-"))
-const file = join(dir, "SERVICES.json")
-writeFileSync(file, JSON.stringify(fixture, null, 2))
-process.env.SERVICES_FILE = file
-process.env.MEMORY_SERVICE_ID = "memory"
+const dir = mkdtempSync(join(tmpdir(), "probe-227-3-"))
+const file = join(dir, "OWN-SERVICE-PROPS.json")
+writeFileSync(file, JSON.stringify(fixture.services[0], null, 2))
+process.env.OWN_SERVICE_PROPS_FILE = file
 
 const { elsewhere, elsewhereWords } = await import("../../lib/elsewhere.mjs")
-const { channelOfService } = await import("../../lib/services.mjs")
+const { channelOfService, NEIGHBOURS_KNOWN } = await import("../../lib/services.mjs")
+
+// Соседи, какими они придут из карты панели (227-5). Сегодня подаются прямо в `elsewhereWords` —
+// той же формы записи, что вернёт карта.
+const authNeighbour = fixture.services[1]
+const panelNeighbour = { ...fixture.services[2], channels: {} }
 
 const CASE = "запомни что Петя заказал чехлы на 100 $ и кстати сделай уже нам авторизацию через Google"
-const found = elsewhere(CASE).filter((x) => x.service === "auth")
+
+console.log("— соседей ещё нет: маршрутизатор МОЛЧИТ, а не выдумывает —")
+check(NEIGHBOURS_KNOWN === false, "карта от панели ещё не приходит", String(NEIGHBOURS_KNOWN))
+check(elsewhere(CASE).length === 0, "чужая просьба не отнесена никуда — переадресовать некуда")
+check(elsewhereWords([], "ru", "aifa.dev", "telegram") === "", "пустому списку соответствует пустая приписка")
+
+// Дальше — выбор адреса по каналу на записях соседей, какими их вернёт карта.
+const found = [{ channels: authNeighbour.channels, manage: authNeighbour.manage, matched: "авторизацию", service: "auth" }]
 
 console.log("— одна и та же просьба, два разных источника —")
-check(found.length === 1, "чужая просьба узнана и отнесена к службе входа", JSON.stringify(found.map((x) => x.service)))
+check(found.length === 1, "запись соседа готова к переадресации", JSON.stringify(found.map((x) => x.service)))
 
 const fromTelegram = elsewhereWords(found, "ru", "aifa.dev", channelOfService("memory"))
 check(/https:\/\/t\.me\/probe_auth_bot/.test(fromTelegram), "пришло из Telegram → ссылка ведёт в бота", fromTelegram.slice(-40))
@@ -96,28 +115,25 @@ const fromWeb = elsewhereWords(found, "ru", "aifa.dev", null)
 check(/auth\.aifa\.dev\/ru\/build/.test(fromWeb), "канал не назван → прежний веб-адрес", fromWeb.slice(-40))
 
 console.log("— негативный контроль: у службы канала нет —")
-const panel = elsewhere("проверь домен").filter((x) => x.service === "panel")
+const panel = [{ channels: panelNeighbour.channels, manage: panelNeighbour.manage, matched: "домен", service: "panel" }]
 const panelWords = elsewhereWords(panel, "ru", "aifa.dev", "telegram")
-check(panel.length === 1, "просьба про домен отнесена к панели")
+check(panel.length === 1, "запись соседа без канала готова")
 // 🔒 ГЛАВНЫЙ ОТРИЦАТЕЛЬНЫЙ СЛУЧАЙ: правило не имеет права ломать прежнее поведение там, где канала
 // нет. Пустая ссылка была бы хуже веб-адреса — отказ без адреса есть тупик.
 check(/admin\.aifa\.dev/.test(panelWords), "канала нет → уходит веб-адрес, а не пустота", panelWords.slice(-40))
 
 console.log("— вывод канала из службы-источника —")
 check(channelOfService("memory") === "telegram", "у службы с одним каналом канал назван")
-check(channelOfService("panel") === null, "у службы без каналов — null, а не выдуманный канал")
+check(channelOfService("panel") === null, "незнакомая служба — null, а не выдуманный канал")
 
-console.log("— сторож отвергает половинчатую запись —")
-const { problemsOf } = await import("../check-services.mjs")
-const broken = [{ ...fixture.services[1], channels: { telegram: { bot: "@x" } } }]
-const wrongKind = [{ ...fixture.services[1], channels: { telegramm: { bot: "@x", url: "https://t.me/x" } } }]
-const notTme = [{ ...fixture.services[1], channels: { telegram: { bot: "@x", url: "https://example.com/x" } } }]
-check(problemsOf(broken, null, "auth").some((p) => /без прямой ссылки/.test(p)), "канал без ссылки отвергнут")
-check(problemsOf(wrongKind, null, "auth").some((p) => /не из списка/.test(p)), "неизвестный род канала отвергнут")
-check(problemsOf(notTme, null, "auth").some((p) => /t\.me/.test(p)), "ссылка не в Telegram отвергнута")
+console.log("— правила каналов пришли из ЯДРА и отвергают половинчатую запись —")
+const { problemsOfProps } = await import("../../core-vendor/service-props/service-props.decl.mjs")
+const spoil = (channels) => problemsOfProps({ ...authNeighbour, channels })
+check(spoil({ telegram: { bot: "@x" } }).some((p) => /без прямой ссылки/.test(p)), "канал без ссылки отвергнут")
+check(spoil({ telegramm: { bot: "@x", url: "https://t.me/x" } }).some((p) => /не из списка/.test(p)), "неизвестный род канала отвергнут")
+check(spoil({ telegram: { bot: "@x", url: "https://example.com/x" } }).some((p) => /t\.me/.test(p)), "ссылка не в Telegram отвергнута")
 // 🔒 СТОРОЖ ОБЯЗАН МОЛЧАТЬ НА ПРАВДЕ, ИНАЧЕ ЕГО ОТКАЗЫ НИЧЕГО НЕ ЗНАЧАТ.
-const good = [fixture.services[1]]
-check(!problemsOf(good, null, "auth").some((p) => /канал/.test(p)), "правильная запись сторожа не будит")
+check(!problemsOfProps(authNeighbour).some((p) => /канал/.test(p)), "правильная запись сторожа не будит")
 
 console.log("— способность ПОДКЛЮЧЕНА, а не просто написана —")
 const verbs = readFileSync(join(ROOT, "lib", "verbs.mjs"), "utf8")
