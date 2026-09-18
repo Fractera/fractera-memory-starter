@@ -1,7 +1,7 @@
-# `completed-steps/` — итоги законченной работы
+# `completed-steps/` — the outcomes of finished work
 
-Пусто — работа над этой службой ещё не начиналась.
+Empty — work on this service has not started yet.
 
-Каждый закрытый подшаг оставляет здесь файл `<шаг>-<подшаг>.md`: **хэш коммита**, что делали и как,
-два доказательства из разных плоскостей, ошибки, эволюция навыков. Итог без хэша коммита считается
-незакрытым подшагом.
+Every closed sub-step leaves a file here, `<step>-<sub-step>.md`: **the commit hash**, what was done and
+how, two proofs from different planes, the mistakes, the evolution of the skills. An outcome without a
+commit hash counts as an unclosed sub-step.

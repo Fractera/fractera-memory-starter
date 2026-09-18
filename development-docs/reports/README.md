@@ -1,7 +1,7 @@
-# `reports/` — подробные разборы
+# `reports/` — detailed write-ups
 
-Пусто — работа над этой службой ещё не начиналась.
+Empty — work on this service has not started yet.
 
-Два рода документов, и путать их не надо: `errors-<8+ слов через дефис>.md` объясняет **один отказ** —
-симптом, механизм, лечение; `feature-<8+ слов через дефис>.md` описывает **законченную способность** —
-что она умеет сегодня, чем доказана, чего не умеет и где физически живёт.
+Two kinds of document, and they are not to be confused: `errors-<8+ words with dashes>.md` explains
+**one failure** — symptom, mechanism, cure; `feature-<8+ words with dashes>.md` describes **a finished
+capability** — what it can do today, what proves it, what it cannot do and where it physically lives.

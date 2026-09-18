@@ -1,11 +1,11 @@
-# `new-steps/` — планы предстоящей работы
+# `new-steps/` — plans for work ahead
 
-Пусто — работа над этой службой ещё не начиналась.
+Empty — work on this service has not started yet.
 
-Здесь агент разработки заводит план шага **до первой строки кода**: короткий шаг одним файлом
-`<номер>-<описание-6-8-слов>.md`, шаг с подшагами — папкой `<номер>/` с `<N>-main.md` и по файлу на
-подшаг. Порядок описан в `development-docs/development-steps/README.md` и в навыке
-`.claude/skills/memory-development/`.
+This is where the development agent writes the plan of a step **before the first line of code**: a short
+step as a single file `<number>-<description-of-6-8-words>.md`, a step with sub-steps as a folder
+`<number>/` holding `<N>-main.md` and one file per sub-step. The procedure is described in
+`development-docs/development-steps/README.md` and in the skill `.claude/skills/memory-development/`.
 
-План закрытого шага отсюда удаляется тем же коммитом, что и итог: эта папка — очередь предстоящего,
-а не склад сделанного.
+The plan of a closed step is deleted from here by the same commit that writes the outcome: this folder
+is a queue of what is coming, not a warehouse of what is done.

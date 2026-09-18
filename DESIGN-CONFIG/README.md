@@ -1,35 +1,35 @@
-# DESIGN-CONFIG — палитра службы
+# DESIGN-CONFIG — the service's palette
 
-Держит `design-config.json`: семь цветовых ролей для светлой темы и семь для тёмной. Отсюда
-`lib/design-css.ts` печатает CSS-переменные, а переключатель темы в подвале выбирает между ветками.
+Holds `design-config.json`: seven colour roles for the light theme and seven for the dark one. From
+here `lib/design-css.ts` prints the CSS variables, and the theme switch in the footer picks a branch.
 
-## Зачем эта папка появилась 2026-09-06
+## Why this folder appeared on 2026-09-06
 
-🛑 **ДО НЕЁ СЛУЖБА ЧИТАЛА ПАЛИТРУ ИЗ ФАЙЛА ПОРТА 3000** — `DESIGN_CONFIG_PATH` в `.env.local`
-указывал на `/opt/fractera/app/DESIGN-CONFIG/design-config.json`. Работало, и это скрывало
-хрупкость: **собственные умолчания службы пусты** (`colors: { light: {}, dark: {} }`), значит
-удали владелец порт 3000 — и зелёный исчез бы, а служба посерела.
+🛑 **BEFORE IT, THE SERVICE READ ITS PALETTE FROM A FILE BELONGING TO PORT 3000** — `DESIGN_CONFIG_PATH`
+in `.env.local` pointed at `/opt/fractera/app/DESIGN-CONFIG/design-config.json`. It worked, and that
+hid the fragility: **the service's own defaults are empty** (`colors: { light: {}, dark: {} }`), so the
+day the owner deleted port 3000 the green would have vanished and the service would have turned grey.
 
-Слово владельца того дня: «никакие другие импорты из слоя 3000 нам не нужны». Значения перенесены
-**символ в символ**, вид не изменился ни на пиксель: `primary` `#16a34a` в светлой, `#4ade80` в
-тёмной.
+The owner's word that day: "we need no other imports from the 3000 layer". The values were carried
+over **character for character**; not a pixel of the look changed: `primary` `#16a34a` in light,
+`#4ade80` in dark.
 
-## Форма
+## Shape
 
 ```json
 { "colors": { "light": { "primary": "#16a34a", … }, "dark": { "primary": "#4ade80", … } } }
 ```
 
-Роли: `primary` · `accent` · `background` · `foreground` · `muted` · `border` · `destructive`.
-Единственный источник списка ролей — `config/design-config.defaults.ts`, тип `ColorRole`.
+Roles: `primary` · `accent` · `background` · `foreground` · `muted` · `border` · `destructive`.
+The single source of that list is `config/design-config.defaults.ts`, type `ColorRole`.
 
-🔒 **ВЕТКИ `light` И `dark` НЕЗАВИСИМЫ.** Правка одной не имеет права стереть другую: человек
-настраивает их в разное время, и снимок целиком затирал бы соседнюю.
+🔒 **THE `light` AND `dark` BRANCHES ARE INDEPENDENT.** Editing one has no right to erase the other: a
+person tunes them at different times, and writing a whole snapshot would wipe the neighbour.
 
-🔒 **ЧИТАЕТСЯ НА КАЖДОМ ЗАПРОСЕ** (`config/design-config.ts`, `cache()` на один запрос): правка
-видна на следующей загрузке, пересборка не нужна. Этим папка отличается от `REGISTRY-CONFIG`,
-который входит в сборку статическим импортом.
+🔒 **READ ON EVERY REQUEST** (`config/design-config.ts`, `cache()` for the span of one request): an edit
+shows up on the next page load, no rebuild needed. That is what separates this folder from
+`REGISTRY-CONFIG`, which enters the build through a static import.
 
-🔒 **ОТСУТСТВИЕ ФАЙЛА — ЗАКОННОЕ СОСТОЯНИЕ, А НЕ ПОЛОМКА:** служба поднимется на пустых
-умолчаниях. Но выглядеть это будет как потеря оформления, поэтому файл лежит в git, а не
-создаётся на сервере руками.
+🔒 **A MISSING FILE IS A LAWFUL STATE, NOT A BREAKAGE:** the service comes up on empty defaults. But it
+will look like the styling has been lost, which is why the file lives in git instead of being created
+by hand on the server.

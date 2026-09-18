@@ -1,16 +1,18 @@
-# Журнал памяти — выход службы для глаз
+# The memory journal — the service's output for human eyes
 
-Здесь живёт `memory-log.md` — **единственный** рассказ памяти о том, что у неё внутри.
+This is where `memory-log.md` lives — memory's **only** account of what is going on inside it.
 
-🔒 **ОДИН ДОКУМЕНТ НА ДВОИХ ЧИТАТЕЛЕЙ.** Агент читает этот файл, человек читает страницу, порождённую
-из него же. Кнопка «Очистить историю» стирает файл — и пустоту видят оба. Второго источника не
-существует: две копии разошлись бы, и человек с агентом обсуждали бы разные события, не зная об этом.
+🔒 **ONE DOCUMENT, TWO READERS.** The agent reads this file; the person reads the page generated out of
+the same file. The "Clear history" button erases the file — and both of them see the emptiness. There
+is no second source: two copies would drift apart, and person and agent would be discussing different
+events without knowing it.
 
-🔒 **САМ ЖУРНАЛ В GIT НЕ ХРАНИТСЯ** — это рантайм-данные, как `.env.local`. Папка в git есть, чтобы
-служба не падала на её отсутствии; содержимое принадлежит машине, а не проекту.
+🔒 **THE JOURNAL ITSELF IS NOT KEPT IN GIT** — it is runtime data, like `.env.local`. The folder is in
+git so the service does not fall over when it is missing; the contents belong to the machine, not to
+the project.
 
-🛑 **В ЖУРНАЛ ПОПАДАЮТ ФРАЗЫ ЧЕЛОВЕКА.** Это не публичный файл: он лежит на сервере владельца и
-отдаётся только под ролью `architect`.
+🛑 **HUMAN PHRASES END UP IN THE JOURNAL.** This is not a public file: it sits on the owner's server and
+is served only under the `architect` role.
 
-**Предел размера** — 512 КБ по умолчанию (`MEMORY_JOURNAL_LIMIT`). Переполнившись, документ теряет
-старое начало и **пишет об этом строкой**: молчаливая пропажа читается как «этого не было».
+**Size limit** — 512 KB by default (`MEMORY_JOURNAL_LIMIT`). On overflow the document loses its old
+beginning and **says so in a line of its own**: a silent disappearance reads as "this never happened".

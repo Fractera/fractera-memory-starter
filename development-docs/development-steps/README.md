@@ -1,82 +1,86 @@
-# development-steps — учёт службы памяти
+# development-steps — the bookkeeping of the memory service
 
-Две папки и один файл живого состояния — в них живёт всё, что агент планирует, чем занят сейчас и чем
-заканчивает.
+Two folders and one file of live state — between them they hold everything the agent plans, is busy
+with right now, and finishes with.
 
-| Папка | Имя файла | Что внутри |
+| Folder | File name | What is inside |
 |---|---|---|
-| `new-steps/` | `<номер>-<описание-6-8-слов>.md` | план предстоящей работы |
-| `completed-steps/` | `<шаг>-<подшаг>.md` и `<шаг>-main.md` | сжатый итог законченной |
-| `current-steps.md` | один файл, здесь же | где работа СЕЙЧАС: группа активных шагов и условия их закрытия |
-| `pre-steps/` | `dd-mm-yyyy_hh-mm-ss.md` | приёмная заявок ИЗВНЕ: их пишет не агент разработки |
-| `archive/` | по мере накопления | история; читается по просьбе, не при старте |
+| `new-steps/` | `<number>-<description-of-6-8-words>.md` | the plan of work ahead |
+| `completed-steps/` | `<step>-<sub-step>.md` and `<step>-main.md` | the compressed outcome of finished work |
+| `current-steps.md` | a single file, right here | where the work is NOW: the group of active steps and the conditions for closing them |
+| `pre-steps/` | `dd-mm-yyyy_hh-mm-ss.md` | the inbox for requests from OUTSIDE: they are not written by the development agent |
+| `archive/` | as it accumulates | history; read on request, never at session start |
 
-🔒 **УЧЁТ НЕ ЗАВИСИТ ОТ ТОГО, КАК ПОСТАВЛЕНА ЗАДАЧА.** Владелец сказал голосом, задача пришла из
-разбора дефекта, работа оказалась на пять строк — **всё равно шаг**. Свобода агента касается того,
-КАК он строит, и никогда — ведётся ли работа шагом и записано ли состояние. ✗ оплачено дважды: на
-удалённой машине агент завёл собственную папку `Migration/` с имитацией шагов, а состояние велось
-рывками.
+🔒 **BOOKKEEPING DOES NOT DEPEND ON HOW THE TASK ARRIVED.** The owner said it out loud, the task came
+out of a defect write-up, the work turned out to be five lines — **it is a step all the same**. The
+agent's freedom is about HOW it builds, and never about whether the work is run as a step and whether
+the state is written down. ✗ paid for twice: on a remote machine an agent started its own `Migration/`
+folder imitating steps, while the state here was kept in fits and starts.
 
-**Имя — это указатель.** Список папки обязан читаться без открытия файлов: поэтому у плана в имени
-шесть–восемь слов о существе работы, а не «шаг 12» и не «правки».
+**A name is a pointer.** A folder listing must be readable without opening the files: that is why a plan
+carries six to eight words about the substance of the work in its name, not "step 12" and not "fixes".
 
-**Номер сквозной и не переиспользуется.** План уезжает в `completed-steps/` под тем же номером, теряя
-описание в имени: к этому моменту описание живёт внутри файла.
+**Numbers run through and are never reused.** A plan moves to `completed-steps/` under the same number,
+losing the description from its name: by then the description lives inside the file.
 
-🔒 **НУМЕРАЦИЯ ЗДЕСЬ ОБЩАЯ С ФЕДЕРАЛЬНОЙ, А НЕ СВОЯ С ЕДИНИЦЫ** — шаги памяти начались с 175 и идут
-дальше. Своя нумерация с единицы сделала бы «шаг 5» именем двух разных работ, и две ветки истории
-разошлись бы молча.
+🔒 **THE NUMBERING HERE IS SHARED WITH THE FEDERAL ONE, NOT A SERIES OF ITS OWN STARTING AT 1** — memory
+steps began at 175 and carry on. A private series from 1 would make "step 5" the name of two different
+pieces of work, and the two branches of history would drift apart silently.
 
-🔒 **УЧЁТ ЛЕЖИТ РЯДОМ С КОДОМ, И ЭТО ОТЛИЧИЕ ОТ ФЕДЕРАЛЬНОГО СЛОЯ.** Там учёт в одном репозитории, а
-код в других — и итог подшага обязан называть хэш чужого репозитория. Здесь и то и другое в одном
-дереве: коммит, закрывающий подшаг, содержит и работу, и запись о ней.
+🔒 **THE BOOKKEEPING LIES NEXT TO THE CODE, AND THAT IS WHAT DIFFERS FROM THE FEDERAL LAYER.** There the
+bookkeeping is in one repository and the code in others — and a sub-step outcome is obliged to name the
+hash of the other repository. Here both live in one tree: the commit that closes a sub-step contains
+both the work and the record of it.
 
-## 🔒 Судьба плана после закрытия шага
+## 🔒 What happens to a plan once its step is closed
 
-**План закрытого шага удаляется из `new-steps/`** — папка целиком, если шаг вёлся папкой. `new-steps/`
-есть **очередь предстоящего**: план сделанного лежит в ней как заявка на уже построенную работу, и
-следующая сессия читает эту очередь буквально.
+**The plan of a closed step is deleted from `new-steps/`** — the whole folder, if the step was run as
+one. `new-steps/` is **a queue of what is coming**: the plan of finished work sits in it as a request
+for work that is already built, and the next session reads that queue literally.
 
-**Удаление идёт ТЕМ ЖЕ коммитом, что и итог.** Разнесённые, они дают состояние, где итог написан, а
-план ещё висит в очереди, — две записи об одной работе, противоречащие друг другу.
+**The deletion goes in THE SAME commit as the outcome.** Split apart, they leave a state where the
+outcome is written while the plan still hangs in the queue — two records of one piece of work,
+contradicting each other.
 
-**Это законно только потому, что план восстановим из git:**
+**This is lawful only because the plan is recoverable from git:**
 
 ```
-git log --diff-filter=D --format=%H -1 -- <путь к плану>   # коммит, которым план удалён
-git show <хэш>^:<путь к плану>                             # содержимое ДО удаления
+git log --diff-filter=D --format=%H -1 -- <path to the plan>   # the commit that deleted the plan
+git show <hash>^:<path to the plan>                            # the contents before that commit
 ```
 
-Пустой вывод первой команды означает, что по этому пути файла не было никогда, — это её встроенный
-негативный контроль. Итог шага `<шаг>-main.md` называет коммит удаления, чтобы поиск не начинался с
-обхода истории.
+Empty output from the first command means there was never a file at that path — that is its built-in
+negative control. The step outcome `<step>-main.md` names the deleting commit so that the search does
+not have to start by walking the history.
 
-## 🔒 Подшаг — метроном передачи сессии, а не бюрократия
+## 🔒 A sub-step is the metronome of session hand-over, not bureaucracy
 
-**Шаг дробится на 2–10 подшагов, и подшаг ведёт себя ровно как шаг:** свой план, своя приёмка, свой
-итог, свои два доказательства. Закрывается своим файлом — `12-1.md` … `12-10.md`, а `12-main.md` —
-итог шага целиком.
+**A step is split into 2–10 sub-steps, and a sub-step behaves exactly like a step:** its own plan, its
+own acceptance, its own outcome, its own two proofs. It is closed by its own file — `12-1.md` …
+`12-10.md` — while `12-main.md` is the outcome of the step as a whole.
 
-**Зачем это на самом деле.** Сброс контекста ставится на **конец подшага**. Шаг без подшагов идёт
-часами, предел окна приходит на середину незакрытой работы — записывать нечего, сбрасывать нельзя, и
-закон о передаче сессии рвётся ровно там, где должен был сработать. Подшаг задаёт частоту, с которой
-состояние ложится в файл.
+**What this is really for.** The context reset is placed at the **end of a sub-step**. A step without
+sub-steps runs for hours, the edge of the window arrives in the middle of unclosed work — there is
+nothing to write down, nothing may be reset, and the law of session hand-over tears exactly where it
+was supposed to hold. A sub-step sets the rhythm at which state is written to the file.
 
-**Отсюда правило дробления:** подшаг заканчивается тем, что можно записать одной строкой доказательства.
-Не «сделал половину страницы», а «форма отдаёт 200 и запись появилась в таблице».
+**Hence the rule for splitting:** a sub-step ends with something that can be written down in a single
+line of proof. Not "half the page is done", but "the form returns 200 and the row appeared in the
+table".
 
-## Что обязано быть в плане
+## What a plan must contain
 
-Столько подробностей, чтобы работу можно было продолжить с ЧИСТОГО контекста — другой сессией, другой
-моделью, через месяц.
+Enough detail that the work could be continued from a COLD context — by another session, another model,
+a month later.
 
-## Что обязано быть в итоге
+## What an outcome must contain
 
-Что делали · как делали · что получилось · **какие были ошибки** · **эволюция навыков**.
+What was done · how it was done · what came of it · **what the mistakes were** · **the evolution of the
+skills**.
 
-Ошибки — обязательная часть. Шаг без них читается как работа, которой не было, и следующая сессия
-повторит их заново.
+Mistakes are a mandatory part. A step without them reads as work that never happened, and the next
+session will repeat them.
 
-Эволюция навыков — вторая половина закрытия и пропуску не подлежит: какие навыки читались, где
-тормозили, что пришлось искать в коде, что потребовал владелец, какое улучшение согласовано и внесено.
-Нечего улучшать — так и написать одной строкой.
+The evolution of the skills is the second half of closing and may not be skipped: which skills were
+read, where they slowed things down, what had to be dug out of the code, what the owner demanded, which
+improvement was agreed and written in. Nothing to improve — say so in one line.
