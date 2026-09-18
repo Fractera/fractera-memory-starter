@@ -11,7 +11,7 @@
   "channel_kinds": {
     "telegram": "a Telegram bot of this service: { bot: \"@name\", url: \"https://t.me/name\" }. Both fields are required — a channel without a link sends a person nowhere, and that looks like a broken messenger."
   },
-  "channels_note": "OPTIONAL per service. A service answering a request that is not its own sends the address in the SAME channel the request arrived by, and falls back to `manage` (the web address) when it has no such channel. The link is stored whole and never assembled from the bot name.",
+  "channels_note": "DECLARED BY EVERY SERVICE, EMPTY WHEN THERE IS NONE. `{}` means the service said it has no channel yet; a MISSING field means somebody forgot — the same difference as a null subdomain. A service answering a request that is not its own sends the address in the SAME channel the request arrived by, and falls back to `manage` (the web address) when it has no such channel. The link is stored whole and never assembled from the bot name.",
   "services": [
     {
       "id": "app",
@@ -23,6 +23,7 @@
       "subdomain": "app",
       "port": 3000,
       "auth": "global",
+      "channels": {},
       "manage": "https://app.<domain>/ru/build",
       "topics": [
         "сайт",
@@ -44,6 +45,7 @@
       "subdomain": "auth",
       "port": 3001,
       "auth": "provider",
+      "channels": {},
       "manage": "https://auth.<domain>/ru/build",
       "topics": [
         "авторизац",
@@ -67,6 +69,7 @@
       "subdomain": "admin",
       "port": 3002,
       "auth": "global",
+      "channels": {},
       "manage": "https://admin.<domain>/ru/build",
       "topics": [
         "панел",
@@ -89,6 +92,7 @@
       "subdomain": "data",
       "port": 3300,
       "auth": "own",
+      "channels": {},
       "manage": "https://data.<domain>/ru/build",
       "topics": [
         "база данных",
@@ -107,6 +111,7 @@
       "subdomain": null,
       "port": 3400,
       "auth": "own",
+      "channels": {},
       "manage": null,
       "topics": [
         "карт",
@@ -127,6 +132,7 @@
       "subdomain": null,
       "port": 3500,
       "auth": "own",
+      "channels": {},
       "manage": null,
       "topics": [
         "телеграм-бот",
@@ -145,6 +151,7 @@
       "subdomain": null,
       "port": 9621,
       "auth": "own",
+      "channels": {},
       "manage": null,
       "topics": [
         "граф знаний",
@@ -162,6 +169,7 @@
       "subdomain": "telegram",
       "port": 3600,
       "auth": "global",
+      "channels": {},
       "manage": "https://telegram.<domain>/ru/build",
       "topics": [
         "телеграм",
@@ -181,6 +189,7 @@
       "subdomain": "memory",
       "port": 3700,
       "auth": "global",
+      "channels": {},
       "manage": "https://memory.<domain>/ru/build",
       "topics": []
     },
@@ -194,6 +203,7 @@
       "subdomain": "ai-browser",
       "port": 3800,
       "auth": "global",
+      "channels": {},
       "manage": "https://ai-browser.<domain>/ru/build",
       "topics": [
         "браузер",

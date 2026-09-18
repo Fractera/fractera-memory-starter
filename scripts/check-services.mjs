@@ -24,7 +24,11 @@ const AUTH = ["global", "own", "provider"]
 
 const ID = /^[a-z][a-z0-9-]*$/
 
-const REQUIRED = ["id", "api", "about", "author", "price", "for_sale", "subdomain", "port", "auth"]
+// 🔒 226-1: `channels` В ЭТОМ СПИСКЕ — ЭТО ТРЕБОВАНИЕ ОБЪЯВИТЬ, А НЕ ТРЕБОВАНИЕ ИМЕТЬ.
+// Слово владельца 2026-09-18: «на старте у этой службы Telegram бота нет — просто возвращаешь там
+// пустое место». Пустой объект значит «сказано: канала нет»; отсутствие поля значит «забыли», и
+// разница ровно та же, что у субдомена `null`.
+const REQUIRED = ["id", "api", "about", "author", "price", "for_sale", "subdomain", "port", "auth", "channels"]
 
 export function problemsOf(services, error, root) {
   const problems = []
