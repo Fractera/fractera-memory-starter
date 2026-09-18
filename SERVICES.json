@@ -1,5 +1,5 @@
 {
-  "about": "Registry of the microservices of one Fractera server. The SAME file in every service tree, byte for byte. English only. Filled by hand for now. A service READS it and never writes it: a file that each service edits stops being the same file.",
+  "about": "Registry of the microservices of one Fractera server. INTENDED to be assembled from what each service declares about itself; TODAY it is a single hand-written copy living in the memory service tree, read once per process life, with no writer at all. English only. A service READS it and never writes it: a file each service edits stops being the same file.",
   "updated": "2026-09-16",
   "root": "app",
   "root_note": "The single microservice mounted at the domain root: it answers both at <domain> and at its own subdomain. Exactly one service may hold it; moving it is a one-word change here.",

@@ -34,7 +34,8 @@ because the URL started with https: a certificate on an IP is a rare exception.
   can remember what people said to it and answer them better. Its agent is your caller, not your subject.
 - A supplier **names itself** on every call: `from` is a path — service, then its entity
   (`telegram/bot/roma-armstrong`). First segment must be a service in `SERVICES.json` — the registry of this server's services, the
-  same file byte for byte in every service tree, in the root of this repository.
+  registry in the root of this repository. It is MEANT to be assembled from what each service declares
+  about itself; today it is one hand-written copy and lives here only — measured 2026-09-18, step 226-2.
 - Suppliers send **untyped** input: free text, objects, or both. Typing it is your work, not theirs.
 - Your answer is consumed by **another model**, not a human reader: give the conclusion and what it
   rests on, in a shape that model can keep working with.
