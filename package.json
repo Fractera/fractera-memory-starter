@@ -8,7 +8,7 @@
     "start": "node server.mjs",
     "build": "next build",
     "dev": "next dev",
-    "check": "node scripts/check-contract.mjs && node scripts/check-services.mjs && node scripts/check-numbers.mjs && node scripts/check-skills.mjs",
+    "check": "node scripts/check-core-props.mjs && node scripts/check-contract.mjs && node scripts/check-services.mjs && node scripts/check-numbers.mjs && node scripts/check-skills.mjs",
     "probe": "node scripts/probe/alive.mjs"
   },
   "dependencies": {
