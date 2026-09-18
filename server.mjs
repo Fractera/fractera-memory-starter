@@ -63,6 +63,7 @@ import { contract, CONTRACT_VERSION, METHODS, SERVICE } from "./contract.mjs"
 import { say } from "./lib/words.mjs"
 // 🪦 `people` БОЛЬШЕ НЕ ИМПОРТИРУЕТСЯ (207-6): он считал людей, а человек один. Взамен — каталог
 // источников: кто мне писал.
+import { neighboursWords, refreshNeighbours } from "./lib/services.mjs"
 import { remember, recall } from "./lib/verbs.mjs"
 import { sources } from "./lib/sources.mjs"
 import { state } from "./lib/state.mjs"
@@ -918,4 +919,12 @@ server.listen(PORT, HOST, () => {
     // но всё остальное закрыто. Молчаливый старт без замка опаснее отказа.
     console.log("ВНИМАНИЕ: секрет машины не найден — открыт только /v1/health")
   }
+
+  // 🔒 227-5: КАРТА СОСЕДЕЙ СПРАШИВАЕТСЯ ПОСЛЕ ПОДЪЁМА, А НЕ ДО НЕГО. Служба уже слушает порт и
+  // отвечает на «кто я» из своего описания на диске; панель может молчать — это ничего не ломает.
+  // 🛑 Спроси мы её ДО `listen`, старт памяти зависел бы от чужого процесса, и «панель не поднялась»
+  // выглядело бы как «память не работает».
+  refreshNeighbours()
+    .then(() => console.log(`службы сервера: ${neighboursWords()}`))
+    .catch((e) => console.log(`карта служб не получена: ${String(e.message).slice(0, 160)}`))
 })
