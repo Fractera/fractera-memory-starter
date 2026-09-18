@@ -1,5 +1,5 @@
 {
-  "about": "Registry of the microservices of one Fractera server. The SAME file in every service tree, byte for byte. English only. Filled by hand for now. A service READS it and never writes it: a file that each service edits stops being the same file.",
+  "about": "Registry of the microservices of one Fractera server. INTENDED to be assembled from what each service declares about itself; TODAY it is a single hand-written copy living in the memory service tree, read once per process life, with no writer at all. English only. A service READS it and never writes it: a file each service edits stops being the same file.",
   "updated": "2026-09-16",
   "root": "app",
   "root_note": "The single microservice mounted at the domain root: it answers both at <domain> and at its own subdomain. Exactly one service may hold it; moving it is a one-word change here.",
@@ -8,6 +8,10 @@
     "own": "checks its own credential and knows nothing about people; reached by processes, not by browsers",
     "provider": "IS the auth service: it hands authorisation to the others. Exactly one service may say this — two authorities on one server is no authority at all"
   },
+  "channel_kinds": {
+    "telegram": "a Telegram bot of this service: { bot: \"@name\", url: \"https://t.me/name\" }. Both fields are required — a channel without a link sends a person nowhere, and that looks like a broken messenger."
+  },
+  "channels_note": "DECLARED BY EVERY SERVICE, EMPTY WHEN THERE IS NONE. `{}` means the service said it has no channel yet; a MISSING field means somebody forgot — the same difference as a null subdomain. A service answering a request that is not its own sends the address in the SAME channel the request arrived by, and falls back to `manage` (the web address) when it has no such channel. The link is stored whole and never assembled from the bot name.",
   "services": [
     {
       "id": "app",
@@ -19,6 +23,7 @@
       "subdomain": "app",
       "port": 3000,
       "auth": "global",
+      "channels": {},
       "manage": "https://app.<domain>/ru/build",
       "topics": [
         "сайт",
@@ -40,6 +45,7 @@
       "subdomain": "auth",
       "port": 3001,
       "auth": "provider",
+      "channels": {},
       "manage": "https://auth.<domain>/ru/build",
       "topics": [
         "авторизац",
@@ -63,6 +69,7 @@
       "subdomain": "admin",
       "port": 3002,
       "auth": "global",
+      "channels": {},
       "manage": "https://admin.<domain>/ru/build",
       "topics": [
         "панел",
@@ -85,6 +92,7 @@
       "subdomain": "data",
       "port": 3300,
       "auth": "own",
+      "channels": {},
       "manage": "https://data.<domain>/ru/build",
       "topics": [
         "база данных",
@@ -103,6 +111,7 @@
       "subdomain": null,
       "port": 3400,
       "auth": "own",
+      "channels": {},
       "manage": null,
       "topics": [
         "карт",
@@ -123,6 +132,7 @@
       "subdomain": null,
       "port": 3500,
       "auth": "own",
+      "channels": {},
       "manage": null,
       "topics": [
         "телеграм-бот",
@@ -141,6 +151,7 @@
       "subdomain": null,
       "port": 9621,
       "auth": "own",
+      "channels": {},
       "manage": null,
       "topics": [
         "граф знаний",
@@ -150,15 +161,16 @@
     },
     {
       "id": "telegram",
-      "api": "https://telegram.<domain>/api",
-      "about": "Telegram service on port 3600. Automations, fact intake and the agent channel. Independent product: works with no guest application present.",
+      "api": "https://chat.<domain>/api",
+      "about": "Telegram service on port 3600. Automations, fact intake and the agent channel. Independent product: works with no guest application present. Answers at the `chat` subdomain — the service was renamed, the address was not.",
       "author": "fractera",
       "price": null,
       "for_sale": false,
-      "subdomain": "telegram",
+      "subdomain": "chat",
       "port": 3600,
       "auth": "global",
-      "manage": "https://telegram.<domain>/ru/build",
+      "channels": {},
+      "manage": "https://chat.<domain>/ru/build",
       "topics": [
         "телеграм",
         "бот",
@@ -177,6 +189,7 @@
       "subdomain": "memory",
       "port": 3700,
       "auth": "global",
+      "channels": {},
       "manage": "https://memory.<domain>/ru/build",
       "topics": []
     },
@@ -190,6 +203,7 @@
       "subdomain": "ai-browser",
       "port": 3800,
       "auth": "global",
+      "channels": {},
       "manage": "https://ai-browser.<domain>/ru/build",
       "topics": [
         "браузер",
