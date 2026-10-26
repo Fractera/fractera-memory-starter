@@ -1,11 +1,102 @@
 {
-  "title": "Fractera Memory",
-  "description": "The deep memory of the node: it keeps what a person says — phrases, photos, documents, voice notes — and answers «remind me about» with the date and how sure it is.",
-  "keywords": "",
+  "title": "A memory that keeps what you tell it",
+  "description": "The deep memory of a Fractera node keeps the phrases, photos, PDFs and voice notes you send to your main agent and answers «remind me about» with the date, the source and how sure it is. It runs on your own computer.",
+  "keywords": "AI memory, personal memory, remember, remind me, voice notes, PDF search, search by meaning, Telegram, Claude Code, Fractera, open source",
   "blocks": [
+    { "kind": "widget-static-memory-landing", "bid": "mlw01" },
     {
-      "kind": "widget-static-reference-title",
-      "bid": "rf001"
-    }
+      "kind": "block-hero-centered",
+      "pill": "OpenSource Web4 agent & app starter kit",
+      "title": "A memory that keeps what you tell it",
+      "description": "Say «remember» to your main agent in Telegram or in the terminal: a phrase, a photo, a PDF or a voice note. Months later ask «remind me about…», and the answer comes back with the date, the source and how sure the memory is. All of it stays on your own computer.",
+      "cta": { "label": "Start", "href": "#turn-on" },
+      "secondary": { "label": "Connect your element", "href": "#connect" },
+      "bid": "mhr01"
+    },
+    { "kind": "block-section-head", "id": "route", "title": "How a memory goes", "bid": "msr01" },
+    { "kind": "text-h4", "text": "You say «remember»", "bid": "mrt01" },
+    { "kind": "text-p", "text": "In your own words and in any language, with a photo, a document or a voice note if you like.", "bid": "mrp01" },
+    { "kind": "text-h4", "text": "Your main agent", "bid": "mrt02" },
+    { "kind": "text-p", "text": "Understands what you mean, not a fixed word, and hands the words and the file to the memory.", "bid": "mrp02" },
+    { "kind": "text-h4", "text": "The memory", "bid": "mrt03" },
+    { "kind": "text-p", "text": "Describes the file in words, turns a voice note into text, splits the phrase into facts and keeps them in your node.", "bid": "mrp03" },
+    { "kind": "text-h4", "text": "«Remind me about…»", "bid": "mrt04" },
+    { "kind": "text-p", "text": "The answer gathers what you said, with the date, the source and how sure it is. If it found a thing, you get its file.", "bid": "mrp04" },
+    { "kind": "text-small", "text": "While your computer has more than 1 GB free, the memory stays on. With less, your main agent turns it on for a task and off again.", "bid": "mrs01" },
+    { "kind": "block-section-head", "id": "solves", "title": "What changes for you", "bid": "mss01" },
+    {
+      "kind": "text-table",
+      "head": ["Without it", "With the deep memory"],
+      "rows": [
+        ["Notes, photos and voice messages are scattered across apps", "You send them to one bot, and the node keeps them together"],
+        ["Search finds only the exact words you typed", "It finds things by meaning, in any language"],
+        ["A photo is a file without words", "A photo is described in words and found by what is on it"],
+        ["You never know where an answer came from", "Every answer names the date, the source and how sure it is"],
+        ["Your notes sit on someone else's server", "They stay on your computer, inside your node"]
+      ],
+      "bid": "mst01"
+    },
+    { "kind": "block-section-head", "id": "files", "title": "What it does with each kind of file", "bid": "msf01" },
+    {
+      "kind": "text-table",
+      "head": ["What you send", "What the memory does"],
+      "rows": [
+        ["A photo or a picture", "Describes it in words and keeps the picture with the description"],
+        ["A PDF", "Reads it whole and keeps it with a description, so you find it by what it says"],
+        ["A voice note", "Turns it into text and reads it like any phrase"],
+        ["A video", "Reads the frames and the sound when the computer has ffmpeg"],
+        ["Documents and code", "Reads them as text; code is never run"],
+        ["A text longer than 2,000 words", "Keeps it whole as one thing, without splitting it into facts"]
+      ],
+      "bid": "mft01"
+    },
+    { "kind": "block-section-head", "id": "talk", "title": "How to talk to it", "bid": "msk01" },
+    { "kind": "text-p", "text": "There are no forms to fill in and no menus to learn. You talk to your main agent the way you would talk to a person, and it knows when you mean the memory.", "bid": "mkp01" },
+    {
+      "kind": "text-list",
+      "items": [
+        "«remember…», «note down», «save this», «don't forget» — the memory keeps it.",
+        "«remind me about…», «what did I say about…» — the memory answers.",
+        "A photo, a document or a voice note with a few words — kept together and found together."
+      ],
+      "bid": "mkl01"
+    },
+    { "kind": "block-section-head", "id": "turn-on", "title": "Start in three steps", "bid": "mso01" },
+    {
+      "kind": "text-list",
+      "ordered": true,
+      "items": [
+        "Add your OpenAI key in the core's settings. The memory uses it to search by meaning, to hear voice notes and to split phrases into facts.",
+        "Connect your main agent's Telegram bot in the core, so you can talk to it from your phone.",
+        "Say «remember…» to it. That is all."
+      ],
+      "bid": "mol01"
+    },
+    { "kind": "text-small", "text": "Without the key the memory still keeps what you say, but it does not search by meaning and does not hear voice notes.", "bid": "mos01" },
+    { "kind": "block-section-head", "id": "connect", "title": "Connect your element", "bid": "msc01" },
+    { "kind": "text-p", "text": "Any element of your node can keep things in the memory and ask it with two calls on this computer, using the node key.", "bid": "mcp01" },
+    {
+      "kind": "text-code",
+      "text": "// In your element's server code, on this computer: the port and the node key come from the node\nconst base = `http://127.0.0.1:${port}`\nconst headers = { 'content-type': 'application/json', 'X-Node-Key': process.env.SETTINGS_SECRET }\n// from: the id of your element\nawait fetch(`${base}/v1/remember`, { method: 'POST', headers, body: JSON.stringify({ text: 'the taxi from the airport cost 40 euro', from: ['my-element'] }) })\nconst answer = await fetch(`${base}/v1/recall`, { method: 'POST', headers, body: JSON.stringify({ text: 'how much was the taxi?', from: ['my-element'] }) }).then((r) => r.json())\n// → { ok: true, text, objects, certainty, answer_id, … }",
+      "bid": "mcc01"
+    },
+    { "kind": "text-p", "text": "The answer carries the text, the things it found, how sure it is and an `answer_id`. Your element can comment on the answer with `POST /v1/feedback`, and the full contract is at `GET /v1/contract`.", "bid": "mcp02" },
+    { "kind": "block-section-head", "id": "hood", "title": "Under the hood", "bid": "msh01" },
+    {
+      "kind": "text-table",
+      "head": ["Part", "What it does"],
+      "rows": [
+        ["The data element", "Keeps every phrase as a row in the node's database"],
+        ["The vectors element", "Finds what you said by meaning"],
+        ["The graph element", "Keeps the facts and their links in a space of their own"],
+        ["The storage element", "Keeps the photos, documents and recordings"],
+        ["OpenAI `gpt-6-luna`", "Splits a phrase into facts and describes pictures and PDFs, for a fraction of a cent"],
+        ["OpenAI `whisper-1`", "Turns voice notes into text"],
+        ["Your node", "Keeps the memory on while the computer has more than 1 GB free; with less, your main agent turns it on for a task"]
+      ],
+      "bid": "mht01"
+    },
+    { "kind": "block-section-head", "id": "credits", "title": "Open source", "bid": "msx01" },
+    { "kind": "text-p", "text": "Built by Fractera for the [Lagrix](https://lagrix.dev) protocol and for any web2 project that needs a memory. MIT license, the code is at [github.com/Fractera/fractera-memory-starter](https://github.com/Fractera/fractera-memory-starter).", "bid": "mxp01" }
   ]
 }
