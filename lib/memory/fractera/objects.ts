@@ -167,16 +167,35 @@ async function mediaRows(): Promise<Map<string, MediaRow>> {
  * 🔒 ПРИНАДЛЕЖНОСТЬ ОПРЕДЕЛЯЕТ КАРТОЧКА В НАШЕЙ КОЛЛЕКЦИИ, А НЕ ИМЯ ФАЙЛА. В той
  * же медиатеке лежат снимки из Telegram и значки проекта; открыть или стереть их
  * рукой памяти значило бы распорядиться чужим.
+ *
+ * NODE STEP 597-3: two sources, and the failure of one never hides the other. The former server kept the cards in the data element's own
+ * table `vectors`; on a node the vectors live in their own element (node step 550) and the data element's SQL never sees them — ✗ measured
+ * 597-3: every object of the memory was «not-ours», its file and its card answered 404 since 596. The memory's own table names every thing
+ * it took (`object_id` of a row), and that is ours on any machine.
  */
 async function ownIds(): Promise<Set<string>> {
-  const r = await dataJson<{ rows?: { ref_id?: string }[] }>("/db/migrate", {
-    body: JSON.stringify({
-      params: [OBJECT_COLLECTION],
-      sql: "SELECT ref_id FROM vectors WHERE collection = ? AND ref_table = 'media'",
-    }),
-    method: "POST",
-  });
-  return new Set((r.rows ?? []).map((x) => String(x.ref_id)));
+  const out = new Set<string>();
+  try {
+    const r = await dataJson<{ rows?: { ref_id?: string }[] }>("/db/migrate", {
+      body: JSON.stringify({
+        params: [OBJECT_COLLECTION],
+        sql: "SELECT ref_id FROM vectors WHERE collection = ? AND ref_table = 'media'",
+      }),
+      method: "POST",
+    });
+    for (const x of r.rows ?? []) out.add(String(x.ref_id));
+  } catch { /* no such table on this machine — the next source answers */ }
+  try {
+    const r = await dataJson<{ rows?: { object_id?: string }[] }>("/db/migrate", {
+      body: JSON.stringify({
+        params: [],
+        sql: "SELECT DISTINCT object_id FROM messages_that_came_into_memory WHERE object_id IS NOT NULL",
+      }),
+      method: "POST",
+    });
+    for (const x of r.rows ?? []) if (x.object_id) out.add(String(x.object_id));
+  } catch { /* the memory's table is not there yet — then nothing is ours here either */ }
+  return out;
 }
 
 /** Карточка, по которой объект будут искать. */
