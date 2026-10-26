@@ -1,55 +1,50 @@
-import type { NextConfig } from "next";
+import path from "node:path"
+import type { NextConfig } from "next"
 
-const basePath = process.env.IS_DEMO === "1" ? "/demo" : "";
+// The node starts this site with the standalone server: it reads PORT and HOSTNAME
+// from the environment, which is exactly how the node assigns a port. `next start`
+// refuses to run with `output: standalone`, so the passport names the server file.
+//
+// The ROOT IS THIS FOLDER, named explicitly. Inside a node the site lives in
+// WEB4-ITEMS/core/root, and Next, seeing the node's lockfile above, took the node for
+// the project root and tried to compile the node's own proxy.ts.
+const root = path.resolve(__dirname)
 
 const nextConfig: NextConfig = {
-  ...(basePath
-    ? {
-        assetPrefix: "/demo-assets",
-        basePath,
-        redirects: async () => [
-          {
-            basePath: false,
-            destination: basePath,
-            permanent: false,
-            source: "/",
-          },
-        ],
-      }
-    : {}),
-  cacheComponents: true,
-  devIndicators: false,
-  env: {
-    NEXT_PUBLIC_BASE_PATH: basePath,
+  output: "standalone",
+  // 280-9: the node builds this site into a NEIGHBOUR folder (.next-a / .next-b) while the running
+  // build keeps serving — no downtime. Unset, it is the usual .next.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
+  outputFileTracingRoot: root,
+  // 314-2: данные страниц (JSON дерева) едут в standalone-сборку — запасной источник, когда `ELEMENT_DIR` не задан.
+  outputFileTracingIncludes: {
+    '/**': ['./app/**/_data/*.json', './app/**/_pages/**/*.json'],
+    // 458-3: шрифт сниппетов читается с диска (lib/snippet/render.mjs), сборщик сам его не находит.
+    '/[lang]/**': ['./node_modules/@fontsource/inter/files/inter-*-normal.woff'],
   },
-  experimental: {
-    appNewScrollHandler: true,
-    // 🔒 ПРЕДЕЛ ТЕЛА НА ПУТИ ЧЕРЕЗ `proxy.ts` — 200 МБ, КАК У nginx И ДОГОВОРА (200-5): файлы «Сказать» и `keep_object`
-    // идут в Next через привратника. ✗ Умолчание Next 16 — 10 МБ, и тело сверх него ОБРЕЗАЕТСЯ МОЛЧА: файл приехал бы
-    // в дверь неполным. Числа держатся равными — иначе один слой врёт о том, что влезает.
-    proxyClientMaxBodySize: "200mb",
-    cachedNavigations: true,
-    inlineCss: true,
-    prefetchInlining: true,
-    turbopackFileSystemCacheForDev: true,
-  },
-  // 🪦 `images.remotePatterns` С ДОМЕНАМИ VERCEL УБРАНЫ ТОГДА ЖЕ: `avatar.vercel.sh`
-  // и `*.public.blob.vercel-storage.com` — склады чужого шаблона. Файлы проекта
-  // лежат в медиатере слоя данных и отдаются своим маршрутом.
-  logging: {
-    fetches: {
-      fullUrl: false,
-    },
-    incomingRequests: false,
-  },
-  poweredByHeader: false,
-  reactCompiler: true,
-};
+  turbopack: { root },
+  serverExternalPackages: ["better-sqlite3"],
 
-// 🪦 ОБЁРТКА `withBotId` УБРАНА 2026-09-06 ВМЕСТЕ С ПАКЕТОМ `botid`. Это
-// продукт Vercel, защищавший `/api/chat` шаблона; ни маршрута, ни Vercel у нас
-// нет. ✗ И ЭТО МЕСТО Я ПРОПУСТИЛ: искал `botid` по `app`, `lib`, `components`,
-// `providers` — и не заглянул в конфиг сборки. Сборка упала на сервере с
-// `Cannot find module 'botid/next/config'`. Урок: удаляя пакет, ищи его по
-// ВСЕМУ дереву, а не по папкам с кодом — конфиги тоже импортируют.
-export default nextConfig;
+  // Old addresses live in other people's bookmarks: they answer with a permanent
+  // redirect, not a 404.
+  async redirects() {
+    return [
+      { source: "/:lang/architecture", destination: "/:lang/m2m", permanent: true },
+      { source: "/:lang/architecture/index.md", destination: "/:lang/m2m/index.md", permanent: true },
+      // The architect pages live in the node's core (280), on its own address. The installer
+      // writes that address into ARCHITECT_URL; without it the link has nowhere to go and
+      // no rule is made, so the page answers 404 instead of pointing at a wrong host.
+      ...(process.env.ARCHITECT_URL
+        ? [{ source: "/:lang/architect/:path*", destination: process.env.ARCHITECT_URL.replace(/\/+$/, "") + "/:lang/architect/:path*", permanent: false }]
+        : []),
+    ]
+  },
+
+  // The build moment is computed once, here: `/api/health` reports when the site
+  // was BUILT, not when the process started.
+  env: {
+    NEXT_PUBLIC_BUILT_AT: new Date().toISOString(),
+  },
+}
+
+export default nextConfig

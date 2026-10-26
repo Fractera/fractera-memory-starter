@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "memory": {
-      "command": "node",
-      "args": ["scripts/agent/memory-tools.mjs"]
-    }
-  }
-}

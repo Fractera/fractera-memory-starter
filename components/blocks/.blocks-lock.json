@@ -1,0 +1,30 @@
+{
+  "block-faq": {
+    "version": "1.0.0",
+    "files": {
+      "components/blocks/block-faq.tsx": "31438a6b3a3be829",
+      "components/blocks/block-faq.card.json": "23818be20dee4a3c"
+    }
+  },
+  "block-hero-centered": {
+    "version": "1.0.0",
+    "files": {
+      "components/blocks/block-hero-centered.tsx": "e35843ba639a8900",
+      "components/blocks/block-hero-centered.card.json": "1b5488439031250b"
+    }
+  },
+  "block-section-head": {
+    "version": "1.0.0",
+    "files": {
+      "components/blocks/block-section-head.tsx": "ef390a053ed576e7",
+      "components/blocks/block-section-head.card.json": "124a9556044b132c"
+    }
+  },
+  "block-warning-card": {
+    "version": "1.0.0",
+    "files": {
+      "components/blocks/block-warning-card.tsx": "5df61d5693ef5224",
+      "components/blocks/block-warning-card.card.json": "885f820f40f07da0"
+    }
+  }
+}

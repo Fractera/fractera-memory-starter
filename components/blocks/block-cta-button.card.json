@@ -1,0 +1,63 @@
+{
+  "name": "block-cta-button",
+  "component": "CtaButton",
+  "pageKind": false,
+  "categories": [
+    "hero"
+  ],
+  "role": "any",
+  "placement": {
+    "page": false,
+    "inside": [
+      "block-hero-centered"
+    ],
+    "via": "props"
+  },
+  "accepts": null,
+  "repeat": "free",
+  "mode": [
+    "persuade"
+  ],
+  "use": "An action button with an arrow inside the first screen; it arrives through the cta and secondary fields of block-hero-centered.",
+  "avoid": "A page sequence (it is not a page kind); a form submit button.",
+  "slots": {
+    "label": {
+      "maxChars": 30
+    }
+  },
+  "props": "{ href: string; children: ReactNode; variant?: 'primary' | 'outline' }",
+  "markdown": null,
+  "variants": [],
+  "data": "static",
+  "requires": [],
+  "interactive": "none",
+  "media": "none",
+  "headings": [],
+  "rtl": "untested",
+  "weight": "light",
+  "band": false,
+  "alternatives": [],
+  "source": {
+    "origin": "own",
+    "license": "MIT"
+  },
+  "origin": {
+    "project": "base",
+    "request": null
+  },
+  "version": "1.0.0",
+  "status": "published",
+  "cases": [
+    {
+      "title": "The main action of a first screen",
+      "mode": "persuade",
+      "position": "inside block-hero-centered",
+      "why": "One clear action next to the title.",
+      "props": {
+        "href": "/login",
+        "children": "Sign in"
+      }
+    }
+  ],
+  "docs": "Installed with block-hero-centered (registry dependency). Not a page kind: set cta or secondary on the hero."
+}

@@ -1,0 +1,11 @@
+{
+  "title": "Reference native template",
+  "description": "The reference starter template of a Fractera native element.",
+  "keywords": "",
+  "blocks": [
+    {
+      "kind": "widget-static-reference-title",
+      "bid": "rf001"
+    }
+  ]
+}

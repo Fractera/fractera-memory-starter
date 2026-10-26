@@ -1,0 +1,53 @@
+{
+  "_": "Node contract of this element (step 417): what the node needs to install, run and manage it. Read by the node core only; never served to the outside. The public description is OWN-SERVICE-PROPS/.",
+  "kind": "microservice",
+  "entry": "global",
+  "port": {
+    "desired": 24690,
+    "note": "A wish, not a decision. The node assigns the actual port from the block 24680-25679. Ask the node, never remember."
+  },
+  "env": {
+    "file": ".env.local",
+    "example": ".env.example",
+    "note": "Next reads .env.local by its own convention."
+  },
+  "health": {
+    "path": "/api/health",
+    "expect": 200,
+    "note": "Runs the site's own code and needs neither a session nor a key. Answers pid and startedAt so the node can tell this process from another one on the same name."
+  },
+  "runtime": {
+    "stack": "next",
+    "node": ">=20",
+    "build": "npm run build",
+    "start": "node .next/standalone/<traced path>/server.js",
+    "startNote": "The standalone server reads PORT and HOSTNAME from the environment. The installer finds server.js under .next/standalone and copies .next/static next to it.",
+    "nativeModules": [],
+    "distDirEnv": "NEXT_DIST_DIR",
+    "distDirNote": "The node builds into a neighbour folder named by this variable while the old build serves, then switches: no downtime. A replacement that does not declare it is stopped for the build."
+  },
+  "settings": {
+    "door": "/api/settings/design",
+    "key": {
+      "header": "X-Settings-Key",
+      "env": "SETTINGS_SECRET"
+    },
+    "owns": [
+      "DESIGN-CONFIG"
+    ],
+    "note": "The site owns its settings; the node core reads and patches them through this door and rebuilds the site. Without the door the core leaves this site's settings alone."
+  },
+  "contract": [
+    "Takes its port from the environment; never remembers a number.",
+    "Answers GET /api/health with 200 without a session.",
+    "Signs people in only through the node's auth element; never carries its own sign-in.",
+    "Reaches stored data only through the node's data element; never opens a database file.",
+    "Public pages stay static: no force-dynamic, no cookies() or headers() in a layout or a page.",
+    "Reads its own name from this passport at start (lib/own-id.ts); no name of the element is written in its code."
+  ],
+  "languages": {
+    "count": 2,
+    "note": "en is the base, ru the translation; the set is this site's own setting (NEXT_PUBLIC_SUPPORTED_LANGUAGES, kind own)."
+  },
+  "license": "MIT"
+}

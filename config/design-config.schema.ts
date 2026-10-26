@@ -47,6 +47,13 @@ export const designConfigSchema = z.looseObject({
     appWidth: z.string().optional(),
     heroWidth: z.string().optional(),
   }),
+  // 308-1: настройки блоков — первый экран по центру, пиксели.
+  blocks: z
+    .looseObject({
+      heroOneWidth: z.number().optional(),
+      heroOneSize: z.looseObject({ mobile: z.number().optional(), tablet: z.number().optional(), desktop: z.number().optional() }).optional(),
+    })
+    .optional(),
 });
 
 export const __designConfigSchemaMatchesType: z.infer<

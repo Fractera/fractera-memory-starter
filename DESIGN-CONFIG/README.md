@@ -1,35 +1,56 @@
-# DESIGN-CONFIG — the service's palette
+# DESIGN-CONFIG — how the project LOOKS
 
-Holds `design-config.json`: seven colour roles for the light theme and seven for the dark one. From
-here `lib/design-css.ts` prints the CSS variables, and the theme switch in the footer picks a branch.
+Holds `design-config.json`: the owner's visual choices — colours by role (light and dark),
+fonts (heading / body / mono), the type scale, and shape (radius, border width, content width).
 
-## Why this folder appeared on 2026-09-06
+## How it works
 
-🛑 **BEFORE IT, THE SERVICE READ ITS PALETTE FROM A FILE BELONGING TO PORT 3000** — `DESIGN_CONFIG_PATH`
-in `.env.local` pointed at `/opt/fractera/app/DESIGN-CONFIG/design-config.json`. It worked, and that
-hid the fragility: **the service's own defaults are empty** (`colors: { light: {}, dark: {} }`), so the
-day the owner deleted port 3000 the green would have vanished and the service would have turned grey.
+**The control panel (`:3002`) writes it. This application (`:3000`) reads it** — the same contract
+as `APP-CONFIG` and `PLATFORM-CONFIG`: one file, one writer, one reader, read per request, applied
+**without a rebuild**.
 
-The owner's word that day: "we need no other imports from the 3000 layer". The values were carried
-over **character for character**; not a pixel of the look changed: `primary` `#16a34a` in light,
-`#4ade80` in dark.
+At render time `lib/design-css.ts` turns the tokens into CSS and the root layout injects it into
+`<head>`, after the project theme. External font URLs are emitted as `<link>` rather than `@import`:
+the browser sees a link immediately, while an `@import` inside `<style>` costs an extra network
+round-trip before the font is even requested.
 
-## Shape
+## Schema and defaults
 
-```json
-{ "colors": { "light": { "primary": "#16a34a", … }, "dark": { "primary": "#4ade80", … } } }
-```
+Two **generated** files beside `design-config.json`, neither written by hand: **`schema.json`**
+(the shape) and **`defaults.json`**. Both from `npm run build:config-schemas`, guarded by
+`npm run check:config-schemas` in `prebuild`.
 
-Roles: `primary` · `accent` · `background` · `foreground` · `muted` · `border` · `destructive`.
-The single source of that list is `config/design-config.defaults.ts`, type `ColorRole`.
+🔒 **`defaults.json` here is deliberately almost empty**, and that is the honest answer: the
+defaults of APPEARANCE are not data, they are the project theme
+(`config/design/design-minimal-001.css`). Copying the palette into JSON would create a second
+palette that drifts from the first on the first edit — silently, because the page still looks
+fine, just not like the CSS says.
 
-🔒 **THE `light` AND `dark` BRANCHES ARE INDEPENDENT.** Editing one has no right to erase the other: a
-person tunes them at different times, and writing a whole snapshot would wipe the neighbour.
+It checks **types, not colours**: a number where `radius` expects a string is healed with the
+default, while `#0b0f19`, `oklch(…)` and `color-mix(…)` all pass untouched. Enumerating valid
+colour forms would forbid half of them and buy nothing — a wrong colour is visible on the first
+page, a wrong type is not.
 
-🔒 **READ ON EVERY REQUEST** (`config/design-config.ts`, `cache()` for the span of one request): an edit
-shows up on the next page load, no rebuild needed. That is what separates this folder from
-`REGISTRY-CONFIG`, which enters the build through a static import.
+## Skill
 
-🔒 **A MISSING FILE IS A LAWFUL STATE, NOT A BREAKAGE:** the service comes up on empty defaults. But it
-will look like the styling has been lost, which is why the file lives in git instead of being created
-by hand on the server.
+**`use-design-config`** — which token reaches which part of the interface, and what the theme
+already provides. The detail lives there, not here.
+
+## Rules
+
+- **Empty means "the theme decides".** Every value here is an OVERRIDE. A missing key is not a gap
+  to fill — it means the owner did not object to the project theme
+  (`config/design/design-minimal-001.css`), which ships a full palette in both light and dark.
+- **Never duplicate the theme's palette into this file.** Two palettes drift apart on the first edit
+  of either, and they drift silently: the page still looks fine, just not like the CSS says.
+- **Light and dark are separate values of the same role.** A colour set once is almost always wrong
+  on the other theme — dark text on a dark background disappears entirely.
+- **Values are not parsed, only checked for safety.** A colour may be `#0b0f19`, `oklch(…)` or
+  `color-mix(…)`; enumerating valid forms would forbid half of them. Values containing `{ } < > ;`
+  are dropped — that path ends in a `<style>` tag.
+- **No secrets here.** Colours and font names. This file is tracked by git.
+
+## Related
+
+`../APP-CONFIG/` — identity and menu · `../PLATFORM-CONFIG/` — feature switches. Same contract,
+different subject.

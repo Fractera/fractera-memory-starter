@@ -1,23 +1,12 @@
 // @api tell the browser who is signed in and with which roles
-import { NextResponse } from "next/server"
-import { fracteraSession } from "@/lib/fractera/session"
+import { NextRequest, NextResponse } from "next/server"
+import { getSession } from "@/lib/auth/get-session"
+import { withSiblingCors } from "@/lib/sibling-origin"
 
-// ЗЕРКАЛО ДВЕРИ ГОСТЕВОГО ПРИЛОЖЕНИЯ (156-1).
-//
-// 🔒 ВЗЯТО ОДИН В ОДИН С ПОРТА 3000 ПО СЛОВУ ВЛАДЕЛЬЦА 2026-09-07: «используй
-// полную зеркальную копию того, что существует на странице порт 3000». Там эта
-// дверь — соглашение слоя: островок спрашивает `/api/me`, а не `auth()` внутри
-// страницы. Переписывать доказанный конвейер входа запрещено законом проекта.
-//
-// 🔒 ОТЛИЧИЕ РОВНО ОДНО, И ОНО ОБЯЗАТЕЛЬНО: правду о человеке спрашиваем у СВОЕЙ
-// `fracteraSession()`, которая идёт в единственную службу входа `:3001`. Второй
-// способ узнать человека завёл бы вторую правду — ровно то, ради чего у чата нет
-// своего входа.
-//
-// 🛑 `401` ЗДЕСЬ — НЕ ОШИБКА, А ОТВЕТ «НИКТО». Островок читает его как «гость» и
-// рисует кнопку входа; страница при этом остаётся публичной.
-export async function GET() {
-  const session = await fracteraSession()
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  return NextResponse.json(session)
+// 🔒 СОСЕДНИЕ ЭЛЕМЕНТЫ УЗЛА ЧИТАЮТ ОТВЕТ (шаг 312): шапка элементов на `<id>.<зона>` спрашивает эту дверь из браузера —
+// своей двери «кто вошёл» у них нет. Кто считается своим — `lib/sibling-origin.ts` (одно правило на все такие двери).
+export async function GET(req: NextRequest) {
+  const session = await getSession(req)
+  if (!session) return withSiblingCors(req, NextResponse.json({ error: "Unauthorized" }, { status: 401 }))
+  return withSiblingCors(req, NextResponse.json(session))
 }

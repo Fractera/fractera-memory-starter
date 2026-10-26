@@ -1,0 +1,11 @@
+{
+  "title": "Эталонный нативный шаблон",
+  "description": "Эталонный стартовый шаблон нативного элемента Fractera.",
+  "blocks": [
+    {
+      "kind": "widget-static-reference-title",
+      "bid": "rf001"
+    }
+  ],
+  "keywords": ""
+}

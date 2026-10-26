@@ -1,21 +1,21 @@
 {
   "colors": {
     "light": {
-      "primary": "#16a34a",
-      "accent": "#4ade80",
+      "primary": "#2563eb",
+      "accent": "#60a5fa",
       "background": "#ffffff",
       "foreground": "#0f172a",
-      "muted": "#f0fdf4",
-      "border": "#dcfce7",
+      "muted": "#eff6ff",
+      "border": "#dbeafe",
       "destructive": "#ef4444"
     },
     "dark": {
-      "primary": "#4ade80",
-      "accent": "#15803d",
-      "background": "#0a1410",
-      "foreground": "#dcfce7",
-      "muted": "#14532d",
-      "border": "#166534",
+      "primary": "#60a5fa",
+      "accent": "#1d4ed8",
+      "background": "#0b1220",
+      "foreground": "#e2e8f0",
+      "muted": "#172554",
+      "border": "#1e3a8a",
       "destructive": "#f87171"
     }
   }

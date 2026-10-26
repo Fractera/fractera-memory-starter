@@ -1,11 +1,11 @@
 "use client"
 
 import * as React from "react"
+import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { XIcon } from "lucide-react"
 
 function Dialog({
   ...props
@@ -39,7 +39,7 @@ function DialogOverlay({
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-black/80 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
         className
       )}
       {...props}
@@ -47,15 +47,18 @@ function DialogOverlay({
   )
 }
 
-// 🔒 `closeLabel` ДОБАВЛЕН НАМИ (137-3, 2026-09-06) — АДДИТИВНО, ПОВЕДЕНИЕ ПО
-// УМОЛЧАНИЮ НЕ ТРОНУТО. Компоненты, приехавшие из `fractera-next-starter`
-// (`components/dialog/app-dialog.client.tsx` и его потребители), передают сюда
-// подпись кнопки закрытия на языке страницы; тамошний примитив её принимает,
-// здешний — нет, и сборка падала на этом одном пропе.
-// Не задан — печатается прежнее «Close», байт в байт как было.
-// 🛑 ЭТО ПРАВКА ВЕНДОРЕННОГО ФАЙЛА, И ОНА ЖИВЁТ ДО СЛЕДУЮЩЕГО ОБНОВЛЕНИЯ
-// `vercel/ai-chatbot`. Найдя её потерянной, верните эти шесть строк, а не
-// правьте компоненты стартера: у них хозяин — соседний репозиторий.
+// 🔒 ПОДПИСЬ КРЕСТИКА — ПАРАМЕТР, А НЕ СТРОКА В КОДЕ (2026-08-17).
+//
+// Здесь стояло зашитое английское `Close`, и это не косметика: подпись читает
+// программа чтения с экрана, то есть единственный способ узнать назначение
+// кнопки для незрячего человека. Продукт живёт на 82 языках — и на каждом из
+// них окно закрывалось словом «Close».
+//
+// Умолчание оставлено английским НАМЕРЕННО: примитив не знает языка страницы и
+// знать не должен. Правильный вызов идёт через `AppDialog`
+// (`components/dialog/app-dialog.client.tsx`), который подставляет слово из
+// словаря; умолчание — страховка на случай прямого вызова, а не разрешение так
+// вызывать.
 function DialogContent({
   className,
   children,
@@ -64,31 +67,29 @@ function DialogContent({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
+  /** Подпись крестика для читалок экрана — на языке страницы. */
   closeLabel?: string
 }) {
   return (
-    <DialogPortal>
+    <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        aria-describedby={undefined}
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-6 rounded-4xl bg-background p-6 text-sm ring-1 ring-foreground/5 duration-100 outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
           className
         )}
         {...props}
       >
         {children}
         {showCloseButton && (
-          <DialogPrimitive.Close data-slot="dialog-close" asChild>
-            <Button
-              variant="ghost"
-              className="absolute top-4 right-4"
-              size="icon-sm"
-            >
-              <XIcon
-              />
-              <span className="sr-only">{closeLabel}</span>
-            </Button>
+          <DialogPrimitive.Close
+            data-slot="dialog-close"
+            className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+          >
+            <XIcon />
+            <span className="sr-only">{closeLabel}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>
@@ -100,7 +101,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-2", className)}
+      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
       {...props}
     />
   )
@@ -109,10 +110,13 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
 function DialogFooter({
   className,
   showCloseButton = false,
+  closeLabel = "Close",
   children,
   ...props
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean
+  /** Подпись кнопки закрытия — на языке страницы, см. DialogContent выше. */
+  closeLabel?: string
 }) {
   return (
     <div
@@ -126,7 +130,7 @@ function DialogFooter({
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close asChild>
-          <Button variant="outline">Close</Button>
+          <Button variant="outline">{closeLabel}</Button>
         </DialogPrimitive.Close>
       )}
     </div>
@@ -140,7 +144,7 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("text-base leading-none font-medium", className)}
+      className={cn("text-lg leading-none font-semibold", className)}
       {...props}
     />
   )
@@ -153,10 +157,7 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn(
-        "text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
-        className
-      )}
+      className={cn("text-sm text-muted-foreground", className)}
       {...props}
     />
   )

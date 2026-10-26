@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "target": "ES2017",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,17 +23,28 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
-    },
-    "strictNullChecks": true
+      "@/*": [
+        "./*"
+      ],
+      "@features/*": [
+        "./lib/*"
+      ]
+    }
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "next.config.js",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "**/*.mts",
+    ".next-a/types/**/*.ts",
+    ".next-a/dev/types/**/*.ts",
+    ".next-b/types/**/*.ts",
+    ".next-b/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "WEB4-ITEMS"
+  ]
 }

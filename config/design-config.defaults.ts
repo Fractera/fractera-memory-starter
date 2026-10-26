@@ -92,6 +92,12 @@ export type DesignConfig = {
     appWidth?: string
     heroWidth?: string
   }
+
+  /**
+   * Настройки блоков (шаг 308-1, владелец 2026-09-26): первый экран по центру — наибольшая ширина и размер заголовка
+   * на телефоне, планшете и компьютере, в пикселях. Приходят из CONFIG и применяются на лету (сигнал 306).
+   */
+  blocks?: { heroOneWidth?: number; heroOneSize?: { mobile?: number; tablet?: number; desktop?: number } }
 }
 
 export const DEFAULT_DESIGN_CONFIG: DesignConfig = {
@@ -108,6 +114,7 @@ export function isDesignConfigEmpty(cfg: DesignConfig): boolean {
     Object.keys(cfg.colors?.dark ?? {}).length === 0 &&
     Object.keys(cfg.fonts ?? {}).length === 0 &&
     Object.keys(cfg.type ?? {}).length === 0 &&
-    Object.keys(cfg.shape ?? {}).length === 0
+    Object.keys(cfg.shape ?? {}).length === 0 &&
+    Object.keys(cfg.blocks ?? {}).length === 0
   )
 }

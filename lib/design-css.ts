@@ -1,9 +1,7 @@
-import "server-only";
-import { getDesignConfig } from "@/config/design-config";
-import {
-  type DesignConfig,
-  isDesignConfigEmpty,
-} from "@/config/design-config.defaults";
+import "server-only"
+import { getDesignConfig } from "@/config/design-config"
+import { isDesignConfigEmpty, type DesignConfig } from "@/config/design-config.defaults"
+import LOCAL_FONTS from "@/lib/design/local-fonts.json"
 
 // ОФОРМЛЕНИЕ ВЛАДЕЛЬЦА → CSS. Одна функция превращает настройки в правила,
 // которые перекрывают тему проекта.
@@ -36,9 +34,7 @@ import {
  * незачем.
  */
 function safe(value: unknown): value is string {
-  return (
-    typeof value === "string" && value.trim() !== "" && !/[{}<>;]/.test(value)
-  );
+  return typeof value === "string" && value.trim() !== "" && !/[{}<>;]/.test(value)
 }
 
 /**
@@ -52,34 +48,18 @@ function safe(value: unknown): value is string {
  * назвало бы синюю кнопку светлой.
  */
 function luminance(hex: string): number | null {
-  const m = hex.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
-  if (!m) {
-    return null;
-  }
-  const h =
-    m[1].length === 3
-      ? m[1]
-          .split("")
-          .map((c) => c + c)
-          .join("")
-      : m[1];
-  const [r, g, b] = [0, 2, 4].map(
-    (i) => Number.parseInt(h.slice(i, i + 2), 16) / 255
-  );
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const m = hex.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i)
+  if (!m) return null
+  const h = m[1].length === 3 ? m[1].split("").map(c => c + c).join("") : m[1]
+  const [r, g, b] = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255)
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
 /**
  * Цвета, у которых есть ПАРНЫЙ цвет текста поверх них. Список закрыт: это ровно
  * те роли темы, что объявлены вместе с `--…-foreground`.
  */
-const PAIRED = new Set([
-  "primary",
-  "secondary",
-  "accent",
-  "destructive",
-  "muted",
-]);
+const PAIRED = new Set(["primary", "secondary", "accent", "destructive", "muted"])
 
 /**
  * Строки `--role: value;` для одной темы, вместе с парным цветом текста.
@@ -93,30 +73,22 @@ const PAIRED = new Set([
  * «чёрным или белым» однозначно.
  */
 function colorVars(map: Record<string, string | undefined>): string[] {
-  const out: string[] = [];
+  const out: string[] = []
   for (const [role, v] of Object.entries(map)) {
-    if (!safe(v)) {
-      continue;
-    }
-    out.push(`  --${role}: ${v};`);
-    if (!PAIRED.has(role)) {
-      continue;
-    }
-    const l = luminance(v);
-    if (l === null) {
-      continue;
-    }
+    if (!safe(v)) continue
+    out.push(`  --${role}: ${v};`)
+    if (!PAIRED.has(role)) continue
+    const l = luminance(v)
+    if (l === null) continue
     // Порог 0.6, а не 0.5: белый текст теряется на средних тонах раньше, чем
     // чёрный, — глазу нужен больший запас на светлой стороне.
-    out.push(
-      `  --${role}-foreground: ${l > 0.6 ? "oklch(0.145 0 0)" : "oklch(0.985 0 0)"};`
-    );
+    out.push(`  --${role}-foreground: ${l > 0.6 ? "oklch(0.145 0 0)" : "oklch(0.985 0 0)"};`)
   }
-  return out;
+  return out
 }
 
 /**
- * Полный текст правил и список адресов внешних шрифтов.
+ * Полный текст правил и список адресов шрифтов на своём сервере.
  *
  * 🔒 АДРЕСА ШРИФТОВ ВОЗВРАЩАЮТСЯ ОТДЕЛЬНО, А НЕ ОСТАЮТСЯ `@import`-ом. Приём
  * взят у образца и решает конкретную задержку: `@import` внутри `<style>`
@@ -125,22 +97,20 @@ function colorVars(map: Record<string, string | undefined>): string[] {
  * оборот сети на первой отрисовке.
  */
 export function buildDesignCss(cfg: DesignConfig = getDesignConfig()): {
-  css: string;
-  fontLinks: string[];
+  css: string
+  fontLinks: string[]
 } {
-  if (isDesignConfigEmpty(cfg)) {
-    return { css: "", fontLinks: [] };
-  }
+  if (isDesignConfigEmpty(cfg)) return { css: "", fontLinks: [] }
 
-  const blocks: string[] = [];
-  const fontLinks: string[] = [];
+  const blocks: string[] = []
+  const fontLinks: string[] = []
 
   // ── Цвета ──────────────────────────────────────────────────────────────────
-  const light = colorVars(cfg.colors?.light ?? {});
-  const dark = colorVars(cfg.colors?.dark ?? {});
+  const light = colorVars(cfg.colors?.light ?? {})
+  const dark = colorVars(cfg.colors?.dark ?? {})
 
   // ── Шрифты, шкала, формы — всё это от темы не зависит и живёт в светлом блоке
-  const root: string[] = [...light];
+  const root: string[] = [...light]
 
   // 🔒 ИМЕНА ПЕРЕМЕННЫХ ЗАДАНЫ ТАБЛИЦЕЙ, А НЕ СКЛЕЙКОЙ ИЗ РОЛИ. Шаблон
   // `--font-${role}` давал для моноширинного `--font-mono` — а это имя УЖЕ
@@ -148,85 +118,70 @@ export function buildDesignCss(cfg: DesignConfig = getDesignConfig()): {
   // такого рода не падает и не видно в коде: побеждает то правило, что окажется
   // ниже, а какое окажется — зависит от порядка сборки.
   const FONT_VAR: Record<string, string> = {
-    body: "--font-body",
     heading: "--font-heading",
+    body: "--font-body",
     mono: "--font-mono-user",
-  };
+  }
 
   for (const [role, font] of Object.entries(cfg.fonts ?? {})) {
-    const varName = FONT_VAR[role];
-    if (!varName || !font || !safe(font.family)) {
-      continue;
-    }
+    const varName = FONT_VAR[role]
+    if (!varName || !font || !safe(font.family)) continue
     // 🔒 КАВЫЧКИ СТАВЯТСЯ ОДНОМУ ИМЕНИ, НО НЕ НАБОРУ. «Playfair Display» без
     // кавычек распадается на два слова, и браузер ищет шрифт «Playfair». А
     // системный вариант — это СПИСОК через запятую (`system-ui, -apple-system,
     // 'Segoe UI', …`), и кавычки вокруг него превращают весь список в одно
     // несуществующее имя: страница молча откатывается на шрифт по умолчанию
     // браузера, то есть выглядит сломанной ровно там, где выбран «системный».
-    const value = font.family.includes(",") ? font.family : `"${font.family}"`;
-    root.push(`  ${varName}: ${value};`);
-    if (
-      typeof font.import === "string" &&
-      /^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(font.import)
-    ) {
-      fontLinks.push(font.import);
-    }
+    const value = font.family.includes(",") ? font.family : `"${font.family}"`
+    root.push(`  ${varName}: ${value};`)
+    // 🔒 ШРИФТ ОТДАЁТ СВОЙ СЕРВЕР (шаг 315). Файлы лежат в `public/fonts/` (`scripts/local-fonts.mjs`), таблица —
+    // `lib/design/local-fonts.json`. Семейство ищется ПО ИМЕНИ, а не по `import`: в настройках, сохранённых до 315,
+    // там адрес Google — он не читается, подключается свой файл, переносить данные не нужно. Семейства нет в таблице — ссылки нет,
+    // и действует запасной системный шрифт: на чужой сервер страница не ходит ни при каком значении.
+    const local = LOCAL_FONTS.fonts.find(f => f.family === font.family)
+    if (local) fontLinks.push(`/fonts/${local.slug}.css`)
   }
 
   // Множитель шкалы — одно число на весь текст: примитив типографики считает
   // размеры от него. Границы жёсткие: вне их текст либо нечитаем, либо ломает
   // раскладку, а «владелец так захотел» здесь не аргумент — он не видит
   // последствий, пока не откроет каждую страницу.
-  if (
-    typeof cfg.type?.scale === "number" &&
-    cfg.type.scale >= 0.75 &&
-    cfg.type.scale <= 1.5
-  ) {
-    root.push(`  --type-scale: ${cfg.type.scale};`);
+  if (typeof cfg.type?.scale === "number" && cfg.type.scale >= 0.75 && cfg.type.scale <= 1.5) {
+    root.push(`  --type-scale: ${cfg.type.scale};`)
   }
-  if (
-    typeof cfg.type?.leading === "number" &&
-    cfg.type.leading >= 1 &&
-    cfg.type.leading <= 2.2
-  ) {
-    root.push(`  --type-leading: ${cfg.type.leading};`);
+  if (typeof cfg.type?.leading === "number" && cfg.type.leading >= 1 && cfg.type.leading <= 2.2) {
+    root.push(`  --type-leading: ${cfg.type.leading};`)
   }
 
   // Плотность — тот же приём, что у шкалы текста: одно число двигает воздух на
   // всех страницах, сохраняя разницу между контентными и рабочими экранами.
   // Границы те же по смыслу: ниже 0.5 страница слипается, выше 2 — рассыпается.
-  if (
-    typeof cfg.shape?.spaceScale === "number" &&
-    cfg.shape.spaceScale >= 0.5 &&
-    cfg.shape.spaceScale <= 2
-  ) {
-    root.push(`  --space-scale: ${cfg.shape.spaceScale};`);
+  if (typeof cfg.shape?.spaceScale === "number" && cfg.shape.spaceScale >= 0.5 && cfg.shape.spaceScale <= 2) {
+    root.push(`  --space-scale: ${cfg.shape.spaceScale};`)
   }
 
-  if (safe(cfg.shape?.radius)) {
-    root.push(`  --radius: ${cfg.shape.radius};`);
-  }
-  if (safe(cfg.shape?.borderWidth)) {
-    root.push(`  --border-width: ${cfg.shape.borderWidth};`);
-  }
-  if (safe(cfg.shape?.appWidth)) {
-    root.push(`  --app-w: ${cfg.shape.appWidth};`);
-  }
-  if (safe(cfg.shape?.heroWidth)) {
-    root.push(`  --hero-w: ${cfg.shape.heroWidth};`);
+  if (safe(cfg.shape?.radius)) root.push(`  --radius: ${cfg.shape.radius};`)
+  if (safe(cfg.shape?.borderWidth)) root.push(`  --border-width: ${cfg.shape.borderWidth};`)
+  if (safe(cfg.shape?.appWidth)) root.push(`  --app-w: ${cfg.shape.appWidth};`)
+  if (safe(cfg.shape?.heroWidth)) root.push(`  --hero-w: ${cfg.shape.heroWidth};`)
+
+  // Настройки блоков (308-1): первый экран по центру. Пиксели владельца — в rem с общим множителем шрифтов, чтобы
+  // `--type-scale` продолжал двигать и этот заголовок. Границы — вне их страница ломается, а не «становится другой».
+  const w = cfg.blocks?.heroOneWidth
+  if (typeof w === "number" && w >= 600 && w <= 2400) root.push(`  --hero-one-w: ${w}px;`)
+  const size = cfg.blocks?.heroOneSize ?? {}
+  const SIZE_VAR = { mobile: "--fs-hero-one", tablet: "--fs-hero-one-md", desktop: "--fs-hero-one-lg" } as const
+  for (const [k, v] of Object.entries(SIZE_VAR)) {
+    const px = size[k as keyof typeof SIZE_VAR]
+    if (typeof px === "number" && px >= 12 && px <= 120) root.push(`  ${v}: calc(${+(px / 16).toFixed(4)}rem * var(--type-scale));`)
   }
 
-  if (root.length) {
-    blocks.push(`:root {\n${root.join("\n")}\n}`);
-  }
+  if (root.length) blocks.push(`:root {\n${root.join("\n")}\n}`)
 
   // 🔒 ТЁМНАЯ ТЕМА — ОТДЕЛЬНЫМ БЛОКОМ И ТОЛЬКО ЦВЕТА. Класс `.dark` ставит
   // инлайн-скрипт; всё, что от темы не зависит (шрифт, скругление, ширина),
   // повторять здесь не нужно — оно уже стоит в `:root` и наследуется.
-  if (dark.length) {
-    blocks.push(`.dark {\n${dark.join("\n")}\n}`);
-  }
+  if (dark.length) blocks.push(`.dark {\n${dark.join("\n")}\n}`)
 
-  return { css: blocks.join("\n\n"), fontLinks: [...new Set(fontLinks)] };
+  return { css: blocks.join("\n\n"), fontLinks: [...new Set(fontLinks)] }
 }
