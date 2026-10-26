@@ -88,6 +88,7 @@ const ALLOWED = new Map([
   ['app/api/shell/[lang]/route.ts', 'шапка и подвал для служб узла'],
   ['app/api/users/[id]/route.ts', 'одна учётная запись'],
   ['app/api/users/route.ts', 'учётные записи'],
+  ['app/v1/[[...path]]/route.ts', 'договор глубокой памяти /v1/*: remember, recall, feedback и адреса (шаг узла 596-2; владелец 2026-10-25: «ничего не мешает нам установить эту память как нативный элемент»)'],
 ])
 
 const found = []

@@ -1,6 +1,6 @@
 {
-  "title": "Reference native template",
-  "description": "The reference starter template of a Fractera native element.",
+  "title": "Fractera Memory",
+  "description": "The deep memory of the node: it keeps what a person says — phrases, photos, documents, voice notes — and answers «remind me about» with the date and how sure it is.",
   "keywords": "",
   "blocks": [
     {

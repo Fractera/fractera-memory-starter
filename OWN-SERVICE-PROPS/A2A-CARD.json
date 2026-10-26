@@ -121,6 +121,101 @@
               "callers": [
                 "*"
               ]
+            },
+            {
+              "skill": "memory-remember",
+              "protocol": "http",
+              "method": "POST",
+              "path": "/v1/remember",
+              "key": "node-key",
+              "input": {
+                "text": "the taxi from the airport cost 40 euro",
+                "from": [
+                  "build"
+                ]
+              },
+              "output": {
+                "ok": true,
+                "text": "запомнил: …",
+                "objects": [],
+                "answer_id": "ans_12"
+              },
+              "errors": {
+                "400": "need-text · missing-params · unknown-service",
+                "401": "no node key",
+                "404": "through the tunnel"
+              },
+              "callers": [
+                "*"
+              ]
+            },
+            {
+              "skill": "memory-recall",
+              "protocol": "http",
+              "method": "POST",
+              "path": "/v1/recall",
+              "key": "node-key",
+              "input": {
+                "text": "how much was the taxi",
+                "from": [
+                  "build"
+                ]
+              },
+              "output": {
+                "ok": true,
+                "text": "…",
+                "certainty": "affirmative",
+                "depth_used": "standard",
+                "answer_id": "ans_13"
+              },
+              "errors": {
+                "400": "need-text · missing-params · unknown-service",
+                "401": "no node key",
+                "404": "through the tunnel"
+              },
+              "callers": [
+                "*"
+              ]
+            },
+            {
+              "skill": "memory-feedback",
+              "protocol": "http",
+              "method": "POST",
+              "path": "/v1/feedback",
+              "key": "node-key",
+              "input": {
+                "about": "ans_13",
+                "text": "right, but one line would do"
+              },
+              "output": {
+                "ok": true,
+                "text": "…"
+              },
+              "errors": {
+                "400": "need-text · missing-params · unknown-service",
+                "401": "no node key",
+                "404": "through the tunnel"
+              },
+              "callers": [
+                "*"
+              ]
+            },
+            {
+              "skill": "memory-recall",
+              "protocol": "http",
+              "method": "GET",
+              "path": "/v1/contract",
+              "key": "node-key",
+              "output": {
+                "ok": true,
+                "methods": []
+              },
+              "errors": {
+                "401": "no node key"
+              },
+              "callers": [
+                "*"
+              ]
             }
           ],
           "consumes": [
@@ -220,7 +315,14 @@
             "/api/settings/platform",
             "/api/settings/design",
             "/api/a2a/tasks",
-            "/api/own-service-props"
+            "/api/own-service-props",
+            "/v1/health",
+            "/v1/state",
+            "/v1/journal",
+            "/v1/sources",
+            "/v1/signals",
+            "/v1/objects",
+            "/v1"
           ],
           "a2aEndpoint": "/api/a2a",
           "a2aSkills": [
@@ -372,6 +474,67 @@
       ],
       "examples": [
         "Save this hero section for everyone"
+      ],
+      "inputModes": [
+        "application/json"
+      ],
+      "outputModes": [
+        "application/json"
+      ]
+    },
+    {
+      "id": "memory-remember",
+      "name": "Remember",
+      "description": "keep what a person said — a phrase, a photo, a PDF, a voice note — in the deep memory of the node. Not over A2A: an HTTP door — POST /v1/remember (extension https://fractera.ai/a2a/ext/node/v1, «doors»)",
+      "tags": [
+        "memory",
+        "remember",
+        "note",
+        "save",
+        "http-door"
+      ],
+      "examples": [
+        "Remember that the taxi from the airport cost 40 euro"
+      ],
+      "inputModes": [
+        "application/json"
+      ],
+      "outputModes": [
+        "application/json"
+      ]
+    },
+    {
+      "id": "memory-recall",
+      "name": "Remind me about",
+      "description": "answer from what people told the memory, with the date, the source and how sure it is. Not over A2A: an HTTP door — POST /v1/recall (extension https://fractera.ai/a2a/ext/node/v1, «doors»)",
+      "tags": [
+        "memory",
+        "recall",
+        "remind",
+        "search",
+        "http-door"
+      ],
+      "examples": [
+        "How much was the taxi from the airport?"
+      ],
+      "inputModes": [
+        "application/json"
+      ],
+      "outputModes": [
+        "application/json"
+      ]
+    },
+    {
+      "id": "memory-feedback",
+      "name": "Comment on an answer",
+      "description": "a comment on a previous answer of the memory, collected for its evolution. Not over A2A: an HTTP door — POST /v1/feedback (extension https://fractera.ai/a2a/ext/node/v1, «doors»)",
+      "tags": [
+        "memory",
+        "feedback",
+        "http-door"
+      ],
+      "examples": [
+        "Right, but one line would do"
       ],
       "inputModes": [
         "application/json"

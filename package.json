@@ -1,6 +1,6 @@
 {
-  "name": "fractera-native-item-starter",
-  "version": "0.1.0",
+  "name": "fractera-memory-starter",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "check:routes": "node scripts/check-routes.mjs",
@@ -138,5 +138,6 @@
   "optionalDependencies": {
     "@tailwindcss/oxide-linux-x64-gnu": "^4.3.0",
     "lightningcss-linux-x64-gnu": "^1.32.0"
-  }
+  },
+  "description": "Fractera Memory — the deep memory of a Fractera node: remember, recall, feedback over the node data layer"
 }

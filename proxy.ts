@@ -363,6 +363,10 @@ function languageRouter(request: NextRequest): NextResponse {
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
+  // 596-2: the deep memory's contract (`/v1/*`) has its own lock — the node key or the node's data secret, 404 through the tunnel
+  // (`lib/memory/door.mjs`); it is not a page, so neither the language redirect nor the showcase rule below applies to it.
+  if (pathname === "/v1" || pathname.startsWith("/v1/")) return NextResponse.next();
+
   // ── Job −1: ВИТРИНА НЕ ПРИНИМАЕТ ЗАПИСЬ (256-3) ──────────────────────────
   //
   // 🔒 РЕШЕНИЕ ВЛАДЕЛЬЦА 2026-09-20, дословно: «если это Fractera — то индексацию

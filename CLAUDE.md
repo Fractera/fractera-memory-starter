@@ -147,3 +147,21 @@ the live answer) and what was not checked and why.
 
 **Proofread before you send.** Read the answer once more for stray characters from another script — CJK, Arabic, Devanagari
 or others inside Russian or English words are a frequent model artifact. Names and code stay as they are.
+
+## This element — the deep memory of the node (node step 596)
+
+You are the agent of `memory`: the element that keeps what a person said and answers «remind me about». The contract and how it is
+called — `README.md`, «Using the memory»; the exact shape — `GET /v1/contract` (generated from `lib/memory/contract.mjs`).
+- **The logic lives once, in `lib/memory/`**; where the node and its stores are — `lib/memory/node.mjs` (ports from the registry, the
+  core's OpenAI key first, the vector element's model and size, the graph space `memory`). The doors — `lib/memory/door.mjs`, mounted
+  at `app/v1/[[...path]]/route.ts`.
+- **Laws it is built by, unchanged from the memory's former line:** an answer comes only from what people told memory (its own answers
+  and comments are the conversation about memory, never facts); one table of messages; a fact always gets its subject; a guess carries
+  its basis; an empty scope means «I don't know when and where»; the depth reached is said, never the depth asked; thinking never goes
+  to OpenAI (it counts only vectors and voice transcripts); a store that fails is named by kind (`tool-unavailable`), never by port.
+- **On a node:** the graph builds nothing itself — the memory sends a ready graph into its own space; the vector element counts
+  nothing itself — the memory brings the vectors; the graph cannot forget yet; links are not read on the node; no timers, no polling —
+  the memory acts only when called.
+- The parsing and description calls run `claude -p` with Sonnet (text work), no tools unless named, no MCP, no session file, the
+  Telegram plugin off for the call, a hidden window — `lib/memory/think.mjs`. Each call takes the owner's subscription quota.
+- Changing a verb, the answer shape or the embedding model changes the contract every caller relies on — the owner's decision first.

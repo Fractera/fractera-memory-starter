@@ -1,10 +1,10 @@
 {
-  "id": "item",
-  "name": "Fractera Native Item",
-  "shortDescription": "",
-  "longDescription": "",
-  "accepts": "",
-  "returns": "",
+  "id": "memory",
+  "name": "Fractera Memory",
+  "shortDescription": "The deep memory of the node: say «remember» and it keeps a phrase, a photo, a PDF or a voice note; ask «remind me about» and it answers from what was said, with the date and how sure it is.",
+  "longDescription": "The memory of one architect, on the node. A phrase in any language is parsed once by Claude (the owner's subscription) into facts, and laid into the node's data layer: one table of messages (the data element), a vector for search by meaning (the vectors element), a ready graph of who and what is connected in the memory's own space of the graph element, and whole things in the object storage. A question climbs from cheap to expensive: the table, the graph, the vectors, one model call at most — and the answer says the depth it reached and how sure it is. A comment on an answer is collected for the evolution loop. Turned off by default: the node's main agent turns it on for a memory task.",
+  "accepts": "A phrase or a question in any language from the node's main agent or an element: POST /v1/remember, /v1/recall, /v1/feedback with the node key (X-Node-Key); files as multipart parts files with the JSON in the part payload.",
+  "returns": "One object: text for the person, ids of the stored things, certainty (affirmative · presumed · depends), the depth reached and an answer_id to comment on.",
   "designSkill": "impeccable",
   "isFracteraArchitecture": true,
   "framework": "next",
@@ -13,6 +13,7 @@
   "calls": [
     "auth",
     "data",
+    "graph",
     "config",
     "design"
   ],
@@ -20,5 +21,12 @@
     "h2a": true,
     "h2h": false,
     "a2a": false
+  },
+  "power": {
+    "default": "off",
+    "reason": {
+      "en": "Turned on for a memory task: «remember» and «remind me about» — the main agent turns it on and off",
+      "ru": "Включается на задачу памяти: «запомни» и «напомни о» — его включает и выключает главный агент"
+    }
   }
 }
