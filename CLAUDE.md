@@ -157,11 +157,15 @@ called — `README.md`, «Using the memory»; the exact shape — `GET /v1/contr
   at `app/v1/[[...path]]/route.ts`.
 - **Laws it is built by, unchanged from the memory's former line:** an answer comes only from what people told memory (its own answers
   and comments are the conversation about memory, never facts); one table of messages; a fact always gets its subject; a guess carries
-  its basis; an empty scope means «I don't know when and where»; the depth reached is said, never the depth asked; thinking never goes
-  to OpenAI (it counts only vectors and voice transcripts); a store that fails is named by kind (`tool-unavailable`), never by port.
+  its basis; an empty scope means «I don't know when and where»; the depth reached is said, never the depth asked; a store that fails
+  is named by kind (`tool-unavailable`), never by port. 🪦 «Thinking never goes to OpenAI» (owner 2026-09-09) — lifted by the owner
+  2026-10-26 (node step 597-2), his words:
+  «У OpenAI новая модель мини это Luna будем использовать её … это и быстрей дешевле даже обсуждать не будем сразу ставь по факту и всё».
 - **On a node:** the graph builds nothing itself — the memory sends a ready graph into its own space; the vector element counts
   nothing itself — the memory brings the vectors; the graph cannot forget yet; links are not read on the node; no timers, no polling —
   the memory acts only when called.
-- The parsing and description calls run `claude -p` with Sonnet (text work), no tools unless named, no MCP, no session file, the
-  Telegram plugin off for the call, a hidden window — `lib/memory/think.mjs`. Each call takes the owner's subscription quota.
+- The parsing and description calls go to OpenAI `gpt-6-luna` (the Responses API, reasoning low, the node's OpenAI key — the core's
+  first), an image or a PDF inside the request, the price of each call in the journal — `lib/memory/think.mjs`. Without an OpenAI key they
+  run `claude -p` with Sonnet as before (no tools unless named, no MCP, no session file, the Telegram plugin off, a hidden window), and that
+  takes the owner's subscription quota. `MEMORY_THINK_MODEL` overrides: a Claude name — the subscription, another — an OpenAI model.
 - Changing a verb, the answer shape or the embedding model changes the contract every caller relies on — the owner's decision first.

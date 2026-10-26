@@ -42,7 +42,8 @@ const answer = await fetch(`${base}/v1/recall`, { method: 'POST', headers, body:
 `from` is the caller's path: the first segment is an element id of this node, `build` (the main agent) or `core`; an unknown first
 segment refuses the call (`unknown-service`) and nothing is written.
 
-**Where a phrase goes.** One parsing call of Claude (the owner's subscription, Sonnet by default; `MEMORY_THINK_MODEL` overrides) finds
+**Where a phrase goes.** One parsing call of OpenAI `gpt-6-luna` (the node's OpenAI key — the core's first; without a key, Claude by the
+owner's subscription, Sonnet; `MEMORY_THINK_MODEL` overrides; node step 597-2) finds
 the facts. Then, all through the node's data layer:
 
 | Store | What lands there | Element |
@@ -55,7 +56,8 @@ the facts. Then, all through the node's data layer:
 Text longer than 2 000 words is kept whole as a thing and not parsed. The names of the graph's entities are indexed in
 `<SERVICE_DATA_DIR>/graph-labels.json`, the journal of the memory's work is `<SERVICE_DATA_DIR>/memory-log.md` — both outside git.
 
-**Things.** Audio — transcript by OpenAI `whisper-1` (the core's key), described by Claude; image and PDF — read whole by Claude; video —
+**Things.** Audio — transcript by OpenAI `whisper-1` (the core's key), then described by the thinking model; image and PDF — sent whole
+inside the request (`gpt-6-luna`; Claude reads them with its Read tool when there is no key); video —
 frames and sound by ffmpeg when the machine has it (otherwise a named refusal `describe-ffmpeg-failed`); code and text — analysed, never
 run. A loopback or private address in `media` is refused; a web page belongs in `links`.
 
