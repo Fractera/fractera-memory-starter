@@ -56,6 +56,16 @@ the facts. Then, all through the node's data layer:
 Text longer than 2 000 words is kept whole as a thing and not parsed. The names of the graph's entities are indexed in
 `<SERVICE_DATA_DIR>/graph-labels.json`, the journal of the memory's work is `<SERVICE_DATA_DIR>/memory-log.md` — both outside git.
 
+**A request no service of the node handles** («I need a selling headline for my landing page»). The same parsing call gives each request
+its English search words (`terms`, `themes`); the memory then looks for a ready solution (the Fractera marketplace — a stub, nothing yet)
+and for a skill to build one — **the node's skills base** (node step 598-3): the licensed skills of other projects every clone of the
+node brings, loaded into the node's SHARED graph (marks `skill:<source>:<skill>`). The memory only reads that graph (`space` is left out;
+it never writes there) with LightRAG's own threshold 0.5 — the one the core's `skills_find` uses — so a request far from every skill
+finds nothing instead of its nearest neighbour. Found → the answer's `requests[]` holds `proposal: "build-with-skill"` with up to three
+`skills` (skill, source, licence, section names) and the words «в базе навыков узла есть опыт других проектов: навык copywriting проекта
+coreyhaines (лицензия MIT) — …»; nothing found → `create-microservice`; the graph did not answer → the words say the base could not be
+asked. The memory proposes; building is the person's decision. The step of the journal: «реестр навыков: найдено N — <skills>».
+
 **Things.** Audio — transcript by OpenAI `whisper-1` (the core's key), then described by the thinking model; image and PDF — sent whole
 inside the request (`gpt-6-luna`; Claude reads them with its Read tool when there is no key); video —
 frames and sound by ffmpeg when the machine has it (otherwise a named refusal `describe-ffmpeg-failed`); code and text — analysed, never
@@ -89,6 +99,7 @@ A repository that does not keep this contract is refused; the node does not bend
 
 ## Proven by
 
-Node steps 596-2 … 596-5 — the record of each in the node's accounting (`/code/development-docs/development-steps/completed-steps/596-*.md`).
+Node steps 596-2 … 596-5, 597-2, 597-3, 598-3 — the record of each in the node's accounting
+(`/code/development-docs/development-steps/completed-steps/`).
 
 License: MIT.

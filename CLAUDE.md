@@ -168,4 +168,7 @@ called — `README.md`, «Using the memory»; the exact shape — `GET /v1/contr
   first), an image or a PDF inside the request, the price of each call in the journal — `lib/memory/think.mjs`. Without an OpenAI key they
   run `claude -p` with Sonnet as before (no tools unless named, no MCP, no session file, the Telegram plugin off, a hidden window), and that
   takes the owner's subscription quota. `MEMORY_THINK_MODEL` overrides: a Claude name — the subscription, another — an OpenAI model.
+- A request no service of the node handles is looked for in **the node's skills base** (node step 598-3): the shared graph, read only
+  (`graphCall(…, { space: null })` refuses any door but `graph-query`), LightRAG's threshold 0.5, the request's English `terms` and
+  `themes` from the same parsing call — `lib/memory/solution-search.mjs`, README «A request no service of the node handles».
 - Changing a verb, the answer shape or the embedding model changes the contract every caller relies on — the owner's decision first.
