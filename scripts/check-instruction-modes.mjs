@@ -14,7 +14,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 // 590-5: проходы строительства — у прохода дизайна и прохода текстов свой файл законов (мост кладёт его после build.md); разделы
 // «Design skill» и «Texts» переехали туда, в build.md остался раздел «Passes».
 const PLACE = {
-  'CLAUDE.md': ['Process —', 'Two natures', 'On wake', 'Skills by group', 'Outbound A2A guard', 'Protocols', 'How you report'],
+  'CLAUDE.md': ['1. Role and goal', '2. Where you live', '3. Your session', '4. Process', '5. On wake', '6. Protocols', '7. Laws everywhere', '8. Skills by group', '9. Glossary', '10. Where the details are', '12. Evolution'],
   '.claude/modes/build.md': ['Confirm the request first', 'Plan the checks before the work', 'Steps', 'Skills of the build session',
     'Passes', 'Page', 'Report what a person can see', 'Tree'],
   '.claude/modes/build-design.md': ['The design pass', 'Design skill'],
