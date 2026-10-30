@@ -99,7 +99,7 @@ A repository that does not keep this contract is refused; the node does not bend
 
 ## Proven by
 
-Node steps 596-2 … 596-5, 597-2, 597-3, 598-3 — the record of each in the node's accounting
-(`/code/development-docs/development-steps/completed-steps/`).
+Node steps 596-2 … 596-5, 597-2, 597-3, 598-3 of the federal development layer (2026-10-26); their records stayed with that layer, which
+the node no longer uses.
 
 License: MIT.
