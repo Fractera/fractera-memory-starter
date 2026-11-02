@@ -37,7 +37,7 @@ skill itself: a `<!-- PROOF … -->` mark under its header). Vendored skills are
 | `connect-own-domain` | ours, `build-skills` | the person asks «connect my domain»: buy it, the node adds the zone and gives two name servers, the registrar step (browser or words), measure ≤5 min, old domain → come back in 3–4 h, attach to this element | — not proven |
 | `own-domain-sign-in` | ours, `build-skills` | sign-in on this element's own domain goes through the node's sign-in center — why, what to tell the person, the cost of direct sign-in, how to check it is alive and the env marker that breaks it | — not proven |
 | `computer-off` | ours, `own-service-props-skills` | what still works with the computer off (the Cloudflare copy) and what waits for it | ✅ 2026-10-07 (report 2026-10-07-node-skills.md) |
-| `project-origin` | ours, `build-skills` | a project only from the person's own fork of fractera/web4; updates; moving to a new computer | — not proven |
+| `project-origin` | ours, `build-skills` | a project only from the person's own fork of Fractera/web4-node-starter-kit; updates; moving to a new computer | — not proven |
 | `github-repositories` | ours, `build-skills` | one private repository per element: created by a button, renamed with the element, tokens, import, restore | — not proven |
 | `temporary-domain` | ours, `build-skills` | the free trycloudflare address: not permanent, read-only panel, when it dies, switch to an own domain early | — not proven |
 | `local-node` | ours, `own-service-props-skills` | a private node at home: agents, data, automations, Telegram as the remote, a buyer node over a2a | ✅ 2026-10-07 (report 2026-10-07-node-skills.md) |
