@@ -173,7 +173,9 @@ called — `README.md`, «Using the memory»; the exact shape — `GET /v1/contr
   clock puts the words into the node's main chat through the core's notice door — no model, no agent (node step 636-8).
 - The parsing and description calls go to OpenAI `gpt-6-luna` (the Responses API, reasoning low, the node's OpenAI key — the core's
   first), an image or a PDF inside the request, the price of each call in the journal — `lib/memory/think.mjs`. Without an OpenAI key — or with an
-  empty account (node step 636-9: then OpenAI is asked again after an hour) — they run `claude -p` with Sonnet as before (no tools unless named, no MCP, no session file, the Telegram plugin off, a hidden window), and that
+  empty account (node step 636-9, the owner's rule: OpenAI when paid, the Anthropic subscription as the backup channel; OpenAI is asked
+  again after an hour; the person is warned once a day that a subscription used automatically can be limited or blocked) — they run
+  `claude -p` with Sonnet as before (no tools unless named, no MCP, no session file, the Telegram plugin off, a hidden window), and that
   takes the owner's subscription quota. `MEMORY_THINK_MODEL` overrides: a Claude name — the subscription, another — an OpenAI model.
 - A request no service of the node handles is looked for in **the node's skills base** (node step 598-3): the shared graph, read only
   (`graphCall(…, { space: null })` refuses any door but `graph-query`), the threshold 0.45 (node step 626-7), the request's English `terms` and
