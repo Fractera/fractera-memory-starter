@@ -169,8 +169,8 @@ called — `README.md`, «Using the memory»; the exact shape — `GET /v1/contr
   it sends texts, and the vector element counts them through the node's `embeddings` (node step 626-6); «remember» asks `embeddings`
   whether it counts before its thinking call and calls no model when it does not; the graph cannot forget yet; links are not read on
   the node; no polling — the memory acts when called, and its only timer is its clock (node step 636): a reminder — `remember` with
-  `remind` — is an entry of its own calendar (`data/cron.json`, event `agent-task`, `lib/memory/reminder.mjs`); at that minute the clock
-  wakes this element's agent, which passes the words to the core's main agent (`npm run tell-core -- --alarm`).
+  `remind` — is an entry of its own calendar (`data/cron.json`, event `node-notice`, `lib/memory/reminder.mjs`); at that minute the
+  clock puts the words into the node's main chat through the core's notice door — no model, no agent (node step 636-8).
 - The parsing and description calls go to OpenAI `gpt-6-luna` (the Responses API, reasoning low, the node's OpenAI key — the core's
   first), an image or a PDF inside the request, the price of each call in the journal — `lib/memory/think.mjs`. Without an OpenAI key they
   run `claude -p` with Sonnet as before (no tools unless named, no MCP, no session file, the Telegram plugin off, a hidden window), and that

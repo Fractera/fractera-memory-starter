@@ -77,9 +77,9 @@ run. A loopback or private address in `media` is refused; a web page belongs in 
 **A reminder at a time — the memory's own essence (node step 636).** The owner of the node, 2026-11-03: «сейчас мы говорим о памяти
 у которой напоминания являются её собственной сутью … элемент вызывает тебя главного агента и передает тебе сообщение которые ты
 транслируешь». `remember` with `remind` keeps the phrase as always and adds an entry to the memory's own calendar (`data/cron.json`,
-event `agent-task`, `lib/memory/reminder.mjs`); the core shows it under «Memory → Cron events». At that minute the memory's clock wakes
-the memory's agent, which passes the words to the core's main agent (`npm run tell-core -- --alarm`), and the main agent writes to the
-person. The date comes ready («YYYY-MM-DD HH:MM», local time): the agent that heard «через неделю» counts it; a wrong or past time
+event `node-notice`, `lib/memory/reminder.mjs`); the core shows it under «Memory → Cron events». At that minute the memory's clock puts
+the words into the node's main chat through the core's notice door — «⏰ Напоминание · Глубокая память», no model, no agent woken
+(node step 636-8; the owner: «события крон должны приходить не затрагивая искусственный интеллект»). The date comes ready («YYYY-MM-DD HH:MM», local time): the agent that heard «через неделю» counts it; a wrong or past time
 is refused and the phrase is not kept without its reminder. `POST /v1` reads «напомни мне через неделю …» as something to remember
 and says that the time is set by an agent. The core's side: `npm run remember -- "<words>" --remind-at "<YYYY-MM-DD HH:MM>"`.
 
@@ -90,8 +90,8 @@ and says that the time is set by an agent. The core's side: `npm run remember --
 - The graph cannot forget yet: the node's graph element deletes nothing, so a rolled-back thing may leave its graph document.
 - `depth: deep` and `extreme` are declared and not built; the answer always names the depth it reached.
 - Routing a request to another element by its words is weak on a node: the registry offers only what each element `provides`.
-- A reminder needs the memory on at its minute: the computer off, the element stopped or too little free memory for its agent's
-  session — the run is missed, and its calendar shows it.
+- A reminder needs the memory and the core on at its minute: the computer off or the element stopped — the run is missed, and its
+  calendar shows it.
 - No stands of the former line (memory, vector, graph, object, link benches), no own Telegram bot, no own key screens: the node's core
   gives every element its terminal, agent and keys.
 
