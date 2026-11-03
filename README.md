@@ -63,7 +63,7 @@ Text longer than 2 000 words is kept whole as a thing and not parsed. The names 
 its English search words (`terms`, `themes`); the memory then looks for a ready solution (the Fractera marketplace — a stub, nothing yet)
 and for a skill to build one — **the node's skills base** (node step 598-3): the licensed skills of other projects every clone of the
 node brings, loaded into the node's SHARED graph (marks `skill:<source>:<skill>`). The memory only reads that graph (`space` is left out;
-it never writes there) with LightRAG's own threshold 0.5 — the one the core's `skills_find` uses — so a request far from every skill
+it never writes there) with LightRAG's own threshold 0.45 (measured for the node's MiniLM vectors, node step 626-7) — the one the core's `skills_find` uses — so a request far from every skill
 finds nothing instead of its nearest neighbour. Found → the answer's `requests[]` holds `proposal: "build-with-skill"` with up to three
 `skills` (skill, source, licence, section names) and the words «в базе навыков узла есть опыт других проектов: навык copywriting проекта
 coreyhaines (лицензия MIT) — …»; nothing found → `create-microservice`; the graph did not answer → the words say the base could not be
