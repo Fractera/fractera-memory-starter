@@ -11,8 +11,8 @@ node step 596: the same contract — three verbs and one answer shape — over t
 ## Using the memory
 
 **Where it stands.** Port — the node gives it (`npm run a2a -- card memory` of the core, or the registry); never write the number into
-code. Turned off by default: the node's main agent turns it on for a memory task (`npm run element:power -- memory on` in the core) and
-off after it.
+code. On while the computer has more than 1 GB free (node step 601); otherwise the node's main agent turns it on for a memory task
+(`npm run element:power -- memory on` in the core) and off after it — except after a reminder: one waits in its calendar, so it stays on.
 
 **The lock.** A process of this node: the node key in `X-Node-Key` (every element's door) or the node's data secret in `X-Data-Secret`.
 Through the Cloudflare tunnel every address answers 404, even with a key. `GET /v1/health` is open on the machine.
@@ -22,7 +22,7 @@ required, the answer shape. Read it, do not rebuild a body from memory.
 
 | Verb | What it is |
 |---|---|
-| `POST /v1/remember` | say something to memory: `text` and/or files (multipart: JSON in the part `payload`, files in the parts `files`) or `media: [{url}]` |
+| `POST /v1/remember` | say something to memory: `text` and/or files (multipart: JSON in the part `payload`, files in the parts `files`) or `media: [{url}]`; `remind: {at: "YYYY-MM-DD HH:MM", repeat?, text?}` — also a reminder at that time (contract 6.1.0) |
 | `POST /v1/recall` | ask memory: a question in `text`, or nothing for everything known; `depth`: standard (built), deep · extreme (declared, not built) |
 | `POST /v1/feedback` | comment on a previous answer, named by its `answer_id` (`about`) |
 
@@ -74,6 +74,15 @@ inside the request (`gpt-6-luna`; Claude reads them with its Read tool when ther
 frames and sound by ffmpeg when the machine has it (otherwise a named refusal `describe-ffmpeg-failed`); code and text — analysed, never
 run. A loopback or private address in `media` is refused; a web page belongs in `links`.
 
+**A reminder at a time — the memory's own essence (node step 636).** The owner of the node, 2026-11-03: «сейчас мы говорим о памяти
+у которой напоминания являются её собственной сутью … элемент вызывает тебя главного агента и передает тебе сообщение которые ты
+транслируешь». `remember` with `remind` keeps the phrase as always and adds an entry to the memory's own calendar (`data/cron.json`,
+event `agent-task`, `lib/memory/reminder.mjs`); the core shows it under «Memory → Cron events». At that minute the memory's clock wakes
+the memory's agent, which passes the words to the core's main agent (`npm run tell-core -- --alarm`), and the main agent writes to the
+person. The date comes ready («YYYY-MM-DD HH:MM», local time): the agent that heard «через неделю» counts it; a wrong or past time
+is refused and the phrase is not kept without its reminder. `POST /v1` reads «напомни мне через неделю …» as something to remember
+and says that the time is set by an agent. The core's side: `npm run remember -- "<words>" --remind-at "<YYYY-MM-DD HH:MM>"`.
+
 ## What it cannot do (on a node, today)
 
 - Links: web pages and YouTube videos are not read on the node (no AI browser element; the YouTube reading did not move) — every link
@@ -81,6 +90,8 @@ run. A loopback or private address in `media` is refused; a web page belongs in 
 - The graph cannot forget yet: the node's graph element deletes nothing, so a rolled-back thing may leave its graph document.
 - `depth: deep` and `extreme` are declared and not built; the answer always names the depth it reached.
 - Routing a request to another element by its words is weak on a node: the registry offers only what each element `provides`.
+- A reminder needs the memory on at its minute: the computer off, the element stopped or too little free memory for its agent's
+  session — the run is missed, and its calendar shows it.
 - No stands of the former line (memory, vector, graph, object, link benches), no own Telegram bot, no own key screens: the node's core
   gives every element its terminal, agent and keys.
 

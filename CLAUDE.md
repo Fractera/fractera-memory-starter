@@ -166,13 +166,15 @@ called — `README.md`, «Using the memory»; the exact shape — `GET /v1/contr
 - **On a node:** the graph builds nothing itself — the memory sends a ready graph into its own space; the memory counts no vectors —
   it sends texts, and the vector element counts them through the node's `embeddings` (node step 626-6); «remember» asks `embeddings`
   whether it counts before its thinking call and calls no model when it does not; the graph cannot forget yet; links are not read on
-  the node; no timers, no polling — the memory acts only when called.
+  the node; no polling — the memory acts when called, and its only timer is its clock (node step 636): a reminder — `remember` with
+  `remind` — is an entry of its own calendar (`data/cron.json`, event `agent-task`, `lib/memory/reminder.mjs`); at that minute the clock
+  wakes this element's agent, which passes the words to the core's main agent (`npm run tell-core -- --alarm`).
 - The parsing and description calls go to OpenAI `gpt-6-luna` (the Responses API, reasoning low, the node's OpenAI key — the core's
   first), an image or a PDF inside the request, the price of each call in the journal — `lib/memory/think.mjs`. Without an OpenAI key they
   run `claude -p` with Sonnet as before (no tools unless named, no MCP, no session file, the Telegram plugin off, a hidden window), and that
   takes the owner's subscription quota. `MEMORY_THINK_MODEL` overrides: a Claude name — the subscription, another — an OpenAI model.
 - A request no service of the node handles is looked for in **the node's skills base** (node step 598-3): the shared graph, read only
-  (`graphCall(…, { space: null })` refuses any door but `graph-query`), LightRAG's threshold 0.5, the request's English `terms` and
+  (`graphCall(…, { space: null })` refuses any door but `graph-query`), the threshold 0.45 (node step 626-7), the request's English `terms` and
   `themes` from the same parsing call — `lib/memory/solution-search.mjs`, README «A request no service of the node handles».
 - Changing a verb, the answer shape or the embedding model changes the contract every caller relies on — the owner's decision first.
 
