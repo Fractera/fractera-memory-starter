@@ -42,8 +42,8 @@ const answer = await fetch(`${base}/v1/recall`, { method: 'POST', headers, body:
 `from` is the caller's path: the first segment is an element id of this node, `build` (the main agent) or `core`; an unknown first
 segment refuses the call (`unknown-service`) and nothing is written.
 
-**Where a phrase goes.** One parsing call of OpenAI `gpt-6-luna` (the node's OpenAI key — the core's first; without a key, Claude by the
-owner's subscription, Sonnet; `MEMORY_THINK_MODEL` overrides; node step 597-2) finds
+**Where a phrase goes.** One parsing call of OpenAI `gpt-6-luna` (the node's OpenAI key — the core's first; without a key or with an empty
+account — node step 636-9, OpenAI is asked again after an hour — Claude by the owner's subscription, Sonnet; `MEMORY_THINK_MODEL` overrides; node step 597-2) finds
 the facts. Before that call the memory asks the node's `embeddings` element one thing — whether it counts vectors (node step 626-6):
 the facts go to the graph and the phrase to the vector store, both counted there. A failed model or no answer — no model is called,
 the answer names the vector store (`tool-unavailable`), and the message keeps its row with the status `failed`; a model still loading
