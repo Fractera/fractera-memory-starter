@@ -44,12 +44,15 @@ segment refuses the call (`unknown-service`) and nothing is written.
 
 **Where a phrase goes.** One parsing call of OpenAI `gpt-6-luna` (the node's OpenAI key — the core's first; without a key, Claude by the
 owner's subscription, Sonnet; `MEMORY_THINK_MODEL` overrides; node step 597-2) finds
-the facts. Then, all through the node's data layer:
+the facts. Before that call the memory asks the node's `embeddings` element one thing — whether it counts vectors (node step 626-6):
+the facts go to the graph and the phrase to the vector store, both counted there. A failed model or no answer — no model is called,
+the answer names the vector store (`tool-unavailable`), and the message keeps its row with the status `failed`; a model still loading
+is waited for. Then, all through the node's data layer:
 
 | Store | What lands there | Element |
 |---|---|---|
 | relational | one table `messages_that_came_into_memory` — every incoming message and every answer | data (`POST /db/migrate`) |
-| vector | the phrase in the collection `memory-said`, comments in `memory-feedback`, cards of things in the objects collection | vectors (through data); the memory counts the vectors itself — the element's model and size, the core's OpenAI key first |
+| vector | the phrase in the collection `memory-said`, comments in `memory-feedback`, cards of things in the objects collection | vectors (through data); the memory sends texts, the vector element counts them through the node's `embeddings` (MiniLM-L12, 384 numbers, on this computer, no key) |
 | graph | a ready graph (the speaker, the subjects, short values, the place; the facts as links) in the space `memory` | graph (`/api/graph-insert`, `/api/graph-query`, node step 596-1) |
 | objects | whole things with their full description | storage (through data `/media`) |
 
@@ -85,7 +88,9 @@ run. A loopback or private address in `media` is refused; a web page belongs in 
 
 The logic lives once, in `lib/memory/` (verbs, parsing, reading, the stores) and `lib/memory/node.mjs` (where the node and its stores
 are). A new verb is a new entry of `METHODS` in `lib/memory/contract.mjs` plus its function in `RUN` of `lib/memory/door.mjs`. Changing
-the embedding model means re-counting every stored vector — the owner's decision.
+the embedding model (the node's `embeddings` element) means re-counting every stored vector — the owner's decision; the vector element
+sets a store of another model aside whole, and the thresholds of `said-vector.mjs`, `feedback-vector.mjs` and `fractera/objects.ts`
+are measured again.
 
 ## The contract a replacement must keep
 

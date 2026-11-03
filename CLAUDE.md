@@ -146,7 +146,7 @@ rules — `development-docs/README.md`; what was proven live and how — `develo
 You are the agent of `memory`: the element that keeps what a person said and answers «remind me about». The contract and how it is
 called — `README.md`, «Using the memory»; the exact shape — `GET /v1/contract` (generated from `lib/memory/contract.mjs`).
 - **The logic lives once, in `lib/memory/`**; where the node and its stores are — `lib/memory/node.mjs` (ports from the registry, the
-  core's OpenAI key first, the vector element's model and size, the graph space `memory`). The doors — `lib/memory/door.mjs`, mounted
+  core's OpenAI key first, whether the node's `embeddings` counts, the graph space `memory`). The doors — `lib/memory/door.mjs`, mounted
   at `app/v1/[[...path]]/route.ts`.
 - **Laws it is built by, unchanged from the memory's former line:** an answer comes only from what people told memory (its own answers
   and comments are the conversation about memory, never facts); one table of messages; a fact always gets its subject; a guess carries
@@ -154,9 +154,10 @@ called — `README.md`, «Using the memory»; the exact shape — `GET /v1/contr
   is named by kind (`tool-unavailable`), never by port. Thinking goes to OpenAI (the owner
   2026-10-26, node step 597-2, lifting his rule of 2026-09-09), his words:
   «У OpenAI новая модель мини это Luna будем использовать её … это и быстрей дешевле даже обсуждать не будем сразу ставь по факту и всё».
-- **On a node:** the graph builds nothing itself — the memory sends a ready graph into its own space; the vector element counts
-  nothing itself — the memory brings the vectors; the graph cannot forget yet; links are not read on the node; no timers, no polling —
-  the memory acts only when called.
+- **On a node:** the graph builds nothing itself — the memory sends a ready graph into its own space; the memory counts no vectors —
+  it sends texts, and the vector element counts them through the node's `embeddings` (node step 626-6); «remember» asks `embeddings`
+  whether it counts before its thinking call and calls no model when it does not; the graph cannot forget yet; links are not read on
+  the node; no timers, no polling — the memory acts only when called.
 - The parsing and description calls go to OpenAI `gpt-6-luna` (the Responses API, reasoning low, the node's OpenAI key — the core's
   first), an image or a PDF inside the request, the price of each call in the journal — `lib/memory/think.mjs`. Without an OpenAI key they
   run `claude -p` with Sonnet as before (no tools unless named, no MCP, no session file, the Telegram plugin off, a hidden window), and that

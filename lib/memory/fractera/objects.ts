@@ -1,5 +1,4 @@
 import { dataFetch, dataJson, dataService } from "./data-service";
-import { openAiKey, vectorOf } from "../node.mjs";
 import { forgetDocuments, learn } from "./knowledge";
 import { getMessage, getMessageByObject, insertMessage, objectIdsOfKind } from "../messages.mjs";
 // 596-2: the card of a stored file — the same fields the former stand's preview island read; the island itself did not move to the node.
@@ -355,13 +354,10 @@ export async function keep(input: {
   }
 
   try {
-    // 596-5: the node's vector element counts nothing itself — the memory brings the card's vector (the element's model and size).
-    const vec = (await vectorOf(card)) as { ok: boolean; vector?: number[]; why?: string };
-    if (!vec.ok || !vec.vector) throw new Error(vec.why ?? "no vector");
+    // 626-6: the memory sends the card's text; the vector element counts its vector through the node's `embeddings` element.
     const v = await dataJson<{ ok?: boolean }>("/vectors", {
       body: JSON.stringify({
         collection: OBJECT_COLLECTION,
-        embedding: vec.vector,
         id: vectorId(item.id),
         refId: item.id,
         refTable: "media",
@@ -439,12 +435,17 @@ export async function find(input: { k?: number; kind?: string; question: string 
     // таблице сообщений: взяв ровно `k` кандидатов, поиск ссылок отдал бы пустоту там, где первые `k` мест заняли документы.
     // Без рода поведение прежнее — кандидатов ровно `k`.
     const only = input.kind ? await objectIdsOfKind(input.kind) : null;
-    const probe = (await vectorOf(input.question)) as { ok: boolean; vector?: number[]; why?: string };
-    if (!probe.ok || !probe.vector) return { error: "no-vector", hits: [], lost: 0, near: [], ok: false };
-    const r = await dataJson<{ results?: { refId?: string; score: number; text?: string }[] }>("/vectors/search", {
-      body: JSON.stringify({ collection: OBJECT_COLLECTION, embedding: probe.vector, k: only ? Math.max(k * 10, 50) : k }),
-      method: "POST",
-    });
+    // 626-6: the question goes as text (`query`), counted by the vector element; its refusal (the node's `embeddings` does not
+    // count) is the vector's — `no-vector`, as when the memory counted the question itself.
+    let r: { results?: { refId?: string; score: number; text?: string }[] };
+    try {
+      r = await dataJson<{ results?: { refId?: string; score: number; text?: string }[] }>("/vectors/search", {
+        body: JSON.stringify({ collection: OBJECT_COLLECTION, k: only ? Math.max(k * 10, 50) : k, query: input.question }),
+        method: "POST",
+      });
+    } catch {
+      return { error: "no-vector", hits: [], lost: 0, near: [], ok: false };
+    }
     const rows = await mediaRows();
     const hits: ObjectHit[] = [];
     let lost = 0;
@@ -501,12 +502,12 @@ export async function open(input: { id: string; from?: number }): Promise<
 /** Что лежит в объектах памяти и настроен ли склад карточек. */
 export async function status(): Promise<{ configured: boolean; objects: ObjectCard[]; ok: boolean }> {
   try {
-    // 596-5: «configured» means the memory can count a card's vector — the vector element answers and an OpenAI key is found.
-    await dataJson<{ ok?: boolean }>("/vectors/status");
+    // 626-6: «configured» means a card can be stored and found by meaning — the vector element says its `embeddings` counts.
+    const s = await dataJson<{ configured?: boolean; ok?: boolean }>("/vectors/status");
     const own = await ownIds();
     const rows = await mediaRows();
     const objects = [...own].map((id) => rows.get(id)).filter(Boolean).map((m) => cardOf(m as MediaRow));
-    return { configured: Boolean(openAiKey()), objects, ok: true };
+    return { configured: s.configured === true, objects, ok: true };
   } catch {
     return { configured: false, objects: [], ok: false };
   }
