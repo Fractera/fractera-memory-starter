@@ -42,6 +42,7 @@ function SectionView({ section }: { section: Section }) {
     case "spaces": return <Spaces section={section} />
     case "files": return <Hood section={section} />
     case "talk": return <Agent section={section} />
+    case "remind": return <Agent section={section} /> // 656: reminders at a time — words left, the chat and the ⏰ notice right
     case "agent": return <Agent section={section} />
     case "turn-on": return <Steps section={section} />
     case "connect": return <Connect section={section} />

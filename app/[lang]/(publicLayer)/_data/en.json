@@ -1,7 +1,7 @@
 {
   "title": "A memory that keeps what you tell it",
-  "description": "The deep memory of a Fractera node keeps the phrases, photos, PDFs and voice notes you send to your main agent and answers «remind me about» with the date, the source and how sure it is. It runs on your own computer.",
-  "keywords": "AI memory, personal memory, remember, remind me, voice notes, PDF search, search by meaning, Telegram, Claude Code, Fractera, open source",
+  "description": "The deep memory of a Fractera node keeps the phrases, photos, PDFs and voice notes you send to your main agent, answers «remind me about» with the date, the source and how sure it is, and reminds you of a task at the minute you set. It runs on your own computer.",
+  "keywords": "AI memory, personal memory, remember, remind me, voice notes, PDF search, search by meaning, Telegram, Claude Code, Fractera, open source, reminders at a time, calendar",
   "blocks": [
     { "kind": "widget-static-memory-landing", "bid": "mlw01" },
     {
@@ -22,7 +22,7 @@
     { "kind": "text-p", "text": "Describes the file in words, turns a voice note into text, splits the phrase into facts and keeps them in your node.", "bid": "mrp03" },
     { "kind": "text-h4", "text": "«Remind me about…»", "bid": "mrt04" },
     { "kind": "text-p", "text": "The answer gathers what you said, with the date, the source and how sure it is. If it found a thing, you get its file.", "bid": "mrp04" },
-    { "kind": "text-small", "text": "While your computer has more than 1 GB free, the memory stays on. With less, your main agent turns it on for a task and off again.", "bid": "mrs01" },
+    { "kind": "text-small", "text": "While your computer has more than 1 GB free, the memory stays on. With less, your main agent turns it on for a task and off again. If a reminder waits in its calendar, it stays on.", "bid": "mrs01" },
     { "kind": "block-section-head", "id": "solves", "title": "What changes for you", "bid": "mss01" },
     {
       "kind": "text-table",
@@ -32,7 +32,8 @@
         ["Search finds only the exact words you typed", "It finds things by meaning, in any language"],
         ["A photo is a file without words", "A photo is described in words and found by what is on it"],
         ["You never know where an answer came from", "Every answer names the date, the source and how sure it is"],
-        ["Your notes sit on someone else's server", "They stay on your computer, inside your node"]
+        ["Your notes sit on someone else's server", "They stay on your computer, inside your node"],
+        ["The reminder lives in one app and what it is about in another", "Say «remind me tomorrow at 9…», and the memory keeps the phrase and puts an entry into its own calendar"]
       ],
       "bid": "mst01"
     },
@@ -42,6 +43,20 @@
     { "kind": "text-p", "text": "The main agent writes into its own space and reads them all. What you kept before the spaces came stays with it.", "bid": "msp04" },
     { "kind": "text-p", "text": "Clearing the journal clears the journal of the element that asked. The main agent clears an element's journal only when it names the element.", "bid": "msp05" },
     { "kind": "text-p", "text": "The spaces decide what the memory answers. You own the computer and its disk, and nothing on it is hidden from you.", "bid": "msp06" },
+    { "kind": "block-section-head", "id": "remind", "title": "A reminder at the minute you set", "bid": "mrm01" },
+    { "kind": "text-p", "text": "Tell your main agent «remind me tomorrow at 9 to call mum» or «in a week, remind me about my brother's birthday». It works out the date itself. The phrase is kept as usual, and an entry goes into the memory's calendar.", "bid": "mrm02" },
+    { "kind": "text-p", "text": "At that minute the memory's clock posts the words into your main chat by itself, marked «⏰ Reminder». No model takes part, and no tokens are spent.", "bid": "mrm03" },
+    {
+      "kind": "text-list",
+      "items": [
+        "Repeats: once, every day, on weekdays, every week, every month or every year.",
+        "The agent answers with the date in words, and the entry shows in the node's menu: «Deep memory → Cron events».",
+        "A wrong or past time is refused, and the phrase is not kept without its reminder.",
+        "If the computer is off at that minute, the reminder does not come, and the calendar shows the missed run."
+      ],
+      "bid": "mrm04"
+    },
+    { "kind": "text-code", "text": "You: remind me tomorrow at 9\nto call mum\n\nAgent: I will remind you:\nFriday, 6 November 2026\nat 09:00 — «call mum».\nThe entry is in the memory's\ncalendar.\n\nFriday, 09:00, main chat:\n⏰ Reminder · Deep memory\ncall mum", "bid": "mrm05" },
     { "kind": "block-section-head", "id": "files", "title": "What it does with each kind of file", "bid": "msf01" },
     {
       "kind": "text-table",
@@ -62,7 +77,8 @@
       "kind": "text-list",
       "items": [
         "«remember…», «note down», «save this», «don't forget» — the memory keeps it.",
-        "«remind me about…», «what did I say about…» — the memory answers.",
+        "«remind me about…», «what did I say about…» — the memory answers with what you said before.",
+        "«remind me tomorrow at 9…», «every Monday, remind me…» — the memory puts a reminder into its calendar.",
         "A photo, a document or a voice note with a few words — kept together and found together."
       ],
       "bid": "mkl01"
