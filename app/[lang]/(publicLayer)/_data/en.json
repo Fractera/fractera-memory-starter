@@ -38,11 +38,11 @@
       "bid": "mst01"
     },
     { "kind": "block-section-head", "id": "spaces", "title": "Whose memory it is", "bid": "msp01" },
-    { "kind": "block-access-map", "outer": {"title": "The main agent of the node", "text": "Reads every space: what was said through each element of the node."}, "spaces": [{"title": "Mom's element", "text": "Only its own: what she told it, her files, its answers to her."}, {"title": "Son's element", "text": "Only its own: his lessons and his questions."}, {"title": "Your site", "text": "Only its own: what was said through it."}], "between": "One element never finds what was said to another.", "bid": "msp02" },
-    { "kind": "text-p", "text": "A space is everything said through one element: its rows, its search by meaning, its links in the graph, its files. The element writes there and reads only there, whether it asks to remind, opens the journal or a file.", "bid": "msp03" },
-    { "kind": "text-p", "text": "The main agent writes into its own space and reads them all. What you kept before the spaces came stays with it.", "bid": "msp04" },
+    { "kind": "block-access-map", "outer": {"title": "The main agent of the node", "text": "Reads every space: what was said through each element of the node."}, "spaces": [{"title": "Mom's element", "text": "Only its own: what she told it, her files, its answers to her."}, {"title": "Son's element", "text": "Only its own: his lessons and his questions."}, {"title": "Your site", "text": "Only its own: what was said through it."}], "between": "Each element opens the memory with its own key, and one element never finds what was said to another.", "bid": "msp02" },
+    { "kind": "text-p", "text": "A space is everything said through one element: its rows, its search by meaning, its links in the graph, its files. The element's own key decides the space, so it writes and reads only there, whether it asks to remind, opens the journal or a file.", "bid": "msp03" },
+    { "kind": "text-p", "text": "The main agent writes into its own space and reads them all with the node's data key. What you kept before the spaces came stays with it.", "bid": "msp04" },
     { "kind": "text-p", "text": "Clearing the journal clears the journal of the element that asked. The main agent clears an element's journal only when it names the element.", "bid": "msp05" },
-    { "kind": "text-p", "text": "The spaces decide what the memory answers. You own the computer and its disk, and nothing on it is hidden from you.", "bid": "msp06" },
+    { "kind": "text-p", "text": "The stores behind the memory keep each element apart by its own key too. You own the computer and its disk, and nothing on it is hidden from you.", "bid": "msp06" },
     { "kind": "block-section-head", "id": "remind", "title": "A reminder at the minute you set", "bid": "mrm01" },
     { "kind": "text-p", "text": "Tell your main agent «remind me tomorrow at 9 to call mum» or «in a week, remind me about my brother's birthday». It works out the date itself. The phrase is kept as usual, and an entry goes into the memory's calendar.", "bid": "mrm02" },
     { "kind": "text-p", "text": "At that minute the memory's clock posts the words into your main chat by itself, marked «⏰ Reminder». No model takes part, and no tokens are spent.", "bid": "mrm03" },
@@ -96,10 +96,10 @@
     },
     { "kind": "text-small", "text": "Without the key the memory still keeps what you say, but it does not search by meaning and does not hear voice notes.", "bid": "mos01" },
     { "kind": "block-section-head", "id": "connect", "title": "Connect your element", "bid": "msc01" },
-    { "kind": "text-p", "text": "Any element of your node can keep things in the memory and ask it with two calls on this computer, using the node key.", "bid": "mcp01" },
+    { "kind": "text-p", "text": "Any element of your node can keep things in the memory and ask it with two calls on this computer, using its own key.", "bid": "mcp01" },
     {
       "kind": "text-code",
-      "text": "// In your element's server code, on this computer: the port and the node key come from the node\nconst base = `http://127.0.0.1:${port}`\nconst headers = { 'content-type': 'application/json', 'X-Node-Key': process.env.SETTINGS_SECRET }\n// from: the id of your element\nawait fetch(`${base}/v1/remember`, { method: 'POST', headers, body: JSON.stringify({ text: 'the taxi from the airport cost 40 euro', from: ['my-element'] }) })\nconst answer = await fetch(`${base}/v1/recall`, { method: 'POST', headers, body: JSON.stringify({ text: 'how much was the taxi?', from: ['my-element'] }) }).then((r) => r.json())\n// → { ok: true, text, objects, certainty, answer_id, … }",
+      "text": "// In your element's server code, on this computer: the port comes from the node, the key is your element's own\nconst base = `http://127.0.0.1:${port}`\nconst headers = { 'content-type': 'application/json', 'X-Element-Key': process.env.ELEMENT_KEY }\n// no from: your own key is your space\nawait fetch(`${base}/v1/remember`, { method: 'POST', headers, body: JSON.stringify({ text: 'the taxi from the airport cost 40 euro' }) })\nconst answer = await fetch(`${base}/v1/recall`, { method: 'POST', headers, body: JSON.stringify({ text: 'how much was the taxi?' }) }).then((r) => r.json())\n// → { ok: true, text, objects, certainty, answer_id, … }",
       "bid": "mcc01"
     },
     { "kind": "text-p", "text": "The answer carries the text, the things it found, how sure it is and an `answer_id`. Your element can comment on the answer with `POST /v1/feedback`, and the full contract is at `GET /v1/contract`.", "bid": "mcp02" },

@@ -247,6 +247,19 @@
               }
             },
             {
+              "skill": "knowledge-graph",
+              "from": "graph",
+              "why": "the facts and links of each space (memory for the main agent, memory-<element> for an element) and the skills base in the shared graph, read only",
+              "protocol": "i2i",
+              "via": {
+                "kind": "http",
+                "method": "POST",
+                "path": "/api/graph-insert, /api/graph-query",
+                "base": "the graph element (the node registry)",
+                "key": "X-Data-Secret (DATA_SECRET)"
+              }
+            },
+            {
               "skill": "project-settings",
               "from": "config",
               "why": "name, texts and languages of the project, unless the CONFIG link is off",
