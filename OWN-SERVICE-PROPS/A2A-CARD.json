@@ -127,7 +127,7 @@
               "protocol": "http",
               "method": "POST",
               "path": "/v1/remember",
-              "key": "node-key",
+              "key": "X-Element-Key",
               "input": {
                 "text": "the taxi from the airport cost 40 euro",
                 "from": [
@@ -154,7 +154,7 @@
               "protocol": "http",
               "method": "POST",
               "path": "/v1/recall",
-              "key": "node-key",
+              "key": "X-Element-Key",
               "input": {
                 "text": "how much was the taxi",
                 "from": [
@@ -182,7 +182,7 @@
               "protocol": "http",
               "method": "POST",
               "path": "/v1/feedback",
-              "key": "node-key",
+              "key": "X-Element-Key",
               "input": {
                 "about": "ans_13",
                 "text": "right, but one line would do"
@@ -205,7 +205,7 @@
               "protocol": "http",
               "method": "GET",
               "path": "/v1/contract",
-              "key": "node-key",
+              "key": "X-Element-Key",
               "output": {
                 "ok": true,
                 "methods": []

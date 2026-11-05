@@ -189,6 +189,9 @@ called — `README.md`, «Using the memory»; the exact shape — `GET /v1/contr
 - **Spaces (node step 650-1, the owner 2026-11-05: «каждому элементу только своему», the main agent all):** the door puts every call
   into the caller's space (`lib/memory/space.mjs`) and the stores take it from there — never pass a space by hand; a call without
   `from` / `?source=` is refused. README «Spaces».
+- **Who you are is your key (node step 654-5):** the door opens with the node data key (`X-Data-Secret` — the main agent, every space)
+  or an element's own key (`X-Element-Key` — its space is the key's id, `from` may be left out, another's → 403 `space-not-yours`);
+  `X-Node-Key` opens it no more. The memory calls the graph with the node data key (`graphCall`, node step 654-4).
 
 ## 12. Evolution
 

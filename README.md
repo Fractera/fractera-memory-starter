@@ -14,7 +14,9 @@ node step 596: the same contract — three verbs and one answer shape — over t
 code. On while the computer has more than 1 GB free (node step 601); otherwise the node's main agent turns it on for a memory task
 (`npm run element:power -- memory on` in the core) and off after it — except after a reminder: one waits in its calendar, so it stays on.
 
-**The lock.** A process of this node: the node key in `X-Node-Key` (every element's door) or the node's data secret in `X-Data-Secret`.
+**The lock (node step 654-5, contract 8.0.0).** The node's data key in `X-Data-Secret` — the node, its main agent: every space — or an
+element's own key in `X-Element-Key` (`<element id>.<mac>`, written to the element by the node installer) — that element alone. The node
+key `X-Node-Key` opens the memory no more: every custom element holds it, and with it any of them could name any `from`.
 Through the Cloudflare tunnel every address answers 404, even with a key. `GET /v1/health` is open on the machine.
 
 **The contract.** `GET /v1/contract` serves it, generated from the code (`lib/memory/contract.mjs`) — names, parameters, which are
@@ -31,8 +33,13 @@ collections are `memory-said`, `memory-feedback`, `memory-objects` for `node` an
 space is `memory` for `node` and `memory-<element>` for an element; the label index and the journal are `graph-labels[--<element>].json`
 and `memory-log[--<element>].md` in the data folder. A call without its caller is refused (`source-required`), never served «all».
 «Forget» (`DELETE /v1/journal`) clears the caller's own journal; the main agent clears an element's journal only when it names its
-`space`. What the spaces do not stop: the stores behind the memory open with the node's shared keys, so a program of this computer
-holding them reaches the stores past the memory; the architect owns the computer and sees everything.
+`space`.
+
+**Who you are is your key (node step 654-5).** With an element's own key the space IS the key's id: `from` and `?source=` may be left
+out (they become the key's id); a `from` naming another element, `build` or `core` is refused (403 `space-not-yours`) and nothing is
+written or read. With the node's data key the caller names its space as before (`build` — the main agent). The stores behind the memory
+keep each element apart by its own key too (node step 654: its tables, files, vectors and graph space); the architect owns the computer
+and sees everything.
 
 | Verb | What it is |
 |---|---|
@@ -45,9 +52,9 @@ Addresses, not verbs: `GET /v1/state` (who and where I am) · `GET /v1/sources` 
 `POST /v1` with only `text` — memory picks the verb itself and says how it read the words in the first line.
 
 ```js
-// on the machine's loopback; the port and the node key from the node
+// on the machine's loopback; the port from the node; the main agent sends the node data key, an element its own key and no `from`
 const base = `http://127.0.0.1:${port}`
-const headers = { 'content-type': 'application/json', 'X-Node-Key': process.env.SETTINGS_SECRET }
+const headers = { 'content-type': 'application/json', 'X-Data-Secret': process.env.DATA_SECRET }
 await fetch(`${base}/v1/remember`, { method: 'POST', headers, body: JSON.stringify({ text: 'the taxi from the airport cost 40 euro', from: ['build'] }) })
 const answer = await fetch(`${base}/v1/recall`, { method: 'POST', headers, body: JSON.stringify({ text: 'how much was the taxi?', from: ['build'] }) }).then((r) => r.json())
 // → { ok: true, text, objects, certainty, depth_used, answer_id, … }
