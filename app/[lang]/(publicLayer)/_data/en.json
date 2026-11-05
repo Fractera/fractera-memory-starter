@@ -36,6 +36,12 @@
       ],
       "bid": "mst01"
     },
+    { "kind": "block-section-head", "id": "spaces", "title": "Whose memory it is", "bid": "msp01" },
+    { "kind": "block-access-map", "outer": {"title": "The main agent of the node", "text": "Reads every space: what was said through each element of the node."}, "spaces": [{"title": "Mom's element", "text": "Only its own: what she told it, her files, its answers to her."}, {"title": "Son's element", "text": "Only its own: his lessons and his questions."}, {"title": "Your site", "text": "Only its own: what was said through it."}], "between": "One element never finds what was said to another.", "bid": "msp02" },
+    { "kind": "text-p", "text": "A space is everything said through one element: its rows, its search by meaning, its links in the graph, its files. The element writes there and reads only there, whether it asks to remind, opens the journal or a file.", "bid": "msp03" },
+    { "kind": "text-p", "text": "The main agent writes into its own space and reads them all. What you kept before the spaces came stays with it.", "bid": "msp04" },
+    { "kind": "text-p", "text": "Clearing the journal clears the journal of the element that asked. The main agent clears an element's journal only when it names the element.", "bid": "msp05" },
+    { "kind": "text-p", "text": "The spaces decide what the memory answers. You own the computer and its disk, and nothing on it is hidden from you.", "bid": "msp06" },
     { "kind": "block-section-head", "id": "files", "title": "What it does with each kind of file", "bid": "msf01" },
     {
       "kind": "text-table",

@@ -1,6 +1,7 @@
 import { Bot, Brain, Check, CornerDownLeft, History, MessageCircle, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
+import { AccessMap } from "@/components/blocks/block-access-map"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { H1, H2, H3, Lead, P, Small } from "@/components/ui/typography"
 import { inline } from "@/lib/blocks/inline"
@@ -38,6 +39,7 @@ export function MemoryLanding({ lang }: { lang: string }) {
 function SectionView({ section }: { section: Section }) {
   switch (section.id) {
     case "solves": return <Contrast section={section} />
+    case "spaces": return <Spaces section={section} />
     case "files": return <Hood section={section} />
     case "talk": return <Agent section={section} />
     case "agent": return <Agent section={section} />
@@ -258,6 +260,23 @@ function Credits({ section }: { section: Section }) {
         <H2 data-block="jlepc" variant="ui">{section.title}</H2>
         {p && <Small data-block="tnzxr" className="max-w-[80ch] text-pretty [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4">{inline(p.text, "credits")}</Small>}
       </div>
+    </section>
+  )
+}
+
+/** Чья это память (узел, шаг 650-4): схема «кто что видит» — блок каталога `block-access-map` (заголовок раздела — его заголовок), под
+ * ней слова раздела. Владелец 2026-11-05: «схематически изобразите как память администратора доступно семь а внутри элементы доступны
+ * только свою пространство». */
+function Spaces({ section }: { section: Section }) {
+  const map = first(section, "block-access-map")
+  return (
+    <section data-block="dayt3" id={section.id} className={cn(WRAP, "scroll-mt-20 py-16 md:py-24")}>
+      {map ? (
+        <AccessMap blockKey={section.id} title={section.title} outer={map.outer} spaces={map.spaces} between={map.between} />
+      ) : (
+        <H2 data-block="vnh2v" className="text-balance">{section.title}</H2>
+      )}
+      {all(section, "text-p").map((p, i) => <P data-block="s9yyh" key={i} className="mt-5 max-w-[68ch] text-pretty">{inline(p.text, `spaces-${i}`)}</P>)}
     </section>
   )
 }

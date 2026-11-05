@@ -26,5 +26,12 @@
       "components/blocks/block-warning-card.tsx": "5df61d5693ef5224",
       "components/blocks/block-warning-card.card.json": "885f820f40f07da0"
     }
+  },
+  "block-access-map": {
+    "version": "1.0.0",
+    "files": {
+      "components/blocks/block-access-map.tsx": "f269fe0391902746",
+      "components/blocks/block-access-map.card.json": "3eaa0692eabd45da"
+    }
   }
 }
