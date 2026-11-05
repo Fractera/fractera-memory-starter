@@ -1,6 +1,8 @@
 import { dataFetch, dataJson, dataService } from "./data-service";
 import { forgetDocuments, learn } from "./knowledge";
-import { getMessage, getMessageByObject, insertMessage, objectIdsOfKind } from "../messages.mjs";
+import { getMessage, getMessageByObject, insertMessage, MESSAGES, objectIdsOfKind } from "../messages.mjs";
+import { collectionOf, rowsOf } from "../space.mjs";
+import { collectionsToSearch } from "../space-search.mjs";
 // 596-2: the card of a stored file — the same fields the former stand's preview island read; the island itself did not move to the node.
 type PreviewItem = {
   duration: number | null;
@@ -175,10 +177,12 @@ async function mediaRows(): Promise<Map<string, MediaRow>> {
 async function ownIds(): Promise<Set<string>> {
   const out = new Set<string>();
   try {
+    // 650-1: «наше» — карточки коллекций пространства вызова (своей — или всех, если вызов видит все).
+    const collections = await collectionsToSearch(OBJECT_COLLECTION);
     const r = await dataJson<{ rows?: { ref_id?: string }[] }>("/db/migrate", {
       body: JSON.stringify({
-        params: [OBJECT_COLLECTION],
-        sql: "SELECT ref_id FROM vectors WHERE collection = ? AND ref_table = 'media'",
+        params: collections,
+        sql: `SELECT ref_id FROM vectors WHERE collection IN (${collections.map(() => "?").join(", ")}) AND ref_table = 'media'`,
       }),
       method: "POST",
     });
@@ -188,7 +192,7 @@ async function ownIds(): Promise<Set<string>> {
     const r = await dataJson<{ rows?: { object_id?: string }[] }>("/db/migrate", {
       body: JSON.stringify({
         params: [],
-        sql: "SELECT DISTINCT object_id FROM messages_that_came_into_memory WHERE object_id IS NOT NULL",
+        sql: `SELECT DISTINCT object_id FROM ${rowsOf(MESSAGES)} WHERE object_id IS NOT NULL`,
       }),
       method: "POST",
     });
@@ -357,7 +361,8 @@ export async function keep(input: {
     // 626-6: the memory sends the card's text; the vector element counts its vector through the node's `embeddings` element.
     const v = await dataJson<{ ok?: boolean }>("/vectors", {
       body: JSON.stringify({
-        collection: OBJECT_COLLECTION,
+        // 650-1: карточка — в коллекцию пространства вызова.
+        collection: collectionOf(OBJECT_COLLECTION),
         id: vectorId(item.id),
         refId: item.id,
         refTable: "media",
@@ -437,12 +442,17 @@ export async function find(input: { k?: number; kind?: string; question: string 
     const only = input.kind ? await objectIdsOfKind(input.kind) : null;
     // 626-6: the question goes as text (`query`), counted by the vector element; its refusal (the node's `embeddings` does not
     // count) is the vector's — `no-vector`, as when the memory counted the question itself.
-    let r: { results?: { refId?: string; score: number; text?: string }[] };
+    // 650-1: в коллекции своего пространства — или в каждой, если вызов видит все; находки — ближние первыми.
+    type Found = { results?: { refId?: string; score: number; text?: string }[] };
+    let r: Found;
     try {
-      r = await dataJson<{ results?: { refId?: string; score: number; text?: string }[] }>("/vectors/search", {
-        body: JSON.stringify({ collection: OBJECT_COLLECTION, k: only ? Math.max(k * 10, 50) : k, query: input.question }),
-        method: "POST",
-      });
+      const want = only ? Math.max(k * 10, 50) : k;
+      const parts = await Promise.all(
+        (await collectionsToSearch(OBJECT_COLLECTION)).map((collection: string) =>
+          dataJson<Found>("/vectors/search", { body: JSON.stringify({ collection, k: want, query: input.question }), method: "POST" }),
+        ),
+      );
+      r = { results: parts.flatMap((p) => p.results ?? []).sort((a, b) => Number(b.score) - Number(a.score)) };
     } catch {
       return { error: "no-vector", hits: [], lost: 0, near: [], ok: false };
     }

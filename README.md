@@ -20,6 +20,20 @@ Through the Cloudflare tunnel every address answers 404, even with a key. `GET /
 **The contract.** `GET /v1/contract` serves it, generated from the code (`lib/memory/contract.mjs`) — names, parameters, which are
 required, the answer shape. Read it, do not rebuild a body from memory.
 
+**Spaces — whose memory it is (node step 650-1, contract 7.0.0).** Every call names its caller: `from` in a JSON body or a form,
+`?source=` in a `GET` or `DELETE` (`?from=` of an object is its text offset). The first segment decides the space:
+- an element id of the registry — that element's space: it writes there and reads only there, on every verb (recall, journal, sources,
+  signals, an object and its file, feedback, forget);
+- `build` or `core` — the node's main agent: it writes into the space `node` and reads every space, each finding with its source.
+
+Where a space lives: the rows of `messages_that_came_into_memory` carry `space` (`node` for everything kept before 650); the vector
+collections are `memory-said`, `memory-feedback`, `memory-objects` for `node` and `<the same>--<element>` for an element; the graph
+space is `memory` for `node` and `memory-<element>` for an element; the label index and the journal are `graph-labels[--<element>].json`
+and `memory-log[--<element>].md` in the data folder. A call without its caller is refused (`source-required`), never served «all».
+«Forget» (`DELETE /v1/journal`) clears the caller's own journal; the main agent clears an element's journal only when it names its
+`space`. What the spaces do not stop: the stores behind the memory open with the node's shared keys, so a program of this computer
+holding them reaches the stores past the memory; the architect owns the computer and sees everything.
+
 | Verb | What it is |
 |---|---|
 | `POST /v1/remember` | say something to memory: `text` and/or files (multipart: JSON in the part `payload`, files in the parts `files`) or `media: [{url}]`; `remind: {at: "YYYY-MM-DD HH:MM", repeat?, text?}` — also a reminder at that time (contract 6.1.0) |
@@ -89,6 +103,7 @@ and says that the time is set by an agent. The core's side: `npm run remember --
 - Links: web pages and YouTube videos are not read on the node (no AI browser element; the YouTube reading did not move) — every link
   gets `links-not-built-on-node`, the phrase is kept as usual.
 - The graph cannot forget yet: the node's graph element deletes nothing, so a rolled-back thing may leave its graph document.
+- The spaces split what the memory keeps; they are not a lock on the data layer (see «Spaces» above).
 - `depth: deep` and `extreme` are declared and not built; the answer always names the depth it reached.
 - Routing a request to another element by its words is weak on a node: the registry offers only what each element `provides`.
 - A reminder needs the memory and the core on at its minute: the computer off or the element stopped — the run is missed, and its

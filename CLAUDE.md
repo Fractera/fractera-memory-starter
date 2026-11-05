@@ -186,6 +186,9 @@ called — `README.md`, «Using the memory»; the exact shape — `GET /v1/contr
   (`graphCall(…, { space: null })` refuses any door but `graph-query`), the threshold 0.45 (node step 626-7), the request's English `terms` and
   `themes` from the same parsing call — `lib/memory/solution-search.mjs`, README «A request no service of the node handles».
 - Changing a verb, the answer shape or the embedding model changes the contract every caller relies on — the owner's decision first.
+- **Spaces (node step 650-1, the owner 2026-11-05: «каждому элементу только своему», the main agent all):** the door puts every call
+  into the caller's space (`lib/memory/space.mjs`) and the stores take it from there — never pass a space by hand; a call without
+  `from` / `?source=` is refused. README «Spaces».
 
 ## 12. Evolution
 
