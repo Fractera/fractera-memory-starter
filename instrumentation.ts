@@ -39,4 +39,8 @@ export async function register() {
   }
   const { startCron } = await import("./lib/cron/runner")
   startCron()
+  // 654-2 (memory only): the memory's files are private in the storage — one attempt at start, not awaited; while it has not
+  // finished, the next door call tries again (`lib/memory/fractera/objects.ts` `markOwnPrivate`, no timer).
+  void import("./lib/memory/fractera/objects").then(({ markOwnPrivate }) => markOwnPrivate()).then((r) =>
+    console.log(r.ok ? `[memory] 654-2: ${r.marked} file(s) of the memory marked private in the storage` : `[memory] 654-2: files not marked yet (${r.why}) — the next door call tries again`))
 }

@@ -319,6 +319,8 @@ export async function keep(input: {
   form.append("title", title || name);
   // Полное описание лежит рядом с файлом; без него — саммари, как было до 194-4.
   form.append("description", full || about);
+  // 654-2: a thing a person told the memory is private in the storage — no page of any element serves it (node step 654-2).
+  form.append("visibility", "private");
 
   let item: MediaRow | undefined;
   try {
@@ -498,7 +500,8 @@ export async function open(input: { id: string; from?: number }): Promise<
     const card = cardOf(m);
     if (!card.text) return { card, from: 0, ok: true, shown: 0, text: null, total: 0 };
 
-    const res = await dataFetch(`/media/${id}/file`);
+    // 654-2: the memory's files are private — the storage gives them only when asked by name.
+    const res = await dataFetch(`/media/${id}/file?private=1`);
     if (!res.ok) return { error: "file-missing", ok: false };
     const whole = await res.text();
     const from = Math.max(0, Math.min(Number(input.from ?? 0) || 0, whole.length));
@@ -564,7 +567,7 @@ export async function fileOf(
     if (!(await ownIds()).has(key)) return { error: "not-ours", ok: false };
     const row = (await mediaRows()).get(key);
     if (!row) return { error: "not-found", ok: false };
-    const res = await dataFetch(`/media/${key}/file`);
+    const res = await dataFetch(`/media/${key}/file?private=1`);
     if (!res.ok) return { error: res.status === 404 ? "file-missing" : "store-refused", ok: false };
     // Код, положенный до 194-10, мог лечь `video/mp2t` — отдаём его текстом по имени, а не по записи.
     const mime = isCodeName(String(row.name ?? "")) ? CODE_MIME : String(row.mime_type ?? "");
@@ -722,4 +725,46 @@ export async function ingest(input: {
     summary,
     title,
   };
+}
+
+/**
+ * 654-2: THE MEMORY'S FILES ARE PRIVATE IN THE STORAGE. The owner of the node, 2026-11-05: «объектное хранилище должно быть обновлено не
+ * только для использования глубинной памятью но и для использования просто внутри элемента». ✗ Measured the same day: the memory's
+ * `anna-650.txt` was served to anyone on the internet by every element's public route `/api/media/<id>/file`. New things go private at
+ * once (`keep`); the things kept before are marked here — every `object_id` of the memory's rows, in every space, that the storage still
+ * holds as public. One pass at the server's start and, while it has not finished, again at the next door call; no timer. A storage of an
+ * older release answers without `visibility` — nothing is marked then, and the next call tries again.
+ */
+let marked = false;
+let marking: Promise<{ ok: boolean; marked: number; why?: string }> | null = null;
+
+export function markOwnPrivate(): Promise<{ ok: boolean; marked: number; why?: string }> {
+  if (marked) return Promise.resolve({ ok: true, marked: 0 });
+  marking ??= (async () => {
+    try {
+      const rows = await dataJson<{ rows?: { object_id?: string }[] }>("/db/migrate", {
+        body: JSON.stringify({ params: [], sql: `SELECT DISTINCT object_id FROM ${MESSAGES} WHERE object_id IS NOT NULL` }),
+        method: "POST",
+      });
+      const ours = new Set((rows.rows ?? []).map((x) => String(x.object_id)));
+      const items = (await dataJson<{ items?: (MediaRow & { visibility?: string })[] }>("/media")).items ?? [];
+      if (items.length && items.every((m) => m.visibility === undefined)) return { marked: 0, ok: false, why: "storage-without-visibility" };
+      let count = 0;
+      for (const m of items) {
+        if (!ours.has(String(m.id)) || m.visibility === "private") continue;
+        const p = await dataJson<{ item?: { visibility?: string } }>(`/media/${m.id}`, {
+          body: JSON.stringify({ visibility: "private" }),
+          method: "PATCH",
+        });
+        if (p.item?.visibility === "private") count += 1;
+      }
+      marked = true;
+      return { marked: count, ok: true };
+    } catch (e) {
+      return { marked: 0, ok: false, why: e instanceof Error ? e.message : String(e) };
+    } finally {
+      marking = null;
+    }
+  })();
+  return marking;
 }

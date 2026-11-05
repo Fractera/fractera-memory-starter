@@ -104,6 +104,9 @@ and says that the time is set by an agent. The core's side: `npm run remember --
   gets `links-not-built-on-node`, the phrase is kept as usual.
 - The graph cannot forget yet: the node's graph element deletes nothing, so a rolled-back thing may leave its graph document.
 - The spaces split what the memory keeps; they are not a lock on the data layer (see «Spaces» above).
+- Its files are private in the storage (node step 654-2): new ones go `visibility: private`, the ones kept before are marked once at the
+  server's start (again at the next door call until done, no timer; the log line `[memory] 654-2: … marked private`), and the memory
+  reads them with `?private=1`. No page of any element serves them.
 - `depth: deep` and `extreme` are declared and not built; the answer always names the depth it reached.
 - Routing a request to another element by its words is weak on a node: the registry offers only what each element `provides`.
 - A reminder needs the memory and the core on at its minute: the computer off or the element stopped — the run is missed, and its
