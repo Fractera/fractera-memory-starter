@@ -3,49 +3,192 @@
   "description": "The deep memory of a Fractera node keeps the phrases, photos, PDFs and voice notes you send to your main agent, answers «remind me about» with the date, the source and how sure it is, and reminds you of a task at the minute you set. It runs on your own computer.",
   "keywords": "AI memory, personal memory, remember, remind me, voice notes, PDF search, search by meaning, Telegram, Claude Code, Fractera, open source, reminders at a time, calendar",
   "blocks": [
-    { "kind": "widget-static-memory-landing", "bid": "mlw01" },
+    {
+      "kind": "widget-static-memory-landing",
+      "bid": "mlw01"
+    },
     {
       "kind": "block-hero-centered",
       "pill": "OpenSource Web4 agent & app starter kit",
       "title": "A memory that keeps what you tell it",
       "description": "Say «remember» to your main agent in Telegram or in the terminal: a phrase, a photo, a PDF or a voice note. Months later ask «remind me about…», and the answer comes back with the date, the source and how sure the memory is. All of it stays on your own computer.",
-      "cta": { "label": "Start", "href": "#turn-on" },
-      "secondary": { "label": "Connect your element", "href": "#connect" },
+      "cta": {
+        "label": "Start",
+        "href": "#turn-on"
+      },
+      "secondary": {
+        "label": "Connect your element",
+        "href": "#connect"
+      },
       "bid": "mhr01"
     },
-    { "kind": "block-section-head", "id": "route", "title": "How a memory goes", "bid": "msr01" },
-    { "kind": "text-h4", "text": "You say «remember»", "bid": "mrt01" },
-    { "kind": "text-p", "text": "In your own words and in any language, with a photo, a document or a voice note if you like.", "bid": "mrp01" },
-    { "kind": "text-h4", "text": "Your main agent", "bid": "mrt02" },
-    { "kind": "text-p", "text": "Understands what you mean, not a fixed word, and hands the words and the file to the memory.", "bid": "mrp02" },
-    { "kind": "text-h4", "text": "The memory", "bid": "mrt03" },
-    { "kind": "text-p", "text": "Describes the file in words, turns a voice note into text, splits the phrase into facts and keeps them in your node.", "bid": "mrp03" },
-    { "kind": "text-h4", "text": "«Remind me about…»", "bid": "mrt04" },
-    { "kind": "text-p", "text": "The answer gathers what you said, with the date, the source and how sure it is. If it found a thing, you get its file.", "bid": "mrp04" },
-    { "kind": "text-small", "text": "While your computer has more than 1 GB free, the memory stays on. With less, your main agent turns it on for a task and off again. If a reminder waits in its calendar, it stays on.", "bid": "mrs01" },
-    { "kind": "block-section-head", "id": "solves", "title": "What changes for you", "bid": "mss01" },
+    {
+      "kind": "block-section-head",
+      "id": "route",
+      "title": "How a memory goes",
+      "bid": "msr01"
+    },
+    {
+      "kind": "text-h4",
+      "text": "You say «remember»",
+      "bid": "mrt01"
+    },
+    {
+      "kind": "text-p",
+      "text": "In your own words and in any language, with a photo, a document or a voice note if you like.",
+      "bid": "mrp01"
+    },
+    {
+      "kind": "text-h4",
+      "text": "Your main agent",
+      "bid": "mrt02"
+    },
+    {
+      "kind": "text-p",
+      "text": "Understands what you mean, not a fixed word, and hands the words and the file to the memory.",
+      "bid": "mrp02"
+    },
+    {
+      "kind": "text-h4",
+      "text": "The memory",
+      "bid": "mrt03"
+    },
+    {
+      "kind": "text-p",
+      "text": "Describes the file in words, turns a voice note into text, splits the phrase into facts and keeps them in your node.",
+      "bid": "mrp03"
+    },
+    {
+      "kind": "text-h4",
+      "text": "«Remind me about…»",
+      "bid": "mrt04"
+    },
+    {
+      "kind": "text-p",
+      "text": "The answer gathers what you said, with the date, the source and how sure it is. If it found a thing, you get its file.",
+      "bid": "mrp04"
+    },
+    {
+      "kind": "text-small",
+      "text": "While your computer has more than 1 GB free, the memory stays on. With less, your main agent turns it on for a task and off again. If a reminder waits in its calendar, it stays on.",
+      "bid": "mrs01"
+    },
+    {
+      "kind": "block-section-head",
+      "id": "power",
+      "title": "On while the computer has room",
+      "bid": "q0000"
+    },
+    {
+      "kind": "text-p",
+      "text": "While more than 1 GB is free on the computer, the memory is always on. With less, the main agent turns it on for a task and off after it. A reminder waiting in its calendar keeps it on.",
+      "bid": "q0001"
+    },
+    {
+      "kind": "block-section-head",
+      "id": "solves",
+      "title": "What changes for you",
+      "bid": "mss01"
+    },
     {
       "kind": "text-table",
-      "head": ["Without it", "With the deep memory"],
+      "head": [
+        "Without it",
+        "With the deep memory"
+      ],
       "rows": [
-        ["Notes, photos and voice messages are scattered across apps", "You send them to one bot, and the node keeps them together"],
-        ["Search finds only the exact words you typed", "It finds things by meaning, in any language"],
-        ["A photo is a file without words", "A photo is described in words and found by what is on it"],
-        ["You never know where an answer came from", "Every answer names the date, the source and how sure it is"],
-        ["Your notes sit on someone else's server", "They stay on your computer, inside your node"],
-        ["The reminder lives in one app and what it is about in another", "Say «remind me tomorrow at 9…», and the memory keeps the phrase and puts an entry into its own calendar"]
+        [
+          "Notes, photos and voice messages are scattered across apps",
+          "You send them to one bot, and the node keeps them together"
+        ],
+        [
+          "Search finds only the exact words you typed",
+          "It finds things by meaning, in any language"
+        ],
+        [
+          "A photo is a file without words",
+          "A photo is described in words and found by what is on it"
+        ],
+        [
+          "You never know where an answer came from",
+          "Every answer names the date, the source and how sure it is"
+        ],
+        [
+          "Your notes sit on someone else's server",
+          "They stay on your computer, inside your node"
+        ],
+        [
+          "The reminder lives in one app and what it is about in another",
+          "Say «remind me tomorrow at 9…», and the memory keeps the phrase and puts an entry into its own calendar"
+        ]
       ],
       "bid": "mst01"
     },
-    { "kind": "block-section-head", "id": "spaces", "title": "Whose memory it is", "bid": "msp01" },
-    { "kind": "block-access-map", "outer": {"title": "The main agent of the node", "text": "Reads every space: what was said through each element of the node."}, "spaces": [{"title": "Mom's element", "text": "Only its own: what she told it, her files, its answers to her."}, {"title": "Son's element", "text": "Only its own: his lessons and his questions."}, {"title": "Your site", "text": "Only its own: what was said through it."}], "between": "Each element opens the memory with its own key, and one element never finds what was said to another.", "bid": "msp02" },
-    { "kind": "text-p", "text": "A space is everything said through one element: its rows, its search by meaning, its links in the graph, its files. The element's own key decides the space, so it writes and reads only there, whether it asks to remind, opens the journal or a file.", "bid": "msp03" },
-    { "kind": "text-p", "text": "The main agent writes into its own space and reads them all with the node's data key. What you kept before the spaces came stays with it.", "bid": "msp04" },
-    { "kind": "text-p", "text": "Clearing the journal clears the journal of the element that asked. The main agent clears an element's journal only when it names the element.", "bid": "msp05" },
-    { "kind": "text-p", "text": "The stores behind the memory keep each element apart by its own key too. You own the computer and its disk, and nothing on it is hidden from you.", "bid": "msp06" },
-    { "kind": "block-section-head", "id": "remind", "title": "A reminder at the minute you set", "bid": "mrm01" },
-    { "kind": "text-p", "text": "Tell your main agent «remind me tomorrow at 9 to call mum» or «in a week, remind me about my brother's birthday». It works out the date itself. The phrase is kept as usual, and an entry goes into the memory's calendar.", "bid": "mrm02" },
-    { "kind": "text-p", "text": "At that minute the memory's clock posts the words into your main chat by itself, marked «⏰ Reminder». No model takes part, and no tokens are spent.", "bid": "mrm03" },
+    {
+      "kind": "block-section-head",
+      "id": "spaces",
+      "title": "Whose memory it is",
+      "bid": "msp01"
+    },
+    {
+      "kind": "block-access-map",
+      "outer": {
+        "title": "The main agent of the node",
+        "text": "Reads every space: what was said through each element of the node."
+      },
+      "spaces": [
+        {
+          "title": "Mom's element",
+          "text": "Only its own: what she told it, her files, its answers to her."
+        },
+        {
+          "title": "Son's element",
+          "text": "Only its own: his lessons and his questions."
+        },
+        {
+          "title": "Your site",
+          "text": "Only its own: what was said through it."
+        }
+      ],
+      "between": "Each element opens the memory with its own key, and one element never finds what was said to another.",
+      "bid": "msp02"
+    },
+    {
+      "kind": "text-p",
+      "text": "A space is everything said through one element: its rows, its search by meaning, its links in the graph, its files. The element's own key decides the space, so it writes and reads only there, whether it asks to remind, opens the journal or a file.",
+      "bid": "msp03"
+    },
+    {
+      "kind": "text-p",
+      "text": "The main agent writes into its own space and reads them all with the node's data key. What you kept before the spaces came stays with it.",
+      "bid": "msp04"
+    },
+    {
+      "kind": "text-p",
+      "text": "Clearing the journal clears the journal of the element that asked. The main agent clears an element's journal only when it names the element.",
+      "bid": "msp05"
+    },
+    {
+      "kind": "text-p",
+      "text": "The stores behind the memory keep each element apart by its own key too. You own the computer and its disk, and nothing on it is hidden from you.",
+      "bid": "msp06"
+    },
+    {
+      "kind": "block-section-head",
+      "id": "remind",
+      "title": "A reminder at the minute you set",
+      "bid": "mrm01"
+    },
+    {
+      "kind": "text-p",
+      "text": "Tell your main agent «remind me tomorrow at 9 to call mum» or «in a week, remind me about my brother's birthday». It works out the date itself. The phrase is kept as usual, and an entry goes into the memory's calendar.",
+      "bid": "mrm02"
+    },
+    {
+      "kind": "text-p",
+      "text": "At that minute the memory's clock posts the words into your main chat by itself, marked «⏰ Reminder». No model takes part, and no tokens are spent.",
+      "bid": "mrm03"
+    },
     {
       "kind": "text-list",
       "items": [
@@ -56,23 +199,62 @@
       ],
       "bid": "mrm04"
     },
-    { "kind": "text-code", "text": "You: remind me tomorrow at 9\nto call mum\n\nAgent: I will remind you:\nFriday, 6 November 2026\nat 09:00 — «call mum».\nThe entry is in the memory's\ncalendar.\n\nFriday, 09:00, main chat:\n⏰ Reminder · Deep memory\ncall mum", "bid": "mrm05" },
-    { "kind": "block-section-head", "id": "files", "title": "What it does with each kind of file", "bid": "msf01" },
+    {
+      "kind": "text-code",
+      "text": "You: remind me tomorrow at 9\nto call mum\n\nAgent: I will remind you:\nFriday, 6 November 2026\nat 09:00 — «call mum».\nThe entry is in the memory's\ncalendar.\n\nFriday, 09:00, main chat:\n⏰ Reminder · Deep memory\ncall mum",
+      "bid": "mrm05"
+    },
+    {
+      "kind": "block-section-head",
+      "id": "files",
+      "title": "What it does with each kind of file",
+      "bid": "msf01"
+    },
     {
       "kind": "text-table",
-      "head": ["What you send", "What the memory does"],
+      "head": [
+        "What you send",
+        "What the memory does"
+      ],
       "rows": [
-        ["A photo or a picture", "Describes it in words and keeps the picture with the description"],
-        ["A PDF", "Reads it whole and keeps it with a description, so you find it by what it says"],
-        ["A voice note", "Turns it into text and reads it like any phrase"],
-        ["A video", "Reads the frames and the sound when the computer has ffmpeg"],
-        ["Documents and code", "Reads them as text; code is never run"],
-        ["A text longer than 2,000 words", "Keeps it whole as one thing, without splitting it into facts"]
+        [
+          "A photo or a picture",
+          "Describes it in words and keeps the picture with the description"
+        ],
+        [
+          "A PDF",
+          "Reads it whole and keeps it with a description, so you find it by what it says"
+        ],
+        [
+          "A voice note",
+          "Turns it into text and reads it like any phrase"
+        ],
+        [
+          "A video",
+          "Reads the frames and the sound when the computer has ffmpeg"
+        ],
+        [
+          "Documents and code",
+          "Reads them as text; code is never run"
+        ],
+        [
+          "A text longer than 2,000 words",
+          "Keeps it whole as one thing, without splitting it into facts"
+        ]
       ],
       "bid": "mft01"
     },
-    { "kind": "block-section-head", "id": "talk", "title": "How to talk to it", "bid": "msk01" },
-    { "kind": "text-p", "text": "There are no forms to fill in and no menus to learn. You talk to your main agent the way you would talk to a person, and it knows when you mean the memory.", "bid": "mkp01" },
+    {
+      "kind": "block-section-head",
+      "id": "talk",
+      "title": "How to talk to it",
+      "bid": "msk01"
+    },
+    {
+      "kind": "text-p",
+      "text": "There are no forms to fill in and no menus to learn. You talk to your main agent the way you would talk to a person, and it knows when you mean the memory.",
+      "bid": "mkp01"
+    },
     {
       "kind": "text-list",
       "items": [
@@ -83,7 +265,12 @@
       ],
       "bid": "mkl01"
     },
-    { "kind": "block-section-head", "id": "turn-on", "title": "Start in three steps", "bid": "mso01" },
+    {
+      "kind": "block-section-head",
+      "id": "turn-on",
+      "title": "Start in three steps",
+      "bid": "mso01"
+    },
     {
       "kind": "text-list",
       "ordered": true,
@@ -94,31 +281,140 @@
       ],
       "bid": "mol01"
     },
-    { "kind": "text-small", "text": "Without the key the memory still keeps what you say, but it does not search by meaning and does not hear voice notes.", "bid": "mos01" },
-    { "kind": "block-section-head", "id": "connect", "title": "Connect your element", "bid": "msc01" },
-    { "kind": "text-p", "text": "Any element of your node can keep things in the memory and ask it with two calls on this computer, using its own key.", "bid": "mcp01" },
+    {
+      "kind": "text-small",
+      "text": "Without the key the memory still keeps what you say, but it does not search by meaning and does not hear voice notes.",
+      "bid": "mos01"
+    },
+    {
+      "kind": "block-section-head",
+      "id": "connect",
+      "title": "Connect your element",
+      "bid": "msc01"
+    },
+    {
+      "kind": "text-p",
+      "text": "Any element of your node can keep things in the memory and ask it with two calls on this computer, using its own key.",
+      "bid": "mcp01"
+    },
     {
       "kind": "text-code",
       "text": "// In your element's server code, on this computer: the port comes from the node, the key is your element's own\nconst base = `http://127.0.0.1:${port}`\nconst headers = { 'content-type': 'application/json', 'X-Element-Key': process.env.ELEMENT_KEY }\n// no from: your own key is your space\nawait fetch(`${base}/v1/remember`, { method: 'POST', headers, body: JSON.stringify({ text: 'the taxi from the airport cost 40 euro' }) })\nconst answer = await fetch(`${base}/v1/recall`, { method: 'POST', headers, body: JSON.stringify({ text: 'how much was the taxi?' }) }).then((r) => r.json())\n// → { ok: true, text, objects, certainty, answer_id, … }",
       "bid": "mcc01"
     },
-    { "kind": "text-p", "text": "The answer carries the text, the things it found, how sure it is and an `answer_id`. Your element can comment on the answer with `POST /v1/feedback`, and the full contract is at `GET /v1/contract`.", "bid": "mcp02" },
-    { "kind": "block-section-head", "id": "hood", "title": "Under the hood", "bid": "msh01" },
+    {
+      "kind": "text-p",
+      "text": "The answer carries the text, the things it found, how sure it is and an `answer_id`. Your element can comment on the answer with `POST /v1/feedback`, and the full contract is at `GET /v1/contract`.",
+      "bid": "mcp02"
+    },
+    {
+      "kind": "block-section-head",
+      "id": "hood",
+      "title": "Under the hood",
+      "bid": "msh01"
+    },
     {
       "kind": "text-table",
-      "head": ["Part", "What it does"],
+      "head": [
+        "Part",
+        "What it does"
+      ],
       "rows": [
-        ["The data element", "Keeps every phrase as a row in the node's database"],
-        ["The vectors element", "Finds what you said by meaning"],
-        ["The graph element", "Keeps the facts and their links in a space of their own"],
-        ["The storage element", "Keeps the photos, documents and recordings"],
-        ["OpenAI `gpt-6-luna`", "Splits a phrase into facts and describes pictures and PDFs, for a fraction of a cent"],
-        ["OpenAI `whisper-1`", "Turns voice notes into text"],
-        ["Your node", "Keeps the memory on while the computer has more than 1 GB free; with less, your main agent turns it on for a task"]
+        [
+          "The data element",
+          "Keeps every phrase as a row in the node's database"
+        ],
+        [
+          "The vectors element",
+          "Finds what you said by meaning"
+        ],
+        [
+          "The graph element",
+          "Keeps the facts and their links in a space of their own"
+        ],
+        [
+          "The storage element",
+          "Keeps the photos, documents and recordings"
+        ],
+        [
+          "OpenAI `gpt-6-luna`",
+          "Splits a phrase into facts and describes pictures and PDFs, for a fraction of a cent"
+        ],
+        [
+          "OpenAI `whisper-1`",
+          "Turns voice notes into text"
+        ],
+        [
+          "Your node",
+          "Keeps the memory on while the computer has more than 1 GB free; with less, your main agent turns it on for a task"
+        ]
       ],
       "bid": "mht01"
     },
-    { "kind": "block-section-head", "id": "credits", "title": "Open source", "bid": "msx01" },
-    { "kind": "text-p", "text": "Built by Fractera for the [Lagrix](https://lagrix.dev) protocol and for any web2 project that needs a memory. MIT license, the code is at [github.com/Fractera/fractera-memory-starter](https://github.com/Fractera/fractera-memory-starter).", "bid": "mxp01" }
+    {
+      "kind": "block-section-head",
+      "id": "builder",
+      "title": "Your own builder comes with it",
+      "bid": "q0002"
+    },
+    {
+      "kind": "text-p",
+      "text": "Every element of the node comes with its own Claude Code agent and can get its own Telegram bot. When something in this element should change, write to its bot from your phone, and the agent updates the logic or the design.",
+      "bid": "q0003"
+    },
+    {
+      "kind": "text-p",
+      "text": "The agent works only in its element's folder and never reads the whole node, so each change costs fewer tokens. Your Claude Code subscription pays for it.",
+      "bid": "q0004"
+    },
+    {
+      "kind": "text-list",
+      "items": [
+        "The element's bot is connected in the core, on its «Telegram» page.",
+        "The agent returns a commit; you look at it in «Preview» and accept it or turn it down.",
+        "At the computer, the agent's terminal is in the core, in this element's «Build»."
+      ],
+      "bid": "q0005"
+    },
+    {
+      "kind": "block-section-head",
+      "id": "credits",
+      "title": "Open source",
+      "bid": "msx01"
+    },
+    {
+      "kind": "text-p",
+      "text": "Built by Fractera for the [Lagrix](https://lagrix.dev) protocol and for any web2 project that needs a memory. MIT license, the code is at [github.com/Fractera/fractera-memory-starter](https://github.com/Fractera/fractera-memory-starter).",
+      "bid": "mxp01"
+    },
+    {
+      "kind": "block-section-head",
+      "id": "faq",
+      "title": "Questions and answers",
+      "bid": "q0006"
+    },
+    {
+      "kind": "block-faq",
+      "title": "Questions and answers",
+      "items": [
+        {
+          "q": "What can I send it?",
+          "a": "A phrase, a photo, a PDF or a voice message, in any language, through the main agent in Telegram or in the terminal."
+        },
+        {
+          "q": "How do I know where an answer came from?",
+          "a": "Every answer carries the date, the source and how sure the memory is."
+        },
+        {
+          "q": "Does it work while the computer is busy?",
+          "a": "With less than 1 GB free the main agent turns it on for a task and off after it; a waiting reminder keeps it on."
+        },
+        {
+          "q": "Can I keep backups?",
+          "a": "Yes. The element is ready for its programmer agent to set up backups on a schedule or by hand: tell the element's agent in Telegram or in the terminal. It makes no copies on its own until you ask."
+        }
+      ],
+      "bid": "q0007"
+    }
   ]
 }
