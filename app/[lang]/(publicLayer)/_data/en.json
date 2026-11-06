@@ -76,12 +76,12 @@
     {
       "kind": "block-section-head",
       "id": "power",
-      "title": "On while the computer has room",
+      "title": "On, asleep only when memory is short",
       "bid": "q0000"
     },
     {
       "kind": "text-p",
-      "text": "While more than 1 GB is free on the computer, the memory is always on. With less, the main agent turns it on for a task and off after it. A reminder waiting in its calendar keeps it on.",
+      "text": "The element starts with the node. With less than 0.5 GB of free memory the node may put it to sleep; the first call or a calendar entry wakes it in seconds, and above 1 GB free it comes back by itself.",
       "bid": "q0001"
     },
     {

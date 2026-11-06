@@ -15,7 +15,8 @@
     "data",
     "graph",
     "config",
-    "design"
+    "design",
+    "embeddings"
   ],
   "messengers": {
     "h2a": true,
@@ -23,6 +24,9 @@
     "a2a": false
   },
   "power": {
+    "default": "on",
+    "switch": "auto",
+    "wakeOnCall": true,
     "reason": {
       "en": "Turned on for a memory task: «remember» and «remind me about» — the main agent turns it on and off",
       "ru": "Включается на задачу памяти: «запомни» и «напомни о» — его включает и выключает главный агент"
