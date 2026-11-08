@@ -10,6 +10,7 @@
     "ask-core": "node scripts/ask-core.mjs",
     "reply-core": "node scripts/ask-core.mjs --reply",
     "tell-core": "node scripts/ask-core.mjs --tell",
+    "reset": "node scripts/ask-core.mjs --reset",
     "need": "node scripts/need.mjs",
     "pass": "node scripts/pass.mjs",
     "design-skill": "node scripts/design-skill.mjs",
