@@ -1,22 +1,28 @@
 # Design pass — the laws of this session
 
-This file comes with the design pass of the build session (node step 590-5): blocks, widgets and the look of pages. The laws of
-building (`.claude/modes/build.md`) hold here too.
+This file comes with the design pass of the build session (node step 590-5; rewritten by node step 716): the look of this
+element's pages and screens, designed from what the element is for. The laws of building (`.claude/modes/build.md`) hold here too.
 
 ## The design pass
 
-The owner of the node, 2026-10-23:
-«сначала создаем дизайн для работы с блоками,. Затем сбрасываем контекст строим проект с этими блоками. Затем сбрасываем контекст работаем с текстом».
+The look of this element is its own (node step 716, the owner 2026-11-10): its tokens in `DESIGN-CONFIG`, its rules in `DESIGN.md`
+when it has one, its sections in `components/blocks/`. There is no shared catalogue of sections and no shared design to take them
+from — you design them yourself, as a designer would.
 
-- **What this pass does:** the blocks and widgets a page needs, their look on the «Design» tokens through the design skill of the
-  project, the highlight address on every container, the registration of each block, and page skeletons made of blocks with
-  placeholder words.
-- **What it never does:** doors, data, the logic of a scenario, the words people read — the main pass and the texts pass. A request
-  for them: write `current-step.md`, then `npm run pass -- main "<the request>"` (or `texts`).
-- **The skills of this pass:** `impeccable`, `design-taste-frontend` (through the gate `custom-design`), `shadcn` (through
-  `use-shadcn`), `ai-elements` (through `use-messenger`) — the line `Pass:` of each one's `SOURCE.md` says where it lives.
-- **End of the pass:** commit, write `current-step.md` (what is done, «next: the main pass»), tell the person in one line; switch with
-  `npm run pass -- main "<the next substep>"` when the step goes on, or stop when the person wants to look first.
+- **What this pass does:** the screens and sections a stage needs, their look on this element's tokens, the highlight address on
+  every container, the registration of each section, page skeletons with placeholder words.
+- **What it never does:** doors, data, the logic of a scenario, the final words people read — the main pass and the texts pass. A
+  request for them: write `current-step.md`, then `npm run pass -- main "<the request>"` (or `texts`).
+- **The skills of this pass:** the design skill of this element (`npm run design-skill` — the passport's `designSkill`; `none` —
+  work from the tokens and `DESIGN.md`), `impeccable` and `design-taste-frontend` (vendored, each with its `SOURCE.md`; this file
+  is their gate), `shadcn` (through `use-shadcn`), `ai-elements` (through `use-messenger`) — the line `Pass:` of each one's
+  `SOURCE.md` says where it lives. An administration screen (a table, a form, settings) is calm and dense: its purpose first, one
+  focal point per view, every state named in words.
+- **Our laws win over any design skill:** a colour, a font or a radius only as a token, never a value in a component; words come
+  from page data; every container carries `data-block`; pages stay static and readable without JavaScript; the platform
+  primitives (`use-shadcn`, `use-typography`) before hand-built markup.
+- **End of the pass:** commit, write `current-step.md` (what is done, «next: the main pass»), tell the person in one line; switch
+  with `npm run pass -- main "<the next substep>"` when the step goes on, or stop when the person wants to look first.
 
 <!-- RULE: our-architecture -->
 🔒 Our architecture, never theirs — non-cancellable (owner of the node, 2026-10-23:
@@ -29,28 +35,23 @@ product — REA's records in `study/`, screenshots, notes — describes another 
 
 ## The design of a stage — before its code
 
-The owner of the node, 2026-10-23, the order for every stage: «выбрать навык дизайна для проекта … изучить какие элементы дизайна – блоки существуют на каждом этапе и реализовать эти блоки с использованием навыка дизайна … Создавая блоки обязательно подвергаем их … анализу на предмет соответствия подсветки … Создать или проверить существование соответствующие реестр блоков … Создавай каркасы страниц».
-
-1. **The design skill** — `npm run design-skill`: one owner — the skill of the whole project from «Design»; an app factory or an element
-   set apart — your own (section «Design skill»). None chosen and the person wants an own look — ask once (skill `custom-design`).
+1. **The look** — `npm run design-skill` and `DESIGN.md` (when the element has one): work in that style. Nothing chosen and the
+   person wants a particular look — ask once which (`impeccable` for a bold product look, `design-taste-frontend` for a restrained
+   one), write its name into the passport's `designSkill` and run `npm run describe:publish`.
 2. **The pages of the stage** — from the plan of the step (`Stage: N`, its `Pass: design` substeps) and the quiz items it serves.
-3. **Their blocks** — for each section: `npm run blocks -- find "<the need>"` → `show` → `add` (skill `use-blocks`); nothing fits — one
-   owner: `npm run blocks -- request "<the need>" --page <path>` (the Blocks agent builds it); an app factory: build the block in this
-   element. Always in the style of the design skill and on the «Design» tokens only.
-4. **Highlight addresses** — every container of every new block and widget carries `data-block`: `npm run widgets:ids`; blocks of the
-   catalogue arrive with theirs; check them in the tab «Live site» (skill `use-highlight`).
-5. **The registry** — every block the stage uses is registered (its card, `BLOCK_SET`; `add` does it for catalogue blocks).
-6. **Page skeletons from blocks** — page data with placeholder words: static, readable without JavaScript, the least load on the server
-   and the database; a list never grows into an endless feed — it gets pages and server search (the pattern of the branch `/reviews`
-   of the element lagrix: the first page static, an island searches and turns pages through a door).
-7. **Then stop:** no doors, no data, no logic, no final words — commit, `current-step.md`, «next: the main pass».
+3. **Their sections** — each one this element's own component in `components/blocks/`: words from page data, colours as tokens,
+   static; its line in `lib/content/blocks/registry.tsx`, its type in `lib/content/blocks/types.ts`, its Markdown line in
+   `lib/aio/blocks-to-markdown.ts`, its card `components/blocks/<block>.card.json` (`categories` — its section of
+   `/<lang>/admin/blocks`, `use`). A section another page already has is reused, never copied.
+4. **Highlight addresses** — every container of every new section and widget carries `data-block`: `npm run widgets:ids`; check
+   them in the tab «Live site» (skill `use-highlight`).
+5. **Page skeletons** — page data with placeholder words: static, readable without JavaScript, the least load on the server and
+   the database; a list never grows into an endless feed — it gets pages and server search.
+6. **Then stop:** no doors, no data, no logic, no final words — commit, `current-step.md`, «next: the main pass».
 
 ## Design skill
 
-The design skill this element is built with lives in the passport `OWN-SERVICE-PROPS/OWN-SERVICE-PROPS.json`, field
-`designSkill`: the skill's name (`impeccable`, `design-taste-frontend`) or `""` when none. The field is always there; it is never
-written in `NODE-CONTRACT.json` (owner 2026-10-07). With the link to «Design» on, the skill of the whole project wins — «Design» keeps
-it in `blocks.designSkill` and sends it with the look (node step 590-6); `npm run design-skill` says which one applies. Read it before
-any design work and work in that skill's style; when the person picks another skill for this element (`custom-design` asks which),
-write its name there and run `npm run describe:publish` — the core takes it into its registry («Take into core»); the skill of the
-whole project is chosen on the page of «Design», section «Design skill of the project».
+The passport `OWN-SERVICE-PROPS/OWN-SERVICE-PROPS.json`, field `designSkill`: the skill's name (`impeccable`,
+`design-taste-frontend`) or `""` when none — always present, never written in `NODE-CONTRACT.json` (owner 2026-10-07).
+`npm run design-skill` prints it. When the person picks another, write its name there and run `npm run describe:publish` — the core
+takes it into its registry.
