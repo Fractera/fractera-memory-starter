@@ -6,7 +6,7 @@ element's pages and screens, designed from what the element is for. The laws of 
 ## The design pass
 
 The look of this element is its own (node step 716, the owner 2026-11-10): its tokens in `DESIGN-CONFIG`, its rules in `DESIGN.md`
-when it has one, its sections in `components/blocks/`. There is no shared catalogue of sections and no shared design to take them
+when it has one, its sections in `components/sections/`. There is no shared catalogue of sections and no shared design to take them
 from — you design them yourself, as a designer would.
 
 - **What this pass does:** the screens and sections a stage needs, their look on this element's tokens, the highlight address on
@@ -39,10 +39,10 @@ product — REA's records in `study/`, screenshots, notes — describes another 
    person wants a particular look — ask once which (`impeccable` for a bold product look, `design-taste-frontend` for a restrained
    one), write its name into the passport's `designSkill` and run `npm run describe:publish`.
 2. **The pages of the stage** — from the plan of the step (`Stage: N`, its `Pass: design` substeps) and the quiz items it serves.
-3. **Their sections** — each one this element's own component in `components/blocks/`: words from page data, colours as tokens,
-   static; its line in `lib/content/blocks/registry.tsx`, its type in `lib/content/blocks/types.ts`, its Markdown line in
-   `lib/aio/blocks-to-markdown.ts`, its card `components/blocks/<block>.card.json` (`categories` — its section of
-   `/<lang>/admin/blocks`, `use`). A section another page already has is reused, never copied.
+3. **Their sections** — each one this element's own section, one folder `components/sections/<kind>/` (`index.tsx` with
+   `Section` and `Shape`, `markdown.ts` — its words in the page's Markdown twin, `README.md`) and one line in
+   `components/sections/index.ts`: words from page data, colours as tokens, static (`check:sections` holds the set both ways). A
+   section another page already has is reused, never copied.
 4. **Highlight addresses** — every container of every new section and widget carries `data-block`: `npm run widgets:ids`; check
    them in the tab «Live site» (skill `use-highlight`).
 5. **Page skeletons** — page data with placeholder words: static, readable without JavaScript, the least load on the server and

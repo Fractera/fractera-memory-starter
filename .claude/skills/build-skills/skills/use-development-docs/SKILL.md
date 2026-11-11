@@ -87,7 +87,7 @@ Every building task is a step, even a five-line fix. The number is the next one 
   `Stage: N` next to `Serves:`, and it is named by the feature («The launch list of the day»), never by a layer («all doors»). Only the
   current stage — the lowest `n` without `done` in `quiz.json` — gets steps: `npm run check:product` refuses a plan of a later stage.
   The core's quiz page lists the steps of each stage from this line.
-- **Every substep names its pass** (node step 590-5) — `Pass: design` (blocks, widgets, page skeletons), `Pass: main` (code, doors,
+- **Every substep names its pass** (node step 590-5) — `Pass: design` (sections, widgets, page skeletons), `Pass: main` (code, doors,
   data) or `Pass: texts` (the words people read) — in that order inside a step. One pass runs in one session: when the next substep
   belongs to another pass, write `current-step.md` and switch with `npm run pass -- <pass> "<the substep>"` (`.claude/modes/build.md`,
   «Passes»).

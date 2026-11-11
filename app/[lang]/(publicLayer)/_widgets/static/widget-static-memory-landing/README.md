@@ -6,8 +6,8 @@ connects, what is under the hood. A static widget: drawn on the server, part of 
 
 ## Where its words come from
 
-From the blocks of the home page, `../../../_data/en.json` and `ru.json` (`words.ts`). The page is `bare` (`_data/meta.json`): only this
-widget is drawn, and the blocks are its words and the page's text copy for search and agents (`index.md`, `llms-full.txt`), so
+From the items of the home page, `../../../_data/en.json` and `ru.json` (`words.ts`). The page is `bare` (`_data/meta.json`): only this
+widget is drawn, and the items are its words and the page's text copy for search and agents (`index.md`, `llms-full.txt`), so
 `markdown.ts` returns nothing of its own. A corrected sentence shows up without a rebuild (ISR, or `npm run pages:refresh`).
 
 Every sentence describes what is built and was matched against the code of this element: `lib/memory/think.mjs` (`gpt-6-luna`),
@@ -18,10 +18,10 @@ Every sentence describes what is built and was matched against the code of this 
 refused, a missed run when the computer is off, on while a reminder waits) and the core's notice words (`⏰ Напоминание · <element>`).
 A new claim gets the same check before it goes on the page.
 
-| Blocks in the data | How the widget draws them |
+| Items in the data | How the widget draws them |
 |---|---|
-| `block-hero-centered` | first screen: title, lead, two buttons (anchors), the badge |
-| `block-section-head` id `route` + pairs `text-h4`/`text-p` + `text-small` | the memory's route on the first screen; the small text says when the memory is on |
+| `section-hero-centered` | first screen: title, lead, two buttons (anchors), the badge |
+| `section-head` id `route` + pairs `text-h4`/`text-p` + `text-small` | the memory's route on the first screen; the small text says when the memory is on |
 | id `solves` + `text-table` | «without it / with it», two columns |
 | id `files` + `text-table` | each kind of file and what the memory does with it |
 | id `remind` + `text-p`, `text-list`, `text-code` | reminders at a time: the words and the list left, the chat and the ⏰ notice right |

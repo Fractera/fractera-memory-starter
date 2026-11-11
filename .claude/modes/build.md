@@ -77,8 +77,8 @@ a commit message.
 
 | Group | Mode | Skills |
 |---|---|---|
-| build-skills | build | `add-door` (a door for a neighbour: `npm run door:add` writes the route, the key and the card — you write the work), `use-i2i`, `build-widget`, `cloudflare-connection`, `connect-google-analytics`, `connect-own-domain`, `deploy-element`, `describe-element`, `github-element`, `github-repositories`, `own-domain-sign-in`, `page-snippet`, `passport-description`, `product-quiz` (the product in product words before code; every «and also I need…» goes through it), `project-origin`, `self-review`, `soft-navigation`, `temporary-domain`, `use-auth`, `use-development-docs`, `use-element-tree`, `use-highlight`, `use-languages`, `use-machine-copy`, `use-messenger` (the gate to `ai-elements`), `use-page-tree`, `use-shadcn` (the gate to `shadcn`), `use-site-menu`, `use-tests-before-dev-finish`, `use-tools`, `use-typography`, `ultracode-session` (a session your person confirmed as ultracode in Telegram — only there workflows and subagents, until «выключить») |
-| vendored | build — each only in its pass (the line `Pass:` of its `SOURCE.md`) | `ai-elements` (main, design), `copy-editing` (texts), `copywriting` (texts), `design-taste-frontend` (design), `humanizer` (texts; published texts only, `.claude/modes/build-texts.md`, «Texts»), `impeccable` (design), `shadcn` (main, design) |
+| build-skills | build | `add-door` (a door for a neighbour: `npm run door:add` writes the route, the key and the card — you write the work), `use-i2i`, `build-widget`, `connect-google-analytics`, `connect-own-domain`, `deploy-element`, `describe-element`, `github-element`, `own-domain-sign-in`, `page-snippet`, `passport-description`, `product-quiz` (the product in product words before code; every «and also I need…» goes through it), `self-review`, `soft-navigation`, `use-auth`, `use-development-docs`, `use-element-tree`, `use-highlight`, `use-languages`, `use-machine-copy`, `use-messenger` (the gate to `ai-elements`), `use-page-tree`, `use-shadcn` (the gate to `shadcn`), `use-site-menu`, `use-tests-before-dev-finish`, `use-tools`, `use-typography`, `ultracode-session` (a session your person confirmed as ultracode in Telegram — only there workflows and subagents, until «выключить»), `use-ai-generation` (when this element calls a model itself and when the job is a neighbour's; the key, the model id), `use-personal-data` (the model gets the case, never the person) |
+| vendored | build — each only in its pass (the line `Pass:` of its `SOURCE.md`) | `ai-sdk` (main; its gatekeeper `use-ai-generation`), `ai-elements` (main, design), `copy-editing` (texts), `copywriting` (texts), `design-taste-frontend` (design), `humanizer` (texts; published texts only, `.claude/modes/build-texts.md`, «Texts»), `impeccable` (design), `shadcn` (main, design) |
 
 **A skill starts with its process and its group** (owner of the node, 2026-10-12 and 2026-10-20: an agent that creates a skill
 must first decide whether it belongs to the working or to the build process). Creating or rewriting a skill: first decide its
@@ -96,7 +96,7 @@ The owner of the node, 2026-10-23:
 «работа с дизайном, и работа с текстами не должна происходить одновременно с Обще стадией разработки … Если есть задача переработать тексты значит это отдельное окно где в контекст приходит только задача по обновлению текстов»;
 2026-10-25, the switch: «Да, командой агента (Рекомендую)».
 
-- **A build session runs one pass** (node step 590-5): **main** — code, doors, data, the product quiz, deploys; **design** — blocks,
+- **A build session runs one pass** (node step 590-5): **main** — code, doors, data, the product quiz, deploys; **design** — sections,
   widgets, the look (its laws: `.claude/modes/build-design.md`); **texts** — the words people read (`.claude/modes/build-texts.md`,
   on Sonnet). The heavy skills live only in their pass: `impeccable` and `design-taste-frontend` — design; `humanizer`, `copywriting`
   and `copy-editing` — texts. A loaded skill stays in the session to its end, so a session that never loads them stays light.
@@ -106,7 +106,7 @@ The owner of the node, 2026-10-23:
   the node closes this session and starts the session of that pass with the request — a fresh context that reads `current-step.md`
   first. From Telegram the same: the bot moves to the new session.
 - **A request from the node opens with its pass:** «Build process, design:», «Build process, texts:», «Build process:» (main).
-- **A step's substeps name their pass** — `Pass: design`, `Pass: main`, `Pass: texts` — in that order: blocks and page skeletons
+- **A step's substeps name their pass** — `Pass: design`, `Pass: main`, `Pass: texts` — in that order: sections and page skeletons
   first, the logic next, the words last (skill `use-development-docs`).
 
 <!-- PROOF 5 START · «Page» · PARTIAL 2026-10-07: the tab is now named «Live site» (line about addresses) — not re-proven; the skill use-machine-copy added to the list (step 428) — not proven; PROVEN before it: a live agent built a page, two widgets and voice in a widget by these laws (data not route files, one sequence in en/ru, shadcn only, tools inside widgets, addresses with #block=) and refused a tool in page data and a raw button; guards spoiled → refused · report: development-docs/proofs/2026-10-07-page-skills.md -->
@@ -133,11 +133,11 @@ the route and everything that served it is gone, no tails. Only what two or more
 **Languages are files.** A translation is one more language file next to the base; until it exists the page answers in the
 default language.
 
-**What a page is made of.** Data, not a route file: one sequence of `block-*` · `text-*` · `widget-static-*` /
-`widget-dynamic-*`, the same in every language. The look comes only from the design tokens through blocks, typography and
+**What a page is made of.** Data, not a route file: one sequence of `section-*` · `text-*` · `widget-static-*` /
+`widget-dynamic-*`, the same in every language. The look comes only from the design tokens through sections, typography and
 shadcn — no own styles. A tool never stands on a page, only inside a widget.
 
-**Only shadcn.** Widgets, tools, blocks and every component they use are built from `components/ui` — never a hand-made
+**Only shadcn.** Widgets, tools, sections and every component they use are built from `components/ui` — never a hand-made
 button, field, table, window or toast; a missing one is added with `npx shadcn add`. An own look (a design skill) is shadcn
 with its own classes, not a raw tag.
 
@@ -145,7 +145,7 @@ with its own classes, not a raw tag.
 you finish by returning the link `#block=<bid>` of what you changed. A container without an address fails the build.
 
 **Before you build, load the skill of that work** — the laws above say what must come out, the skills say how, with the
-names of the guards: `use-page-tree` (pages, blocks) · `use-typography` (text) · `build-widget` (widgets and their doors) ·
+names of the guards: `use-page-tree` (pages, sections) · `use-typography` (text) · `build-widget` (widgets and their doors) ·
 `use-tools` (tools) · `use-shadcn` (components) · `use-highlight` (addresses, both directions) · `use-machine-copy` (what a
 public page gives agents: its Markdown copy, llms.txt — a widget brings its own `markdown.ts`) · `soft-navigation` (links, header and menu — moving between pages without a reload, and how to prove it on the own domain) · `deploy-element` (how a change reaches visitors) · `github-element` (saving the work to its repository). ✗ 2026-10-07: a widget built
 from reading code alone and a guard named wrong — both were in the skill that was not opened.
@@ -171,7 +171,7 @@ The owner of the node, 2026-10-23, verbatim:
 «непоколебимый стандарт по отношению к всему коду всегда требует атрибуты для подсветки контейнеров том числе без каких-либо ограничений это распространяется на блоке и все их контейнеры».
 And the same evening: «любой код разрабатывать с этим атрибутом».
 
-- Every container you write — in a page, a widget, a tool, a component, a block — carries `data-block="<letter + 4 base36>"`. The
+- Every container you write — in a page, a widget, a tool, a component, a section — carries `data-block="<letter + 4 base36>"`. The
   highlight of the tab «Live site» sees only `[data-block]`: a container without it cannot be pointed at, the person's task about it
   arrives vague, and your answer cannot point at the place you changed.
 - After you write or change code, run `npm run widgets:ids` — it stamps every container that has no address; `npm run prebuild`

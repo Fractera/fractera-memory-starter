@@ -2,13 +2,13 @@
   "title": "Память, которая хранит то, что вы ей сказали",
   "description": "Глубокая память узла Fractera хранит фразы, фото, PDF и голосовые, которые вы отправляете главному агенту, отвечает на «напомни о» с датой, источником и тем, насколько она уверена, и напоминает о деле в назначенную минуту. Работает на вашем собственном компьютере.",
   "keywords": "память ИИ, личная память, запомни, напомни, голосовые заметки, поиск по PDF, поиск по смыслу, Telegram, Claude Code, Fractera, открытый код, напоминания по времени, календарь",
-  "blocks": [
+  "body": [
     {
       "kind": "widget-static-memory-landing",
       "bid": "mlw01"
     },
     {
-      "kind": "block-hero-centered",
+      "kind": "section-hero-centered",
       "pill": "OpenSource Web4 agent & app starter kit",
       "title": "Память, которая хранит то, что вы ей сказали",
       "description": "Скажите главному агенту «запомни» в Telegram или в терминале: фразу, фото, PDF или голосовое. Через месяцы спросите «напомни о…» — и ответ вернётся с датой, источником и тем, насколько память уверена. Всё это остаётся на вашем компьютере.",
@@ -23,7 +23,7 @@
       "bid": "mhr01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "route",
       "title": "Как работает память",
       "bid": "msr01"
@@ -74,7 +74,7 @@
       "bid": "mrs01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "power",
       "title": "Включён, засыпает только при нехватке памяти",
       "bid": "q0000"
@@ -85,7 +85,7 @@
       "bid": "q0001"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "solves",
       "title": "Что меняется для вас",
       "bid": "mss01"
@@ -125,13 +125,13 @@
       "bid": "mst01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "spaces",
       "title": "Чья это память",
       "bid": "msp01"
     },
     {
-      "kind": "block-access-map",
+      "kind": "section-access-map",
       "outer": {
         "title": "Главный агент узла",
         "text": "Читает все пространства: что было сказано через каждый элемент узла."
@@ -174,7 +174,7 @@
       "bid": "msp06"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "remind",
       "title": "Напомнит в нужную минуту",
       "bid": "mrm01"
@@ -205,7 +205,7 @@
       "bid": "mrm05"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "files",
       "title": "Что память делает с каждым видом файлов",
       "bid": "msf01"
@@ -245,7 +245,7 @@
       "bid": "mft01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "talk",
       "title": "Как с ней говорить",
       "bid": "msk01"
@@ -266,7 +266,7 @@
       "bid": "mkl01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "turn-on",
       "title": "Начать в три шага",
       "bid": "mso01"
@@ -287,7 +287,7 @@
       "bid": "mos01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "connect",
       "title": "Подключите свой элемент",
       "bid": "msc01"
@@ -308,7 +308,7 @@
       "bid": "mcp02"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "hood",
       "title": "Что под капотом",
       "bid": "msh01"
@@ -352,7 +352,7 @@
       "bid": "mht01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "builder",
       "title": "Свой строитель в комплекте",
       "bid": "q0002"
@@ -377,7 +377,7 @@
       "bid": "q0005"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "credits",
       "title": "Открытый код",
       "bid": "msx01"
@@ -388,13 +388,13 @@
       "bid": "mxp01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "faq",
       "title": "Вопросы и ответы",
       "bid": "q0006"
     },
     {
-      "kind": "block-faq",
+      "kind": "section-faq",
       "title": "Вопросы и ответы",
       "items": [
         {

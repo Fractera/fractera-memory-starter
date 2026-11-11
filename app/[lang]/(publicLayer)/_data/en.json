@@ -2,13 +2,13 @@
   "title": "A memory that keeps what you tell it",
   "description": "The deep memory of a Fractera node keeps the phrases, photos, PDFs and voice notes you send to your main agent, answers «remind me about» with the date, the source and how sure it is, and reminds you of a task at the minute you set. It runs on your own computer.",
   "keywords": "AI memory, personal memory, remember, remind me, voice notes, PDF search, search by meaning, Telegram, Claude Code, Fractera, open source, reminders at a time, calendar",
-  "blocks": [
+  "body": [
     {
       "kind": "widget-static-memory-landing",
       "bid": "mlw01"
     },
     {
-      "kind": "block-hero-centered",
+      "kind": "section-hero-centered",
       "pill": "OpenSource Web4 agent & app starter kit",
       "title": "A memory that keeps what you tell it",
       "description": "Say «remember» to your main agent in Telegram or in the terminal: a phrase, a photo, a PDF or a voice note. Months later ask «remind me about…», and the answer comes back with the date, the source and how sure the memory is. All of it stays on your own computer.",
@@ -23,7 +23,7 @@
       "bid": "mhr01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "route",
       "title": "How a memory goes",
       "bid": "msr01"
@@ -74,7 +74,7 @@
       "bid": "mrs01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "power",
       "title": "On, asleep only when memory is short",
       "bid": "q0000"
@@ -85,7 +85,7 @@
       "bid": "q0001"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "solves",
       "title": "What changes for you",
       "bid": "mss01"
@@ -125,13 +125,13 @@
       "bid": "mst01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "spaces",
       "title": "Whose memory it is",
       "bid": "msp01"
     },
     {
-      "kind": "block-access-map",
+      "kind": "section-access-map",
       "outer": {
         "title": "The main agent of the node",
         "text": "Reads every space: what was said through each element of the node."
@@ -174,7 +174,7 @@
       "bid": "msp06"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "remind",
       "title": "A reminder at the minute you set",
       "bid": "mrm01"
@@ -205,7 +205,7 @@
       "bid": "mrm05"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "files",
       "title": "What it does with each kind of file",
       "bid": "msf01"
@@ -245,7 +245,7 @@
       "bid": "mft01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "talk",
       "title": "How to talk to it",
       "bid": "msk01"
@@ -266,7 +266,7 @@
       "bid": "mkl01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "turn-on",
       "title": "Start in three steps",
       "bid": "mso01"
@@ -287,7 +287,7 @@
       "bid": "mos01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "connect",
       "title": "Connect your element",
       "bid": "msc01"
@@ -308,7 +308,7 @@
       "bid": "mcp02"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "hood",
       "title": "Under the hood",
       "bid": "msh01"
@@ -352,7 +352,7 @@
       "bid": "mht01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "builder",
       "title": "Your own builder comes with it",
       "bid": "q0002"
@@ -377,7 +377,7 @@
       "bid": "q0005"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "credits",
       "title": "Open source",
       "bid": "msx01"
@@ -388,13 +388,13 @@
       "bid": "mxp01"
     },
     {
-      "kind": "block-section-head",
+      "kind": "section-head",
       "id": "faq",
       "title": "Questions and answers",
       "bid": "q0006"
     },
     {
-      "kind": "block-faq",
+      "kind": "section-faq",
       "title": "Questions and answers",
       "items": [
         {

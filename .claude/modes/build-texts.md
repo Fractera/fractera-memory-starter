@@ -15,7 +15,7 @@ The owner of the node, 2026-10-23:
 - **The product quiz** (owner of the node, 2026-10-25: «Полировка в проходе текстов (Рекомендую)»): the interview drafts the quiz in
   the main pass without `humanizer`; here its draft items are polished before the person confirms them — editing a confirmed item turns
   it back into a draft, so polish first. The meaning and the person's verbatim words in `said` never change.
-- **What it never does:** code, doors, data, blocks, design — the main pass and the design pass. A request for them: write
+- **What it never does:** code, doors, data, sections, design — the main pass and the design pass. A request for them: write
   `current-step.md`, then `npm run pass -- main "<the request>"` (or `design`).
 - **The skills of this pass:** `humanizer`, `copywriting`, `copy-editing` — turned on only here (the line `Pass:` of each one's
   `SOURCE.md`).
