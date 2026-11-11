@@ -1,13 +1,12 @@
 ---
 name: product-quiz
 description: >
-  Builder skill. The product quiz of this element: what the product is, in product words, before code — `development-docs/product/`.
-  Load it when the person wants a new product («I want to make…», «let's plan it»); when a task comes from the core's quiz page
-  («Product quiz, item S-03 …», «Product quiz: let's continue…», «…start deep planning…»); when the person asks for something that
-  adds or changes what the product does («and also I need…»: a new role, a new kind of thing, a new money flow, an outside
-  service); after the node (i2i) and the network (f2f) found nothing ready for a new capability; and when a larger building step closes. Not for page texts, design, a bug inside a confirmed scenario, a clear request whose input and output are named (it is built the short way), or a worker job. The
-  thing you cannot guess: only the person confirms an item, in words — you never mark one confirmed yourself, and changing a
-  confirmed item turns it back into a draft.
+  Builder skill. The product quiz — what the product is, in product words, before code (`development-docs/product/`). Load it when
+  the person wants a new product («I want to make…», «let's plan it»), a task comes from the core's quiz page («Product quiz…»), a
+  request adds or changes what the product does (a role, a money flow, an outside service), and when a larger step closes. Not for
+  texts, design or a small fix.
+model: opus
+effort: max
 ---
 
 <!-- PROOF · NOT PROVEN yet: written 2026-10-19 (node step 536-4); no live run by an element agent — the person starts it from the quiz page -->

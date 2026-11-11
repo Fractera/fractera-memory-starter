@@ -1,10 +1,9 @@
 ---
 name: element-power
 description: >
-  Both natures. Being turned on or off in the node (node step 567). Load it when the person asks you to turn yourself off or on, to stop
-  this element or start it, asks why the element is «off», or when you are building something that should arrive turned off by default
-  (it needs a server, a paid account, a machine this computer is not). The thing you cannot guess: you never switch yourself — the
-  node holds the switch; you only declare your default in your passport and pass a request to the core.
+  Both natures. Being turned on or off in the node — the node holds the switch, you declare your default in the passport. Load it
+  when the person asks you to turn yourself off or on, stop or start this element, asks why it is «off», or when you build
+  something that should arrive off by default (a server, a paid account, another machine).
 ---
 
 # element-power

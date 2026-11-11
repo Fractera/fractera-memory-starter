@@ -321,7 +321,11 @@
             "/v1/sources",
             "/v1/signals",
             "/v1/objects",
-            "/v1"
+            "/v1",
+            "/api/prototypes",
+            "/api/settings/brief",
+            "/[lang]/admin/api/settings/design",
+            "/[lang]/admin/api/settings/brief"
           ],
           "a2aEndpoint": "/api/a2a",
           "a2aSkills": [
