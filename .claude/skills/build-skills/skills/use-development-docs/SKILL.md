@@ -74,6 +74,8 @@ Every building task is a step, even a five-line fix. The number is the next one 
 - A substep closes with a commit, and its hash goes into `current-step.md` at once. A summary without a commit hash is an
   unclosed substep.
 - The work turns out bigger or different from the agreed plan — stop and ask before doing it; the «yes» covered the plan.
+- **Tasks this needs** (node step 733): before the code the plan names every task its interface solves, each asked of `parts_find` —
+  found: taken as it is; not found: born as a tool in `_tools/<id>/`, its card first, its parts before it (skill `use-tools`).
 - **One line `Serves:`** (node step 536-2) in the plan, in every summary in `steps-done/`, and in `current-step.md` while a small
   step is active: the numbers of the product quiz items the step serves (`development-docs/product/`), for example
   `Serves: S-03, R-02`, or `Serves: none`. The core reads only this line to show, next to each item of the quiz, which steps work
